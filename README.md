@@ -49,7 +49,6 @@ cd hypertube
 ### 2\. Environment Configuration ⚠️
 
 You must create a `.env` file in the root directory.
-**Important:** Never commit credentials to Git.
 
 ```bash
 # Example .env structure
