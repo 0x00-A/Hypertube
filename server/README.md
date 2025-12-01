@@ -95,17 +95,10 @@ docker compose -f docker-compose.dev.yml down
 ### Build & Run
 
 ```bash
-# Build image
-docker build -t ntier-backend .
-# Run container
-docker run -p 3000:3000 --env-file .env ntier-backend
-# Or via compose
 docker compose up --build
 ```
 
 ## Future TODOs
-
-All implemented core scaffolding tasks complete. Remaining enhancements (optional):
 
 - Production logging transport & structured error classes
 - Role/permission guards atop auth middleware
