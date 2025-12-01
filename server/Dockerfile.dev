@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=development
+# Install dependencies (includes dev deps)
+COPY package.json package-lock.json* ./
+RUN npm install
+# Copy config files (tsconfig etc.)
+COPY tsconfig.json ./
+# Copy source (will be overridden by bind mount in compose)
+COPY src ./src
+EXPOSE 3000
+# Use non-root user for safety
+USER node
+CMD ["npm", "run", "dev"]
