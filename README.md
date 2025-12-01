@@ -68,7 +68,7 @@ GITHUB_CLIENT_SECRET=...
 The entire application (Frontend, Backend, Database) is containerized.
 
 ```bash
-docker-compose up --build
+make dev
 ```
 
 Access the application at `http://localhost:3000`.
@@ -79,10 +79,10 @@ This project adheres to strict coding standards. No console errors or warnings a
 
 ```bash
 # Run backend tests
-npm run test:backend
+npm run test:server
 
 # Run frontend tests
-npm run test:frontend
+npm run test:client
 ```
 
 ## 👥 Authors
