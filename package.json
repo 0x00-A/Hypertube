@@ -1,0 +1,24 @@
+{
+  "name": "hypertube",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint",
+    "format:client": "cd client && npm run format",
+    "format:server": "cd server && npm run format"
+  },
+  "lint-staged": {
+    "client/**/*.{ts,tsx}": [
+      "npm run lint --prefix client -- --fix"
+    ],
+    "server/**/*.ts": [
+      "npm run lint --prefix server -- --fix"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.0"
+  }
+}
