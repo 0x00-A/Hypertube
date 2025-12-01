@@ -48,20 +48,7 @@ cd hypertube
 
 ### 2\. Environment Configuration ⚠️
 
-You must create a `.env` file in the root directory.
-
-```bash
-# Example .env structure
-PORT=3000
-DB_HOST=mongo
-DB_NAME=hypertube
-JWT_SECRET=your_super_secure_secret
-# OAuth Credentials
-FORTY_TWO_UID=...
-FORTY_TWO_SECRET=...
-GITHUB_CLIENT_ID=...
-GITHUB_CLIENT_SECRET=...
-```
+You must create a `.env` file in the client and server directory.
 
 ### 3\. Run with Docker
 
