@@ -1,4 +1,4 @@
-# N-Tier Express + TypeScript Scaffold
+# Express + TypeScript
 
 This project was initialized using `express-generator` and refactored into a clean N-tier architecture with TypeScript, MongoDB (Mongoose), OpenAPI docs via swagger-jsdoc, containerization, CI, and quality tooling.
 
@@ -103,14 +103,6 @@ docker run -p 3000:3000 --env-file .env ntier-backend
 docker compose up --build
 ```
 
-## CI
-
-GitHub Actions workflow (`.github/workflows/ci.yml`) installs dependencies, runs lint and tests (placeholder). Caching via `actions/setup-node`.
-
-## Pre-commit Quality
-
-Husky pre-commit hook runs `lint-staged` to lint/format staged files.
-
 ## Future TODOs
 
 All implemented core scaffolding tasks complete. Remaining enhancements (optional):
@@ -120,10 +112,6 @@ All implemented core scaffolding tasks complete. Remaining enhancements (optiona
 - Improved filtering (query object mapping) beyond pagination
 - Validation coverage for all create/update paths
 
-## Rationale & Citations (Research Summary)
-
-Node LTS: v24 Active LTS chosen for longevity ([Node.js Releases](https://nodejs.org/en/about/releases)). Mongo connection string patterns ([Mongo Connection String](https://www.mongodb.com/docs/manual/reference/connection-string/)). Express scaffolding via generator ([Express Generator](https://expressjs.com/en/starter/generator.html)). Security & performance best practices ([Security](https://expressjs.com/en/advanced/best-practice-security.html), [Performance](https://expressjs.com/en/advanced/best-practice-performance.html)). Mongoose schema & connection guidance ([Guide](https://mongoosejs.com/docs/guide.html), [Connections](https://mongoosejs.com/docs/connections.html)). swagger-jsdoc OpenAPI support ([swagger-jsdoc](https://github.com/Surnet/swagger-jsdoc#readme), [OpenAPI Spec](https://spec.openapis.org/oas/latest.html)). Multi-stage Docker builds ([Docker Multi-stage](https://docs.docker.com/build/building/multi-stage/)). Docker image variants ([Node Docker Images](https://github.com/nodejs/docker-node/blob/main/README.md)). ESLint configuration flexibility ([ESLint Configure](https://eslint.org/docs/latest/use/configure/)). Prettier formatting options ([Prettier Options](https://prettier.io/docs/en/options.html)). Jest & TypeScript setup ([Jest Getting Started](https://jestjs.io/docs/getting-started)). Supertest HTTP assertions ([Supertest](https://github.com/ladjs/supertest#readme)). Pino low-overhead logging ([Pino](https://getpino.io/#/)). Helmet headers ([Helmet](https://helmetjs.github.io/)). CORS middleware usage ([CORS](https://github.com/expressjs/cors#readme)). Rate limiting configuration ([express-rate-limit](https://github.com/express-rate-limit/express-rate-limit#readme)). GitHub Actions workflow syntax ([Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)). Husky git hooks ([Husky](https://typicode.github.io/husky/)). lint-staged staged file processing ([lint-staged](https://github.com/okonet/lint-staged#readme)). Env validation & fail-fast ([envalid](https://github.com/af/envalid#readme)).
-
 ## Development
 
 ```bash
@@ -132,10 +120,3 @@ npm install
 npm run dev
 # Visit: http://localhost:3000/api-docs
 ```
-
-## Notes
-
-Business logic intentionally minimal—focus on architecture scaffolding.
-
----
-This scaffold is ready for iterative feature implementation.
