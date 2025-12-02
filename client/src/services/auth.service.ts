@@ -1,0 +1,21 @@
+import { httpClient } from './http';
+import { LoginCredentials, RegisterData, AuthResponse, User } from '../types/auth.types';
+
+export const authService = {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    return httpClient.post<AuthResponse>('/auth/login', credentials);
+  },
+
+  async register(data: RegisterData): Promise<AuthResponse> {
+    return httpClient.post<AuthResponse>('/auth/register', data);
+  },
+
+  async logout(): Promise<void> {
+    await httpClient.post('/auth/logout');
+    window.location.href = '/auth/login';
+  },
+
+  async getCurrentUser(): Promise<User> {
+    return httpClient.get<User>('/auth/me');
+  },
+};

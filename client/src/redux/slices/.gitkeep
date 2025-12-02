@@ -1,0 +1,7 @@
+// Redux slices will be organized here
+// Example structure:
+// - authSlice.ts
+// - movieSlice.ts
+// - userSlice.ts
+
+export {};
