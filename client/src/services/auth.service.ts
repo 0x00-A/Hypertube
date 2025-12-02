@@ -1,4 +1,5 @@
 import { httpClient } from './http';
+import { navigateTo } from '../utils/navigation';
 import type { LoginCredentials, RegisterData, AuthResponse, User } from '../types/auth.types';
 
 export const authService = {
@@ -12,7 +13,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     await httpClient.post('/auth/logout');
-    window.location.href = '/auth/login';
+    navigateTo('/auth/login');
   },
 
   async getCurrentUser(): Promise<User> {

@@ -156,10 +156,10 @@ Full page components that use layouts and components.
 
 ## 🔐 Authentication
 
-Authentication is handled via JWT tokens stored in `localStorage`. The HTTP client automatically:
-- Adds auth token to requests
+Authentication is handled via HTTP-only cookies. The HTTP client automatically:
+- Sends authentication cookies with requests (`withCredentials: true`)
 - Redirects to login on 401 errors
-- Handles token management
+- Relies on the backend for JWT token management in secure cookies
 
 ## 🎬 Features
 

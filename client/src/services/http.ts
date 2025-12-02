@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import { navigateTo } from '../utils/navigation';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -32,8 +33,8 @@ class HttpClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Redirect to login on unauthorized
-          window.location.href = '/auth/login';
+          // Use navigation utility instead of window.location
+          navigateTo('/auth/login');
         }
         return Promise.reject(error);
       }

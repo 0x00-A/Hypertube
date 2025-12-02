@@ -1,5 +1,8 @@
 export function formatDate(date: string | Date): string {
   const d = new Date(date);
+  if (isNaN(d.getTime())) {
+    return 'Invalid date';
+  }
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / 60000);

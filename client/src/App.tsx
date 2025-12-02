@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import MainLayout from './layouts/MainLayout';
+import { setNavigate } from './utils/navigation';
 
 // Pages
 import Login from './pages/auth/Login';
@@ -9,9 +11,20 @@ import Library from './pages/library/Library';
 import MovieDetails from './pages/movie/MovieDetails';
 import NotFound from './pages/notFound/NotFound';
 
+function NavigationSetup() {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <NavigationSetup />
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Navigate to="/browse" replace />} />
