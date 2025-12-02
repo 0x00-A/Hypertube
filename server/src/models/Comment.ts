@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { ICommentDocument, ICommentModel } from './comment.model.types';
 
 const commentSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -7,4 +8,4 @@ const commentSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const CommentModel = model('Comment', commentSchema);
+export const CommentModel = model<ICommentDocument, ICommentModel>('Comment', commentSchema);

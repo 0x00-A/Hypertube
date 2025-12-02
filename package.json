@@ -7,7 +7,9 @@
     "lint:client": "cd client && npm run lint",
     "lint:server": "cd server && npm run lint",
     "format:client": "cd client && npm run format",
-    "format:server": "cd server && npm run format"
+    "format:server": "cd server && npm run format",
+    "test:client": "cd client && npm run test",
+    "test:server": "cd server && npm run test"
   },
   "lint-staged": {
     "client/**/*.{ts,tsx}": [
