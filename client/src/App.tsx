@@ -6,9 +6,13 @@ import { setNavigate } from './utils/navigation';
 // Pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import Browse from './pages/browse/Browse';
 import Library from './pages/library/Library';
 import MovieDetails from './pages/movie/MovieDetails';
+import UserProfile from './pages/user/UserProfile';
+import EditProfile from './pages/user/EditProfile';
 import NotFound from './pages/notFound/NotFound';
 
 function NavigationSetup() {
@@ -30,9 +34,13 @@ function App() {
           <Route path="/" element={<Navigate to="/browse" replace />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/library" element={<Library />} />
           <Route path="/movie/:id" element={<MovieDetails />} />
+          <Route path="/user/:id" element={<UserProfile />} />
+          <Route path="/user/edit" element={<EditProfile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

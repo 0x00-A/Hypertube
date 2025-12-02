@@ -6,9 +6,18 @@ export function buildImageUrl(
 ): string | undefined {
   if (!path) return undefined;
   
-  // If path is already a full URL, return it
+  // If path is already a full URL, validate it
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+    try {
+      const url = new URL(path);
+      // Only allow http and https protocols
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        return path;
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
   }
   
   return `${IMAGE_BASE_URL}/${size}${path}`;

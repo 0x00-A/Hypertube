@@ -12,8 +12,14 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await httpClient.post('/auth/logout');
-    navigateTo('/auth/login');
+    try {
+      await httpClient.post('/auth/logout');
+      navigateTo('/auth/login');
+    } catch (error) {
+      // Still redirect to login even if logout fails (session might be expired)
+      navigateTo('/auth/login');
+      throw error;
+    }
   },
 
   async getCurrentUser(): Promise<User> {
