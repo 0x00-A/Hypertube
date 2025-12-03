@@ -1,23 +1,29 @@
 # 🎬 Hypertube - Frontend Client
 
-This is the client-side application for Hypertube, built with **React**, **TypeScript**, and **Vite**. It interacts with the Hypertube API to provide a seamless video streaming experience.
+A modern React + TypeScript frontend for the Hypertube movie streaming platform.
 
 ## 🛠️ Tech Stack
 
-* **Core:** React 18, TypeScript, Vite
-* **Styling:** Tailwind CSS, Lucide React (Icons)
-* **State & Fetching:** TanStack Query (React Query), Axios
-* **Routing:** React Router DOM
-* **Forms:** React Hook Form + Zod (Schema Validation)
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **React Router** - Routing
+- **TailwindCSS** - Styling
+- **Axios** - HTTP client
+- **React Hook Form** - Form handling
+- **Zod** - Schema validation
+- **TanStack Query (React Query)** - Data fetching
+- **React Player** - Video player
+- **Lucide React** - Icons
 
 ## 🚀 Getting Started
 
-### 1\. Prerequisites
+### 1. Prerequisites
 
-* Node.js (v18+ recommended)
-* npm or pnpm
+- Node.js (v18+ recommended)
+- npm or pnpm
 
-### 2\. Installation
+### 2. Installation
 
 Navigate to the client directory and install dependencies:
 
@@ -26,19 +32,24 @@ cd client
 npm install
 ```
 
-### 3\. Environment Setup
+### 3. Environment Setup
 
-Create a `.env` file in the `client/` root.
+Create a `.env` file in the `client/` root based on `.env.example`:
+
+```env
+# API Base URL
+VITE_API_URL=http://localhost:3000/api
+
+# OAuth URL
+VITE_OMNIAUTH_42_URL=http://localhost:3000/auth/42
+
+# Image CDN URL (e.g., TMDB)
+VITE_IMAGE_URL=https://image.tmdb.org/t/p
+```
 
 > **Note:** Variables must start with `VITE_` to be exposed to the browser.
 
-```env
-# .env
-VITE_API_URL=http://localhost:3000/api
-VITE_OMNIAUTH_42_URL=http://localhost:3000/auth/42
-```
-
-### 4\. Development Server
+### 4. Development Server
 
 Start the local development server:
 
@@ -48,46 +59,134 @@ npm run dev
 
 The app will be available at `http://localhost:5173`.
 
+
 ## 📜 Available Scripts
 
 | Command | Description |
 | :--- | :--- |
-| `npm run dev` | Starts the development server with HMR. |
-| `npm run build` | Compiles the TypeScript code to production-ready HTML/JS. |
-| `npm run lint` | Runs ESLint. **Must pass with 0 warnings.** |
-| `npm run preview` | Locally preview the production build. |
+| `npm run dev` | Starts the development server with HMR |
+| `npm run build` | Compiles TypeScript and builds for production |
+| `npm run lint` | Runs ESLint (must pass with 0 warnings) |
+| `npm run preview` | Locally preview the production build |
 
 ## 📂 Project Structure
 
-We follow a **Feature-Based** architecture to keep the code modular and scalable.
-
-```text
+```
 src/
-├── components/         # Shared UI components
-│   ├── ui/             # Atoms (Buttons, Inputs, Cards)
-│   └── ...
-├── features/           # Feature-based modules
-│   └── library/        # Library feature
-│       ├── components/ # Feature-specific components
-│       ├── hooks/      # Feature-specific hooks
-│       └── utils/      # Feature-specific utilities
-├── hooks/              # Custom React hooks (useAuth, useDebounce)
-├── layouts/            # Page layouts (Header, Footer wrappers)
-├── pages/              # Main route views
-│   ├── Auth/           # Login & Register forms
-│   ├── Library/        # Movie Grid & Search logic
-│   └── Movie/          # Video Player & Comments
-├── services/           # Axios setup & API endpoints
-├── store/              # Global state management
-├── types/              # TypeScript interfaces (User, Movie)
-└── utils/              # Helper functions (validation, formatting)
+├── components/         # Reusable components
+│   ├── auth/          # Authentication components
+│   ├── layout/        # Layout components (Header, Footer)
+│   ├── movie/         # Movie-related components
+│   ├── user/          # User-related components
+│   ├── common/        # Common components (Loader, Error)
+│   └── ui/            # UI primitives (Button, Input, etc.)
+│
+├── layouts/           # Page layouts
+│   └── MainLayout.tsx
+│
+├── pages/             # Page components
+│   ├── auth/          # Authentication pages
+│   ├── browse/        # Browse movies
+│   ├── library/       # User library
+│   ├── movie/         # Movie details
+│   ├── user/          # User profile
+│   └── notFound/      # 404 page
+│
+├── services/          # API services
+│   ├── http.ts        # HTTP client
+│   ├── auth.service.ts
+│   ├── movie.service.ts
+│   └── user.service.ts
+│
+├── redux/             # State management (placeholder)
+│   ├── store.ts
+│   ├── slices/
+│   ├── actions/
+│   └── reducers/
+│
+├── types/             # TypeScript types
+│   ├── auth.types.ts
+│   ├── movie.types.ts
+│   └── user.types.ts
+│
+├── utils/             # Utility functions
+│   ├── formatDate.ts
+│   ├── validate.ts
+│   └── buildImageUrl.ts
+│
+├── App.tsx            # Main app component
+├── main.tsx           # Entry point
+└── index.css          # Global styles
 ```
 
-## ⚠️ Strict Coding Standards
+## 🗺️ Routing Map
 
-1. **Do not ignore linter warnings.** If ESLint complains, fix it.
-2. **No `any` types.** Define proper interfaces in `src/types/`.
-3. **Check Console:** frequently check the browser console (F12) to ensure no React "key" warnings or hydration errors appear.
+```
+/                              → Redirects to /browse
+├── /auth/login                → Login page
+├── /auth/register             → Registration page
+├── /auth/forgot-password      → Password recovery
+├── /auth/reset-password/:token → Password reset
+│
+├── /browse                    → Browse movies
+├── /library                   → User's watched movies
+├── /movie/:id                 → Movie details & player
+│
+├── /user/:id                  → Public user profile
+└── /user/edit                 → Edit your profile
+```
+
+## 🎨 Component Guidelines
+
+### UI Components (`components/ui/`)
+Reusable, generic UI primitives:
+- Button, Input, Select
+- Modal, Card, Badge
+- Avatar
+
+### Feature Components
+Domain-specific components:
+- `components/auth/` - Auth forms
+- `components/movie/` - Movie cards, player, comments
+- `components/user/` - Profile cards
+- `components/common/` - Loaders, error messages
+
+### Pages
+Full page components that use layouts and components.
+
+## 🔐 Authentication
+
+Authentication is handled via HTTP-only cookies. The HTTP client automatically:
+- Sends authentication cookies with requests (`withCredentials: true`)
+- Redirects to login on 401 errors
+- Relies on the backend for JWT token management in secure cookies
+
+## 🎬 Features
+
+- ✅ User authentication (login, register, password reset)
+- ✅ Browse movies with search and filters
+- ✅ Movie details with video player
+- ✅ User profiles (public and editable)
+- ✅ Personal library of watched movies
+- ✅ Comment system
+- 🔄 Redux state management (to be implemented)
+- 🔄 Real-time features (to be implemented)
+
+## 📝 Development Notes
+
+### State Management
+The `redux/` folder is prepared for Redux Toolkit integration. To implement:
+
+```bash
+npm install @reduxjs/toolkit react-redux
+```
+
+### API Integration
+Services are pre-configured to work with the backend API. Update the `VITE_API_URL` in `.env` to point to your backend.
+
+### Styling
+Using TailwindCSS with custom utility classes. Components follow a consistent design system.
+
 
 ## 📱 Browser Compatibility
 

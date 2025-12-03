@@ -1,32 +1,47 @@
-import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Layout from "./layouts/Layout";
-import Login from "./pages/Auth/Login";
-import Library from "./pages/Library/Library";
-import MoviePlayer from "./pages/Movie/MoviePlayer";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import MainLayout from './layouts/MainLayout';
+import { setNavigate } from './utils/navigation';
+
+// Pages
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import Browse from './pages/browse/Browse';
+import Library from './pages/library/Library';
+import MovieDetails from './pages/movie/MovieDetails';
+import UserProfile from './pages/user/UserProfile';
+import EditProfile from './pages/user/EditProfile';
+import NotFound from './pages/notFound/NotFound';
+
+function NavigationSetup() {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
+
+  return null;
+}
 
 function App() {
-  const isAuthenticated = false;
-
   return (
     <BrowserRouter>
+      <NavigationSetup />
       <Routes>
-        <Route path="/login" element={<Login />} />
-        {/* Protected Routes */}
-        <Route element={<Layout />}>
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                <Navigate to="/library" />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Navigate to="/browse" replace />} />
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/browse" element={<Browse />} />
           <Route path="/library" element={<Library />} />
-          <Route path="/movie/:id" element={<MoviePlayer />} />
-          <Route path="/profile/:id" element={<div>Profile</div>} />
+          <Route path="/movie/:id" element={<MovieDetails />} />
+          <Route path="/user/:id" element={<UserProfile />} />
+          <Route path="/user/edit" element={<EditProfile />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
