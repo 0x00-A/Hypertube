@@ -16,7 +16,7 @@ You are an expert full-stack developer assisting with the "Hypertube" project. T
 
 - **Frontend:** React (Vite), TypeScript, Tailwind CSS, TanStack Query (React Query), Redux toolkit, Zod.
 - **Backend:** Node.js (Express), TypeScript, MongoDB (Mongoose).
-- **DevOps:** Docker, Docker Compose, github actions.
+- **DevOps:** Docker, Docker Compose, GitHub Actions.
 - **Streaming:** `torrent-stream` -> `fluent-ffmpeg` -> `HTTP Response`.
 
 ## 📝 Coding Standards
