@@ -122,7 +122,7 @@ src/
 ## 🗺️ Routing Map
 
 ```
-/                              → Redirects to /browse or /auth/login
+/                              → Redirects to /browse
 ├── /auth/login                → Login page
 ├── /auth/register             → Registration page
 ├── /auth/forgot-password      → Password recovery
