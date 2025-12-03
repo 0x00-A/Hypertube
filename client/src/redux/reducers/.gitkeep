@@ -1,4 +1,0 @@
-// Redux reducers will be organized here if needed
-// When using Redux Toolkit, slices already contain reducers
-
-export {};

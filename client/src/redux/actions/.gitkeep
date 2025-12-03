@@ -1,7 +1,0 @@
-// Redux actions will be organized here
-// Example structure:
-// - authActions.ts
-// - movieActions.ts
-// - userActions.ts
-
-export {};

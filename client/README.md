@@ -12,7 +12,8 @@ A modern React + TypeScript frontend for the Hypertube movie streaming platform.
 - **Axios** - HTTP client
 - **React Hook Form** - Form handling
 - **Zod** - Schema validation
-- **TanStack Query (React Query)** - Data fetching
+- **TanStack Query (React Query)** - Server state management
+- **Redux Toolkit** - Client state management
 - **React Player** - Video player
 - **Lucide React** - Icons
 
@@ -93,16 +94,22 @@ src/
 │   └── notFound/      # 404 page
 │
 ├── services/          # API services
-│   ├── http.ts        # HTTP client
-│   ├── auth.service.ts
+│   ├── http.ts        # HTTP client with interceptors
+│   ├── auth.service.ts # Authentication API calls
 │   ├── movie.service.ts
 │   └── user.service.ts
 │
-├── redux/             # State management (placeholder)
-│   ├── store.ts
-│   ├── slices/
-│   ├── actions/
-│   └── reducers/
+├── redux/             # Redux Toolkit state management
+│   ├── store.ts       # Store configuration
+│   ├── hooks.ts       # Typed hooks (useAppDispatch, useAppSelector)
+│   └── slices/
+│       └── authSlice.ts # Auth state (user, isAuthenticated)
+│
+├── config/            # Configuration files
+│   └── queryClient.ts # React Query configuration & query keys
+│
+├── hooks/             # Custom React hooks
+│   └── useAuth.ts     # Authentication hooks (useLogin, useRegister, etc.)
 │
 ├── types/             # TypeScript types
 │   ├── auth.types.ts
@@ -156,10 +163,78 @@ Full page components that use layouts and components.
 
 ## 🔐 Authentication
 
-Authentication is handled via HTTP-only cookies. The HTTP client automatically:
-- Sends authentication cookies with requests (`withCredentials: true`)
-- Redirects to login on 401 errors
-- Relies on the backend for JWT token management in secure cookies
+### Architecture
+
+The authentication system uses **Redux Toolkit** for client state and **React Query** for server state:
+
+```
+## 🎬 Features
+
+- ✅ User authentication (login, register, password reset)
+- ✅ Redux Toolkit + React Query state management
+- ✅ Cookie-based secure authentication
+- ✅ Browse movies with search and filters (public access)
+- ✅ Movie details with video player
+- ✅ User profiles (public and editable)
+- ✅ Personal library of watched movies
+- ✅ Comment system
+- 🔄 Real-time features (to be implemented)
+│  - API queries (getCurrentUser)         │
+│  - Automatic caching & refetching       │
+└─────────────────────────────────────────┘
+```
+
+### How It Works
+
+1. **Cookie-Based Auth**: HTTP-only cookies for secure token storage
+2. **AuthProvider**: Initializes auth state on app startup
+3. **Smart Caching**: React Query caches user data intelligently
+4. **Auto State Management**: Login/logout automatically updates Redux & cache
+5. **401 Handling**: Automatic redirect on unauthorized requests
+
+### Available Hooks
+
+```tsx
+// Get auth state
+const { user, isAuthenticated } = useAuthState();
+
+// Authentication mutations
+const { mutate: login } = useLogin();
+const { mutate: register } = useRegister();
+const { mutate: logout } = useLogout();
+
+// Profile management
+const { mutate: updateProfile } = useUpdateProfile();
+const { mutate: changePassword } = useChangePassword();
+
+// Password reset
+const { mutate: forgotPassword } = useForgotPassword();
+const { mutate: resetPassword } = useResetPassword();
+```
+
+### Usage Example
+
+```tsx
+// In a login page
+import { useLogin } from '../hooks/useAuth.js';
+
+export const Login = () => {
+  const { mutate: login, isPending, error } = useLogin();
+  
+  const handleSubmit = (data) => {
+    login(data); // Automatically updates Redux & navigates
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <p>{error.message}</p>}
+      <button disabled={isPending}>Login</button>
+    </form>
+  );
+};
+```
+
+For complete documentation, see `AUTHENTICATION_SETUP.md`
 
 ## 🎬 Features
 
@@ -171,16 +246,26 @@ Authentication is handled via HTTP-only cookies. The HTTP client automatically:
 - ✅ Comment system
 - 🔄 Redux state management (to be implemented)
 - 🔄 Real-time features (to be implemented)
-
 ## 📝 Development Notes
 
 ### State Management
-The `redux/` folder is prepared for Redux Toolkit integration. To implement:
 
-```bash
-npm install @reduxjs/toolkit react-redux
-```
+**Redux Toolkit** is configured for client state (user info, auth status):
+- Store: `src/redux/store.ts`
+- Auth Slice: `src/redux/slices/authSlice.ts`
+- Typed Hooks: `src/redux/hooks.ts`
 
+**React Query** handles server state (API calls, caching):
+- Configuration: `src/config/queryClient.ts`
+- Query Keys: Organized by domain (auth, movies, comments)
+- Smart caching with 5-minute stale time
+
+### Why Both?
+- **Redux** = Fast local access to current user (no API calls)
+- **React Query** = Handles all API communication & caching
+- **Together** = Clean separation, each does what it's best at
+
+### API Integration
 ### API Integration
 Services are pre-configured to work with the backend API. Update the `VITE_API_URL` in `.env` to point to your backend.
 

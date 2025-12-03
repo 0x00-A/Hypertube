@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { useEffect } from 'react';
 import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
+import { AuthProvider } from './components/auth/AuthProvider';
 
 // Pages
 import Login from './pages/auth/Login';
@@ -28,22 +29,24 @@ function NavigationSetup() {
 function App() {
   return (
     <BrowserRouter>
-      <NavigationSetup />
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/browse" replace />} />
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/movie/:id" element={<MovieDetails />} />
-          <Route path="/user/:id" element={<UserProfile />} />
-          <Route path="/user/edit" element={<EditProfile />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <NavigationSetup />
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Navigate to="/browse" replace />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/register" element={<Register />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/movie/:id" element={<MovieDetails />} />
+            <Route path="/user/:id" element={<UserProfile />} />
+            <Route path="/user/edit" element={<EditProfile />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
