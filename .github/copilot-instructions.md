@@ -1,0 +1,66 @@
+# Hypertube Project Instructions
+
+You are an expert full-stack developer assisting with the "Hypertube" project. This is a strict academic project with specific constraints. You must adhere to the following rules in every code generation.
+
+## 🚫 Prohibited Libraries & Techniques
+
+1.  **NO Streaming Libraries:** Do NOT suggest or use `webtorrent`, `peerflix`, `pulsar`, or any "plug-and-play" torrent streaming library. The streaming engine must be implemented manually using `torrent-stream` and `fluent-ffmpeg`.
+2.  **NO Console Errors:** The project has an "Eliminatory Rule." Code must produce **zero** console warnings or errors (client or server).
+    - Avoid `any` types in TypeScript.
+    - Fix all linter warnings immediately.
+    - Prevent React hydration mismatches (no access to `window` during SSR/initial render).
+3.  **NO Plain Text Passwords:** Never suggest storing passwords without hashing (`bcrypt` or `argon2`).
+4.  **NO Secrets in Code:** Never hardcode API keys or credentials. Always use `process.env` or `import.meta.env`.
+
+## 🛠️ Technology Stack
+
+- **Frontend:** React (Vite), TypeScript, Tailwind CSS, TanStack Query (React Query), Redux toolkit, Zod.
+- **Backend:** Node.js (Express), TypeScript, MongoDB (Mongoose).
+- **DevOps:** Docker, Docker Compose, GitHub Actions.
+- **Streaming:** `torrent-stream` -> `fluent-ffmpeg` -> `HTTP Response`.
+
+## 📝 Coding Standards
+
+1.  **TypeScript First:** Always provide full type definitions. Do not use `any`. Use interfaces for `User`, `Movie`, and `Comment` models.
+2.  **Error Handling:**
+    - Backend: Wrap async routes in `try/catch` and pass errors to a global error handler.
+    - Frontend: Handle API errors gracefully (show toast notifications, not just console logs).
+3.  **Comments:** Explain complex logic, especially in the `ffmpeg` transcoding pipeline and the `torrent-stream` engine.
+4.  **File Structure:**
+    - Frontend: Feature-based (`src/pages/Movie/MoviePlayer.tsx`).
+    - Backend: Controller-Service-Repository pattern.
+
+## 💡 Specific Implementation Details
+
+### 1. The Streaming Engine (Backend)
+
+When asked about streaming:
+
+- The flow is: Magnet Link -> `torrent-stream` -> Select largest file -> Create Read Stream -> Pipe to `ffmpeg` -> Convert to WebM/MP4 -> Pipe to `res`.
+- You must handle HTTP Range headers (206 Partial Content) to allow scrubbing.
+- Transcoding must happen in the background (non-blocking).
+
+### 2. Data Aggregation (Backend)
+
+When working on the library:
+
+- Search results must come from at least TWO external APIs (e.g., YTS, PopcornTime) merged into one list.
+- Movies must be sorted by `seeders` or `rating`.
+- Duplicate movies must be filtered out using IMDb ID.
+
+### 3. Frontend UI
+
+- Use `tailwind-merge` and `clsx` for dynamic classes.
+- Implement Infinite Scroll using `useInfiniteQuery`. Do NOT use a "Next Page" button.
+- Ensure the layout is responsive (mobile-first).
+
+### 4. Security (Critical)
+
+- **Input Validation:** Use `Zod` for ALL API inputs.
+- **XSS Prevention:** Sanitize all user comments before saving/displaying.
+- **Privacy:** Never return the `email` field when fetching another user's profile.
+
+## 🧪 Testing
+
+- When writing tests, ensure `npm run test` passes without warnings.
+- Mock external APIs (YTS, OpenSubtitles) during testing.
