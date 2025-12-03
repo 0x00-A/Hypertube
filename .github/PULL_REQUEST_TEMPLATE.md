@@ -10,5 +10,5 @@
 - [ ] **Documentation:** Updated `CHANGELOG.md` with my changes.
 - [ ] **Env:** Added any new `.env` variables to `.env.example`.
 - [ ] Updated Swagger if API routes changed?
-- [ ] Updated relevent README.md?
+- [ ] Updated relevant README.md?
 - [ ] Updated CHANGELOG.md?
