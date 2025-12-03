@@ -56,7 +56,7 @@ When working on the library:
 
 ### 4. Security (Critical)
 
-- **Input Validation:** Use `Zod` ALL API inputs.
+- **Input Validation:** Use `Zod` for ALL API inputs.
 - **XSS Prevention:** Sanitize all user comments before saving/displaying.
 - **Privacy:** Never return the `email` field when fetching another user's profile.
 
