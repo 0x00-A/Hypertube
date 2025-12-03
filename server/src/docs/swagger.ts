@@ -4,7 +4,7 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.1.0',
     info: {
-      title: 'N-Tier API Placeholder',
+      title: 'Hypertube API',
       version: '0.1.0',
     },
     security: [{ bearerAuth: [] }],
