@@ -27,4 +27,13 @@ export class MovieRepository {
   async findById(id: string): Promise<IMovie | null> {
     return MovieModel.findById(id) as any;
   }
+
+  // async create(movieData: IMovie): Promise<IMovie> {
+  //   const movie = new MovieModel(movieData);
+  //   return movie.save() as any;
+  // }
+
+  async upsertMovie(movieData: IMovie) {
+    await MovieModel.create(movieData);
+  }
 }
