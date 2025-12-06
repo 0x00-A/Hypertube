@@ -17,6 +17,12 @@ const options: swaggerJsdoc.Options = {
         },
       },
       schemas: {
+        Auth: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' },
+          },
+        },
         Movie: {
           type: 'object',
           properties: {

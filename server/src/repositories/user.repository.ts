@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { UserModel } from '../models/User';
-import { IUser } from '../interfaces/user.interface';
+import { IUser, ICreateUserDTO } from '../interfaces/user.interface';
 import { IPaginationOptions, IPaginatedResponse } from '../interfaces/pagination.interface';
+
 
 export class UserRepository {
   async findAll(options?: IPaginationOptions): Promise<IPaginatedResponse<IUser>> {
@@ -22,6 +23,20 @@ export class UserRepository {
       total,
       totalPages: Math.ceil(total / limit) || 1,
     };
+  }
+
+  async findByUsername(username: string): Promise<IUser | null> {
+    return UserModel.findOne({ username }) as IUser | null;
+  }
+
+  async findByEmail(email: string): Promise<IUser | null> {
+    return UserModel.findOne({ email }) as IUser | null;
+  }
+
+  async create(userData: ICreateUserDTO): Promise<IUser> {
+    const user = new UserModel(userData);
+    await user.save();
+    return user as IUser;
   }
 
   async findById(id: string): Promise<IUser | null> {

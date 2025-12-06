@@ -1,11 +1,26 @@
-.PHONY: help dev prod down clean logs test lint
+.PHONY: help dev prod down clean logs test lint server down-server logs-server
 
 # Optional build flag: make dev build=true
 dev:
 	@echo "Starting development environment..."
-	docker-compose -f docker-compose.dev.yml up -d --build
+	docker compose -f docker-compose.dev.yml up -d --build
 	@echo "\nUse 'make logs' to follow logs"
 
+## Start only the server services (MongoDB, Mongo Express, and Backend)
+server:
+	@echo "Starting server services..."
+	docker compose -f server/docker-compose.dev.yml up -d --build
+	@echo "\nServer services started!"
+	@echo "Use 'make logs-server' to follow server logs"
+
+## Stop server services
+down-server:
+	@echo "Stopping server services..."
+	docker compose -f server/docker-compose.dev.yml down
+
+## View logs for server services
+logs-server:
+	docker compose -f server/docker-compose.dev.yml logs -f
 ## Start production environment
 # prod:
 # 	@echo "Starting production environment..."
@@ -14,7 +29,7 @@ dev:
 ## Stop all services
 down:
 	@echo "Stopping all services..."
-	docker-compose -f docker-compose.dev.yml down
+	docker compose -f docker-compose.dev.yml down
 # 	docker-compose -f docker-compose.prod.yml down
 
 ## Remove all containers, volumes, and images
@@ -25,7 +40,7 @@ clean: down
 
 ## View logs
 logs:
-	docker-compose -f docker-compose.dev.yml logs -f
+	docker compose -f docker-compose.dev.yml logs -f
 
 ## View logs for a specific service (usage: make logs-service service=frontend)
 logs-service:

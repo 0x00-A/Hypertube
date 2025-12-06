@@ -7,6 +7,7 @@ export interface IOAuth {
   fortytwoId?: string;
   googleId?: string;
 }
+
 export interface IUser {
   id: string;
   username: string;
@@ -33,5 +34,6 @@ export interface ICreateUserDTO {
   oauth?: IOAuth;
   watchedMovies?: IWatchedMovie[];
 }
+
 
 export interface IUpdateUserDTO extends Partial<ICreateUserDTO> {}

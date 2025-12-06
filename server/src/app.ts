@@ -6,6 +6,7 @@ import { rateLimit } from 'express-rate-limit';
 import { router as moviesRouter } from './routes/v1/movies.routes';
 import { router as usersRouter } from './routes/v1/users.routes';
 import { router as commentsRouter } from './routes/v1/comments.routes';
+import { router as authRouter } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
@@ -52,6 +53,12 @@ export const createApp = () => {
     const dbStatus = dbHealth();
     res.json({ status: 'ok', db: dbStatus });
   });
+
+  // authentication and authorization routes
+  app.use('/v1/auth', authRouter);
+
+  // accounts routes
+  app.use('/v1/accounts', usersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
