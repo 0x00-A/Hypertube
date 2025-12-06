@@ -7,11 +7,11 @@ export const env = cleanEnv(process.env, {
   PORT: port({ default: 3000 }),
   MONGODB_URI: str(),
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
+
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
-  POP_CORNTIME_BASE_API_URL: str({ default: 'https://tv-v2.api-fetch.website' }),
   TMDB_API_KEY: str(),
-  TMDB_BASE_API_URL: str({ default: 'https://api.themoviedb.org/3' }),
-  OMDB_API_KEY: str(),
+  // OMDB_API_KEY: str(),
+
   SCRAPER_INTERVAL_MINUTES: str({ default: '30' }),
   DOWNLOADS_PATH: str({ default: './downloads' }),
   MAX_CONCURRENT_DOWNLOADS: str({ default: '3' }),
