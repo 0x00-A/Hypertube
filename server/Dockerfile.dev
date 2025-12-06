@@ -11,5 +11,5 @@ COPY tsconfig.json ./
 COPY src ./src
 EXPOSE 3000
 # Use non-root user for safety
-USER node
+# USER node
 CMD ["npm", "run", "dev"]

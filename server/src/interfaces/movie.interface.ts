@@ -2,7 +2,8 @@ export interface ITorrent {
   url: string;
   hash: string;
   quality: string;
-  type: string; // "mp4", "mkv" (if available)
+  type: string; // "mp4", "mkv"
+  videoCodec: string;
   seeds: number;
   peers: number;
   size: string;
@@ -10,7 +11,6 @@ export interface ITorrent {
   provider: string;
 }
 export interface IMovie {
-  id: string;
   imdbId: string;
   title: string;
   year: number;
@@ -19,6 +19,7 @@ export interface IMovie {
   synopsis?: string;
   genres?: string[];
   language?: string;
+  trailer: string;
   images: {
     thumbnail: string;
     poster: string;
@@ -36,18 +37,6 @@ export interface IScrapedMovie {
   title: string;
   year: number;
   slug: string;
-  synopsis: string;
-  duration: number;
-  rating: number;
-  genres: string[];
-  language: string;
-
-  images: {
-    thumbnail: string;
-    poster: string;
-    backdrop: string;
-  };
-
   torrents: ITorrent[]; // Array of torrents from this specific source
 }
 

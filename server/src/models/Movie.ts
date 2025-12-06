@@ -7,6 +7,7 @@ const torrentSchema = new Schema(
     hash: { type: String, required: true }, // Magnet hash
     quality: { type: String, required: true }, // e.g., "720p", "1080p"
     type: { type: String }, // e.g., "mp4", "mkv"
+    videoCodec: { type: String }, // x254
     seeds: { type: Number, required: true, min: 0 },
     peers: { type: Number, required: true, min: 0 },
     size: { type: String, required: true }, // Human-readable size (e.g., "1.2 GB")
@@ -25,7 +26,8 @@ const movieSchema = new Schema({
   duration: { type: Number },
   synopsis: { type: String },
   genres: [{ type: String }], // Array for filtering
-  language: { type: String }, // Original language
+  language: { type: String, default: 'en' }, // Original language
+  trailer: { type: String },
 
   images: {
     thumbnail: { type: String }, // Medium image for lists
