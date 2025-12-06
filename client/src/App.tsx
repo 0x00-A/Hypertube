@@ -11,6 +11,11 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import Browse from './pages/browse/Browse';
 import Library from './pages/library/Library';
+import Watchlist from './pages/watchlist/Watchlist';
+import History from './pages/history/History';
+import Downloads from './pages/downloads/Downloads';
+import Profile from './pages/profile/Profile';
+import Settings from './pages/settings/Settings';
 import MovieDetails from './pages/movie/MovieDetails';
 import UserProfile from './pages/user/UserProfile';
 import EditProfile from './pages/user/EditProfile';
@@ -40,6 +45,11 @@ function App() {
             <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/downloads" element={<Downloads />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/user/edit" element={<EditProfile />} />
