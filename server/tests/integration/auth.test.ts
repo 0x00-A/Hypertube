@@ -31,7 +31,6 @@ describe('Auth Signup Integration Tests', () => {
       username: 'testuser',
       email: 'test@example.com',
       password: 'SecurePass123!',
-      confirmPassword: 'SecurePass123!',
       firstName: 'Test',
       lastName: 'User',
     };
@@ -62,30 +61,11 @@ describe('Auth Signup Integration Tests', () => {
       expect(user?.password?.length).toBeGreaterThan(20); // Hashed passwords are longer
     });
 
-    it('should return 400 when password and confirmPassword do not match', async () => {
-      const invalidData = {
-        ...validUserData,
-        confirmPassword: 'DifferentPassword123!',
-      };
-
-      const res = await request(app).post('/v1/auth/signup').send(invalidData);
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
-      expect(res.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            message: 'Passwords do not match',
-          }),
-        ]),
-      );
-    });
-
     it('should return 400 when required fields are missing', async () => {
       const incompleteData = {
         username: 'testuser',
         email: 'test@example.com',
-        // Missing password, confirmPassword, firstName, lastName
+        // Missing password, firstName, lastName
       };
 
       const res = await request(app).post('/v1/auth/signup').send(incompleteData);
@@ -137,13 +117,19 @@ describe('Auth Signup Integration Tests', () => {
       const shortPasswordData = {
         ...validUserData,
         password: 'short',
-        confirmPassword: 'short',
       };
 
       const res = await request(app).post('/v1/auth/signup').send(shortPasswordData);
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('errors');
+      expect(res.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.stringContaining('6 characters'),
+          }),
+        ]),
+      );
     });
 
     it('should return 500 when trying to register with duplicate username', async () => {
