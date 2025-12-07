@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { env } from '../../config/env';
 
-const TMDB_KEY = env.TMDB_API_ACCESS_TOCKEN;
+const TMDB_KEY = env.TMDB_API_ACCESS_TOKEN;
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
