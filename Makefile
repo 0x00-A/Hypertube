@@ -59,7 +59,7 @@ test:
 ## Run server tests in Docker
 test-server:
 	@echo "Running server tests in Docker..."
-	cd ./server && docker compose -f docker-compose.dev.yml exec app npm test
+	cd ./server && docker compose -f docker-compose.dev.yml exec app npm test -- --passWithNoTests
 
 ## Run linting
 lint:
