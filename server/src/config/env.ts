@@ -5,7 +5,7 @@ import { cleanEnv, str, port, bool } from 'envalid';
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({ choices: ['development', 'test', 'production'] }),
   PORT: port({ default: 3000 }),
-  MONGODB_URI: str(),
+  MONGODB_URI: str({ default: 'mongodb://mongo:27017/hypertube' }),
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
 
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
