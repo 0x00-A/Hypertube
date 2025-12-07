@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Bell, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -65,10 +66,10 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
 
           {/* Notifications */}
           <button
-            className="relative w-6 h-6 flex items-center justify-center hover:opacity-70 transition-opacity"
+            className="relative w-6 h-6 flex items-center justify-center transition-opacity cursor-pointer"
             aria-label="Notifications"
           >
-            <Bell className="w-6 h-6 text-white" />
+            <Bell className="w-6 h-6 text-white hover:text-primary" />
             <span className="absolute top-0 right-0 w-2 h-2 bg-accent-red rounded-full"></span>
           </button>
 
@@ -92,20 +93,22 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
           ) : (
             <div className="flex items-center gap-3">
               {/* Login Button */}
-              <button
+              <Link
+                to="/auth/login"
                 className="px-4 py-2 text-sm font-medium text-white hover:text-primary transition-colors"
                 aria-label="Login"
               >
                 Login
-              </button>
+              </Link>
               
               {/* Sign Up Button */}
-              <button
+              <Link
+                to="/auth/register"
                 className="px-5 py-2 text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary/90 transition-colors"
                 aria-label="Sign up"
               >
                 Sign Up
-              </button>
+              </Link>
             </div>
           )}
         </div>

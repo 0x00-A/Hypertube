@@ -37,12 +37,15 @@ function App() {
       <AuthProvider>
         <NavigationSetup />
         <Routes>
+          {/* Auth routes without layout */}
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+
+          {/* Main app routes with layout */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Navigate to="/browse" replace />} />
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<Register />} />
-            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/library" element={<Library />} />
             <Route path="/watchlist" element={<Watchlist />} />

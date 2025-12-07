@@ -59,6 +59,7 @@ export interface ChangePasswordData {
 
 export interface AuthResponse {
   user: User;
+  token: string;
   message?: string;
 }
 
