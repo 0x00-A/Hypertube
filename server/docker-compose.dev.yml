@@ -5,6 +5,10 @@ services:
     restart: unless-stopped
     ports:
       - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     volumes:
       - mongo_dev_data:/data/db
     healthcheck:
@@ -12,6 +16,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      ME_CONFIG_MONGODB_URL: ${ME_CONFIG_MONGODB_URL}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
+    depends_on:
+      - mongo
   app:
     build:
       context: .
@@ -21,10 +39,10 @@ services:
       mongo:
         condition: service_healthy
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/hypertube
-      - NODE_ENV=development
-      - PORT=3000
-      - ENABLE_REQUEST_LOGGING=true
+      - MONGODB_URI=${MONGODB_URI}
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - ENABLE_REQUEST_LOGGING=${ENABLE_REQUEST_LOGGING}
     ports:
       - '3000:3000'
     volumes:
