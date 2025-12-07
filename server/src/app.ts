@@ -4,7 +4,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { router as moviesRouter } from './routes/v1/movies.routes';
-import { router as usersRouter } from './routes/v1/users.routes';
 import { router as commentsRouter } from './routes/v1/comments.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
@@ -53,7 +52,7 @@ export const createApp = () => {
 
   // Versioned domain routes
   app.use('/v1/movies', moviesRouter);
-  app.use('/v1/users', usersRouter);
+  // app.use('/v1/users', usersRouter);
   app.use('/v1/comments', commentsRouter);
 
   // Health check
@@ -68,7 +67,7 @@ export const createApp = () => {
   app.use('/v1/auth', createAuthRoutes(authController));
 
   // accounts routes
-  app.use('/v1/accounts', usersRouter);
+  // app.use('/v1/accounts', usersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -32,9 +32,9 @@ export class AuthService {
     const newUserCreated = await this._repo.create(newUser);
     // then you should send verification email
     return {
-      id: newUserCreated._id,
+      userId: newUserCreated._id,
       username: newUserCreated.username,
       email: newUserCreated.email,
-    }
+    };
   }
 }

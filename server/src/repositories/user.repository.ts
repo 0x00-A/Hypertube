@@ -41,7 +41,7 @@ export class UserRepository {
     return this.toIUser(doc)!;
   }
 
-  async findById(id: string): Promise<IUser | null> {
+  async findById(id: string): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findById(id).exec();
     return this.toIUser(doc);
   }

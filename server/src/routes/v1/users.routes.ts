@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listUsers, getUser, patchUser } from '../../controllers/user.controller';
+// import { listUsers, getUser, patchUser } from '../../controllers/user.controller';
 import { validate } from '../../middleware/validate';
 import { IdParamSchema } from '../../validators/common.schema';
 
