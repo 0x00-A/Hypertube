@@ -3,21 +3,25 @@ import { UserRepository } from "../repositories/user.repository";
 import { PasswordService } from "./password.service";
 
 
-const repo = new UserRepository();
-const passwordService = new PasswordService();
-
 export class AuthService {
+  private _repo;
+  private _passwordService;
+
+  constructor(repo: UserRepository, passwordService: PasswordService) {
+    this._repo = repo;
+    this._passwordService = passwordService;
+  }
 
   async signUp(userData: any) {
-    const exist_username = await repo.findByUsername(userData.username);
-    const exist_email = await repo.findByEmail(userData.email);
+    const exist_username = await this._repo.findByUsername(userData.username);
+    const exist_email = await this._repo.findByEmail(userData.email);
     if (exist_username) {
       throw new Error('Username already taken');
     }
     if (exist_email) {
       throw new Error('An email with this address already exists');
     }
-    const hashedPassword = await passwordService.hashPassword(userData.password);
+    const hashedPassword = await this._passwordService.hashPassword(userData.password);
     const newUser: ICreateUserDTO = {
       username: userData.username,
       firstName: userData.firstName,
@@ -26,6 +30,6 @@ export class AuthService {
       password: hashedPassword,
     };
     // then you should send verification email
-    return repo.create(newUser);
+    return this._repo.create(newUser);
   }
 }

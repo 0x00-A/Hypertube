@@ -6,7 +6,7 @@ import { rateLimit } from 'express-rate-limit';
 import { router as moviesRouter } from './routes/v1/movies.routes';
 import { router as usersRouter } from './routes/v1/users.routes';
 import { router as commentsRouter } from './routes/v1/comments.routes';
-import { router as authRouter } from './routes/v1/auth.routes';
+import { createAuthRoutes } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
@@ -14,6 +14,14 @@ import { env } from './config/env';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
 import { dbHealth } from './config/database';
+// Contrellers
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
+// Services
+import { PasswordService } from './services/password.service';
+// Repositories
+import { UserRepository } from './repositories/user.repository';
+
 
 export const createApp = () => {
   const app = express();
@@ -55,7 +63,9 @@ export const createApp = () => {
   });
 
   // authentication and authorization routes
-  app.use('/v1/auth', authRouter);
+  const authService = new AuthService(new UserRepository(), new PasswordService());
+  const authController = new AuthController(authService);
+  app.use('/v1/auth', createAuthRoutes(authController));
 
   // accounts routes
   app.use('/v1/accounts', usersRouter);
