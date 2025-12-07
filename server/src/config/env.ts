@@ -7,4 +7,7 @@ export const env = cleanEnv(process.env, {
   PORT: port({ default: 3000 }),
   MONGODB_URI: str(),
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
+
+  YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
+  TMDB_API_ACCESS_TOKEN: str(),
 });

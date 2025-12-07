@@ -35,7 +35,7 @@ src/
 ```dotenv
 NODE_ENV=development
 PORT=3000
-MONGODB_URI=mongodb://localhost:27017/ntier
+MONGODB_URI=mongodb://localhost:27017/hypertube
 ENABLE_REQUEST_LOGGING=true
 ```
 Validated via `envalid` in `src/config/env.ts` (fail-fast if missing).

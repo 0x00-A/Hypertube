@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prepare": "husky",
+    "prepare": "husky install",
     "lint:client": "cd client && npm run lint",
     "lint:server": "cd server && npm run lint",
     "format:client": "cd client && npm run format",
@@ -22,5 +22,7 @@
   "devDependencies": {
     "husky": "^9.0.11",
     "lint-staged": "^15.2.0"
+  },
+  "dependencies": {
   }
 }

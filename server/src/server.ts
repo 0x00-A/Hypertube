@@ -2,6 +2,7 @@ import { createApp } from './app';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { env } from './config/env';
 import pino from 'pino';
+import { ScraperScheduler } from './services/scraper/ScraperScheduler';
 
 const logger = pino();
 
@@ -11,6 +12,9 @@ const logger = pino();
     const app = createApp();
     const port = env.PORT;
     const server = app.listen(port, () => logger.info({ port }, 'Server started'));
+
+    const scheduler = new ScraperScheduler();
+    scheduler.init();
 
     const shutdown = async (signal: string) => {
       logger.info({ signal }, 'Received shutdown signal');
