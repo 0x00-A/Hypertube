@@ -19,7 +19,7 @@ export interface IMovie {
   synopsis?: string;
   genres?: string[];
   language?: string;
-  trailer: string;
+  trailer?: string;
   images: {
     thumbnail: string;
     poster: string;
