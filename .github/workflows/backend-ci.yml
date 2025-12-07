@@ -22,4 +22,4 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm ci
       - run: npm run lint
-      # - run: npm test -- --passWithNoTests
+      - run: npm test -- --passWithNoTests
