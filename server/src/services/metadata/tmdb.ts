@@ -5,6 +5,11 @@ const TMDB_KEY = env.TMDB_API_ACCESS_TOKEN;
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
+/**
+ * Fetches movie metadata from TMDB API using an IMDb ID
+ * @param imdbId - The IMDb ID of the movie (e.g., "tt1234567")
+ * @returns Movie metadata object with title, year, images, etc., or null if not found
+ */
 export async function getMetadata(imdbId: string) {
   // find is better than search because it guarantees the exact match
   const url = `${TMDB_BASE}/find/${imdbId}?external_source=imdb_id`;
