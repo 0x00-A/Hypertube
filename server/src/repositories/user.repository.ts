@@ -1,7 +1,5 @@
-import mongoose from 'mongoose';
 import { UserModel } from '../models/User';
 import { IUser, ISignupDTO } from '../interfaces/user.interface';
-import { IPaginationOptions, IPaginatedResponse } from '../interfaces/pagination.interface';
 import { IUserDocument } from '../models/user.model.types';
 
 // Interface for the Repository (Good for testing/mocking)

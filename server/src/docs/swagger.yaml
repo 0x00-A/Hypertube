@@ -32,11 +32,6 @@ paths:
                   format: password
                   minLength: 8
                   example: SecurePass123!
-                confirmPassword:
-                  type: string
-                  format: password
-                  minLength: 8
-                  example: SecurePass123!
                 username:
                   type: string
                   minLength: 3
@@ -86,6 +81,87 @@ paths:
                           type: string
                         message:
                           type: string
+        '500':
+          description: Internal server error
+
+  /v1/auth/login:
+    post:
+      summary: Login with username/email and password
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifier
+                - password
+              properties:
+                identifier:
+                  type: string
+                  description: Username or email address
+                  example: johndoe
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass123!
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Login successful
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: string
+                          username:
+                            type: string
+                          email:
+                            type: string
+        '400':
+          description: Validation error - missing or invalid fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+        '401':
+          description: Authentication failed - invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Invalid credentials
         '500':
           description: Internal server error
 

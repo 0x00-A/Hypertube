@@ -11,6 +11,7 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     volumes:
       - mongo_dev_data:/data/db
+    command: ["mongod", "--quiet"]
     healthcheck:
       test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
       interval: 10s
