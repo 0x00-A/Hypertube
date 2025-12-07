@@ -9,31 +9,21 @@ export interface IOAuth {
 }
 
 export interface IUser {
-  id: string;
+  _id?: string;
   username: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  password?: string; // may be absent for OAuth-only accounts
-  profilePicture?: string;
-  language: string;
-  oauth?: IOAuth;
-  watchedMovies: IWatchedMovie[];
+  password: string;
+  firstName?: string;
+  lastName?: string;
   createdAt?: Date;
-  updatedAt?: Date;
 }
 
-export interface ICreateUserDTO {
+export interface ISignupDTO {
   username: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  password?: string;
-  profilePicture?: string;
-  language?: string;
-  oauth?: IOAuth;
-  watchedMovies?: IWatchedMovie[];
+  password: string;
+  firstName?: string;
+  lastName?: string;
 }
 
-
-export interface IUpdateUserDTO extends Partial<ICreateUserDTO> {}
+export interface IUpdateUserDTO extends Partial<ISignupDTO> {}

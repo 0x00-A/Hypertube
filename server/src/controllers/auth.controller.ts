@@ -18,11 +18,7 @@ export class AuthController {
             return res.status(201).json({
                 status: 'success',
                 message: 'User registered successfully',
-                data: {
-                    userId: newUser.id,
-                    username: newUser.username,
-                    email: newUser.email,
-                },
+                data: newUser,
             });
         } catch (err) {
             next(err);
