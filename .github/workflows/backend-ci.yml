@@ -25,7 +25,6 @@ jobs:
       - run: npm test -- --passWithNoTests
     env:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      TMDB_API_ACCESS_TOKEN: ${{ secrets.TMDB_API_ACCESS_TOKEN }}
       NODE_ENV: "test"
       SESSION_SECRET: "super_secret_dummy_value_for_ci"
-      TMDB_API_KEY: "dummy_tmdb_key"
-      TMDB_API_ACCESS_TOKEN: "dummy_tmdb_token"

@@ -9,13 +9,5 @@ export const env = cleanEnv(process.env, {
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
 
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
-  TMDB_API_KEY: str(),
   TMDB_API_ACCESS_TOKEN: str(),
-  // OMDB_API_KEY: str(),
-
-  SCRAPER_INTERVAL_MINUTES: str({ default: '30' }),
-  DOWNLOADS_PATH: str({ default: './downloads' }),
-  MAX_CONCURRENT_DOWNLOADS: str({ default: '3' }),
-  TORRENT_DOWNLOAD_TIMEOUT_MS: str({ default: '300000' }),
-  SESSION_SECRET: str(),
 });
