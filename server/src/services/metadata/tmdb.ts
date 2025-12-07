@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { env } from '../../config/env';
+import { logger } from '../../utils/logger';
 
 const TMDB_KEY = env.TMDB_API_ACCESS_TOKEN;
 const TMDB_BASE = 'https://api.themoviedb.org/3';
@@ -11,6 +12,11 @@ const IMAGE_BASE = 'https://image.tmdb.org/t/p';
  * @returns Movie metadata object with title, year, images, etc., or null if not found
  */
 export async function getMetadata(imdbId: string) {
+  if (!imdbId || !/^tt\d+$/.test(imdbId)) {
+    logger.warn({ imdbId }, 'Invalid ID');
+    return null;
+  }
+
   // find is better than search because it guarantees the exact match
   const url = `${TMDB_BASE}/find/${imdbId}?external_source=imdb_id`;
   const { data } = await axios.get(url, {
