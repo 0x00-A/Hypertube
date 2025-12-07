@@ -2,13 +2,13 @@ export interface ITorrent {
   url: string;
   hash: string;
   quality: string;
-  type: string; // "mp4", "mkv"
-  videoCodec: string;
+  type?: string; // "mp4", "mkv"
+  videoCodec?: string;
   seeds: number;
   peers: number;
   size: string;
   sizeBytes: number;
-  provider: string;
+  provider?: string;
 }
 export interface IMovie {
   imdbId: string;
