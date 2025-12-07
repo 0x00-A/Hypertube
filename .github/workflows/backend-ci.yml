@@ -23,3 +23,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test -- --passWithNoTests
+    env:
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      NODE_ENV: "test"
