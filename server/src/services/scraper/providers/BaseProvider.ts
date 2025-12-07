@@ -33,19 +33,6 @@ export abstract class BaseProvider {
 //   return null;
 // }
 
-// function parseRetryAfter(header?: string): number | null {
-//   if (!header) return null;
-//   const sec = Number(header);
-//   if (!Number.isNaN(sec)) return sec * 1000; // seconds -> ms
-//   // try parse HTTP date
-//   const date = Date.parse(header);
-//   if (!Number.isNaN(date)) {
-//     const delay = date - Date.now();
-//     return delay > 0 ? delay : 0;
-//   }
-//   return null;
-// }
-
 // axiosRetry(this.api, {
 //   retries: 3,
 //   retryCondition: (error) => {

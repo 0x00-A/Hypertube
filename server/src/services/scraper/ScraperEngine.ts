@@ -1,4 +1,4 @@
-import { IMovie, IScrapedMovie } from '../../interfaces/movie.interface';
+import { IScrapedMovie } from '../../interfaces/movie.interface';
 import { YtsProvider } from './providers/YtsProvider';
 import { MovieRepository } from '../../repositories/movie.repository';
 import { getMetadata } from '../metadata/tmdb';
@@ -18,10 +18,6 @@ export class ScraperEngine {
     const partialMovies = results.flat();
 
     logger.info(`Scraped ${partialMovies.length} movies from all providers on page ${page}.`);
-
-    // logger.info(partialMovies[0]);
-
-    // await this.upsertMovie(partialMovies[0]);
 
     for (const partial of partialMovies) {
       await this.fillMetadataAndUpsertMovie(partial);
@@ -58,8 +54,6 @@ export class ScraperEngine {
           ...metadata,
           torrents: partial.torrents,
         };
-
-        // logger.info(completeMovie, 'Movie::::');
 
         await this._movieRepository.create(completeMovie);
         logger.info(`Created DB Entry: ${completeMovie.title}`);

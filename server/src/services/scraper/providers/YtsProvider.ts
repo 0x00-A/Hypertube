@@ -1,6 +1,7 @@
 import { IScrapedMovie } from '../../../interfaces/movie.interface';
 import { BaseProvider } from './BaseProvider';
 import { env } from '../../../config/env';
+import { logger } from '../../../utils/logger';
 
 type YtsMovie = {
   id: number;
@@ -62,8 +63,8 @@ export class YtsProvider extends BaseProvider {
       const movies = data.data.movies || [];
 
       return movies.map((m: YtsMovie) => this.normalize(m));
-    } catch (error: any) {
-      console.error(`[YTS] Error scraping page ${page}:`, error.message);
+    } catch (error) {
+      logger.error(`[YTS] Error scraping page ${page}: ${(error as Error).message}`);
       return [];
     }
   }

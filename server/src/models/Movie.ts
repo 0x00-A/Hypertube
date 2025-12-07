@@ -7,7 +7,7 @@ const torrentSchema = new Schema(
     hash: { type: String, required: true }, // Magnet hash
     quality: { type: String, required: true }, // e.g., "720p", "1080p"
     type: { type: String }, // e.g., "mp4", "mkv"
-    videoCodec: { type: String }, // x254
+    videoCodec: { type: String }, // x264
     seeds: { type: Number, required: true, min: 0 },
     peers: { type: Number, required: true, min: 0 },
     size: { type: String, required: true }, // Human-readable size (e.g., "1.2 GB")

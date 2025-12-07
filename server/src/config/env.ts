@@ -10,6 +10,7 @@ export const env = cleanEnv(process.env, {
 
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
   TMDB_API_KEY: str(),
+  TMDB_API_ACCESS_TOCKEN: str(),
   // OMDB_API_KEY: str(),
 
   SCRAPER_INTERVAL_MINUTES: str({ default: '30' }),

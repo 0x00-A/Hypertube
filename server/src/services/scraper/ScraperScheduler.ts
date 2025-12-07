@@ -1,9 +1,11 @@
 import cron from 'node-cron';
 import { ScraperEngine } from './ScraperEngine';
 import { logger } from '../../utils/logger';
+import { MovieRepository } from '../../repositories/movie.repository';
 
 export class ScraperScheduler {
   private _engine = new ScraperEngine();
+  private _movieRepository = new MovieRepository();
   private _isScraping: boolean = false;
 
   public init() {
@@ -12,8 +14,11 @@ export class ScraperScheduler {
   }
 
   private async runStartupScrape() {
-    logger.info('Server Startup: Triggering initial quick scrape...');
-    this.safeScrape(1, 1).catch((err) => logger.error(`Startup scrape failed: ${err.message}`));
+    const movieCount = (await this._movieRepository.findAll({ limit: 50, page: 1 })).total;
+    if (movieCount < 50) {
+      logger.info('Server Startup: Triggering initial quick scrape...');
+      this.safeScrape(1, 1).catch((err) => logger.error(`Startup scrape failed: ${err.message}`));
+    }
   }
 
   private scheduleNightlyScrape() {
