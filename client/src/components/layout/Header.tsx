@@ -12,15 +12,23 @@ const tabs = [
   { id: 'genres' as Tab, label: 'Genres', hasDropdown: true },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  isSidebarCollapsed: boolean;
+}
+
+export default function Header({ isSidebarCollapsed }: HeaderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const isLoggedIn = false; // TODO: Replace with actual auth state
 
   return (
     <header className="fixed top-0 left-0 right-0 h-[70px] bg-bg-primary z-30">
       <div className="h-full flex items-center justify-between px-8">
         {/* Left Section - Navigation Tabs */}
-        <nav className="flex items-center gap-8 ml-[220px]">
+        <nav className={clsx(
+          'flex items-center gap-8 transition-all duration-300',
+          isSidebarCollapsed ? 'ml-[70px]' : 'ml-[220px]'
+        )}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -34,7 +42,6 @@ export default function Header() {
             >
               <span>{tab.label}</span>
               {tab.hasDropdown && <ChevronDown className="w-4 h-4" />}
-              {/* Yellow underline for active tab */}
               {activeTab === tab.id && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
               )}
@@ -56,19 +63,6 @@ export default function Header() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />
           </div>
 
-          {/* Grid Icon */}
-          <button
-            className="w-6 h-6 flex items-center justify-center hover:opacity-70 transition-opacity"
-            aria-label="Grid view"
-          >
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
-              <rect x="14" y="14" width="7" height="7" rx="1"/>
-            </svg>
-          </button>
-
           {/* Notifications */}
           <button
             className="relative w-6 h-6 flex items-center justify-center hover:opacity-70 transition-opacity"
@@ -78,22 +72,42 @@ export default function Header() {
             <span className="absolute top-0 right-0 w-2 h-2 bg-accent-red rounded-full"></span>
           </button>
 
-          {/* User Avatar */}
-          <button
-            className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center hover:opacity-80 transition-opacity overflow-hidden"
-            aria-label="User menu"
-          >
-            <img 
-              src="https://via.placeholder.com/40" 
-              alt="User avatar" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <span className="hidden text-sm font-semibold text-white">DF</span>
-          </button>
+          {/* User Avatar or Auth Buttons */}
+          {isLoggedIn ? (
+            <button
+              className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center hover:opacity-80 transition-opacity overflow-hidden"
+              aria-label="User menu"
+            >
+              <img 
+                src="https://via.placeholder.com/40" 
+                alt="User avatar" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <span className="hidden text-sm font-semibold text-white">DF</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              {/* Login Button */}
+              <button
+                className="px-4 py-2 text-sm font-medium text-white hover:text-primary transition-colors"
+                aria-label="Login"
+              >
+                Login
+              </button>
+              
+              {/* Sign Up Button */}
+              <button
+                className="px-5 py-2 text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+                aria-label="Sign up"
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

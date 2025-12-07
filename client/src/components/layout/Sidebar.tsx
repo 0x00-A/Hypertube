@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Film,
@@ -36,7 +35,7 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { icon: Library, label: 'Library', path: '/library' },
       { icon: Star, label: 'Watchlist', path: '/watchlist' },
-      { icon: Clock, label: 'History', path: '/history', badge: 'NEW' },
+      { icon: Clock, label: 'History', path: '/history'},
       { icon: Download, label: 'Downloads', path: '/downloads' },
     ],
   },
@@ -49,9 +48,12 @@ const sidebarSections: SidebarSection[] = [
   },
 ];
 
-export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
+}
 
+export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   return (
     <>
       {/* Sidebar */}
@@ -95,7 +97,7 @@ export default function Sidebar() {
           {/* Toggle Button - Matches curved cutout */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 bg-bg-primary border-2 border-white flex items-center justify-center hover:border-primary transition-all z-50 group"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 bg-bg-primary border-2 border-white flex items-center justify-center transition-all z-50 group"
             style={{
               borderRadius: '50% 50px 50px 50%',
               clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)',
@@ -116,14 +118,16 @@ export default function Sidebar() {
         <nav className="mt-2">
           {sidebarSections.map((section, sectionIndex) => (
             <div key={section.title} className={clsx(sectionIndex > 0 && 'mt-8')}>
-              {/* Section Header - Hide when collapsed */}
-              {!isCollapsed && (
-                <div className="px-5 mb-3">
-                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+              {/* Section Header - Fixed height to prevent vibration */}
+              <div className="mb-3 h-[16px] flex items-center">
+                {!isCollapsed ? (
+                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider px-5 block w-full whitespace-nowrap overflow-hidden">
                     {section.title}
                   </span>
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-[2px] bg-border rounded-full mx-5" />
+                )}
+              </div>
 
               {/* Section Items */}
               <ul className="space-y-0.5">
@@ -145,9 +149,9 @@ export default function Sidebar() {
                       >
                         {({ isActive }) => (
                           <>
-                            {/* Yellow left border for active item - FROM EDGE */}
+                            {/* Yellow left border for active item - Shorter with rounded right corners */}
                             {isActive && (
-                              <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></span>
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"></span>
                             )}
                             
                             {/* Content wrapper with padding AFTER border */}
