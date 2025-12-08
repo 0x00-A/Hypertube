@@ -64,3 +64,7 @@ When working on the library:
 
 - When writing tests, ensure `npm run test` passes without warnings.
 - Mock external APIs (YTS, OpenSubtitles) during testing.
+
+---
+
+when you create .md guides explaining something place in the guides forlder

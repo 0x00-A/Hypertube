@@ -18,7 +18,26 @@ export const MovieListQuerySchema = z.object({
       .optional(),
     search: z.string().max(255).optional(),
     sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
-    sortBy: z.enum(['seeders', 'rating', 'releaseDate', 'title']).default('seeders').optional(),
+    sortBy: z.enum(['lastUpdated', 'rating', 'year', 'title']).default('lastUpdated').optional(),
+    genre: z.string().max(100).optional(),
+    minRating: z
+      .string()
+      .regex(/^\d+(\.\d+)?$/)
+      .transform(Number)
+      .pipe(z.number().min(0).max(10))
+      .optional(),
+    year: z
+      .string()
+      .regex(/^\d{4}$/)
+      .transform(Number)
+      .pipe(
+        z
+          .number()
+          .int()
+          .min(1900)
+          .max(new Date().getFullYear() + 1),
+      )
+      .optional(),
   }),
 });
 

@@ -4,7 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
-import { router as commentsRouter } from './routes/v1/comments.routes';
+// import { router as commentsRouter } from './routes/v1/comments.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
@@ -45,7 +45,7 @@ export const createApp = () => {
   const { movieController, authController } = createControllers();
 
   app.use('/v1/movies', createMovieRouter(movieController));
-  app.use('/v1/comments', commentsRouter);
+  // app.use('/v1/comments', commentsRouter);
   app.use('/v1/auth', createAuthRoutes(authController));
 
   app.get('/health', (_req, res) => {
