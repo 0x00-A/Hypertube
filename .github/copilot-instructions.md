@@ -67,4 +67,4 @@ When working on the library:
 
 ---
 
-when you create .md guides explaining something place in the guides forlder
+when you create .md guides explaining something place in the guides folder server/guides.
