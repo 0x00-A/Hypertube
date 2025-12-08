@@ -18,17 +18,4 @@ export interface IUser {
   createdAt?: Date;
 }
 
-export interface ISignupDTO {
-  username: string;
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface ILoginDTO {
-  identifier: string;
-  password: string;
-}
-
-export interface IUpdateUserDTO extends Partial<ISignupDTO> {}
+// export interface IUpdateUserDTO extends Partial<ISignupDTO> {}

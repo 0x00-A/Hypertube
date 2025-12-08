@@ -1,18 +1,37 @@
 import { RequestHandler } from 'express';
-import jwt from 'jsonwebtoken';
+import { JWTService, JWTErrorType } from '../services/jwt.service';
+import { UserRepository } from '../repositories/user.repository';
 
-export const auth: RequestHandler = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+export const auth: RequestHandler = async (req, res, next) => {
+  const accessToken = req.cookies.accessToken;
+
+  if (!accessToken) {
+    return res.status(401).json({ status: 'error', message: 'Unauthorized: No access token provided' });
   }
-  const token = header.substring(7);
-  try {
-    const secret = process.env.JWT_SECRET || 'dev-secret';
-    const payload = jwt.verify(token, secret);
-    (req as any).user = payload;
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+
+  const jwtService = new JWTService();
+  const result = jwtService.verifyAccessToken(accessToken);
+
+  if (!result.success) {
+    // if token is expired refresh access token
+    if (result.error?.type === JWTErrorType.EXPIRED) {
+      
+    }
+    const statusCode = result.error?.type === JWTErrorType.EXPIRED ? 401 : 401;
+    return res.status(statusCode).json({
+      status: 'error',
+      message: result.error?.message || 'Unauthorized',
+      errorType: result.error?.type,
+    });
   }
+
+  const repo = new UserRepository();
+  const user = await repo.findById(result.payload!.userId);
+
+  if (!user) {
+    return res.status(401).json({ status: 'error', message: 'Unauthorized: User not found' });
+  }
+
+  req.user = user;
+  return next();
 };

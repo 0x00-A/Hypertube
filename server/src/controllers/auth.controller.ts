@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { env } from "../config/env";
-import { ILoginDTO, ISignupDTO } from '../interfaces/user.interface';
+import { ILoginDTO, ISignupDTO } from '../interfaces/auth.interface';
 
 
 export class AuthController {
@@ -37,7 +37,6 @@ export class AuthController {
                     message: 'Invalid identifier or password',
                 });
             }
-
             // Set tokens in httpOnly cookies
             res.cookie('accessToken', result.access_token, {
                 httpOnly: true,

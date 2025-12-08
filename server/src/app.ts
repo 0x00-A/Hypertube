@@ -14,6 +14,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
 import { dbHealth } from './config/database';
 import { createControllers } from './bootstrap/controllers';
+import { auth } from './middleware/auth';
 
 export const createApp = () => {
   const app = express();
@@ -24,6 +25,7 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
+  app.use(auth);
 
   app.use(
     rateLimit({

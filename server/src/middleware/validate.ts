@@ -7,7 +7,7 @@ type ParsedRequest = { body?: unknown; query?: unknown; params?: unknown };
 declare global {
   namespace Express {
     interface Request {
-      user?: IUser;
+      user?: Partial<IUser>;
       role?: string;
       validated?: ParsedRequest;
     }
