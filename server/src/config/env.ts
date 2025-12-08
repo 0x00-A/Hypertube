@@ -10,4 +10,9 @@ export const env = cleanEnv(process.env, {
 
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
   TMDB_API_ACCESS_TOKEN: str(),
+
+  JWT_ACCESS_SECRET: str(),
+  JWT_REFRESH_SECRET: str(),
+  JWT_ACCESS_EXPIRES_IN: str({ default: '1h' }),
+  JWT_REFRESH_EXPIRES_IN: str({ default: '30d' }),
 });

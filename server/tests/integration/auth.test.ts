@@ -194,4 +194,226 @@ describe('Auth Signup Integration Tests', () => {
     //   expect(user?.watchedMovies).toEqual([]); // Empty watched movies
     });
   });
+
+  describe('POST /v1/auth/login', () => {
+    const validUserData = {
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'SecurePass123!',
+      firstName: 'Test',
+      lastName: 'User',
+    };
+
+    beforeEach(async () => {
+      // Create a user before each login test
+      await request(app).post('/v1/auth/signup').send(validUserData);
+    });
+
+    it('should successfully login with username and set cookies', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Login successful',
+      });
+
+      // Check that cookies are set
+      const cookies = res.headers['set-cookie'] as unknown as string[];
+      expect(cookies).toBeDefined();
+      expect(cookies).toHaveLength(2);
+
+      // Check accessToken cookie
+      const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      expect(accessTokenCookie).toBeDefined();
+      expect(accessTokenCookie).toContain('HttpOnly');
+      expect(accessTokenCookie).toContain('SameSite=Strict');
+
+      // Check refreshToken cookie
+      const refreshTokenCookie = cookies.find((cookie: string) => cookie.startsWith('refreshToken='));
+      expect(refreshTokenCookie).toBeDefined();
+      expect(refreshTokenCookie).toContain('HttpOnly');
+      expect(refreshTokenCookie).toContain('SameSite=Strict');
+    });
+
+    it('should successfully login with email and set cookies', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.email,
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Login successful',
+      });
+
+      // Check that cookies are set
+      const cookies = res.headers['set-cookie'] as unknown as string[];
+      expect(cookies).toBeDefined();
+      expect(cookies).toHaveLength(2);
+    });
+
+    it('should return user information in response', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({
+        username: validUserData.username,
+        email: validUserData.email,
+      });
+      expect(res.body.data).toHaveProperty('userId');
+      expect(res.body.data.userId).toBeTruthy();
+    });
+
+    it('should return 401 with invalid password', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: 'WrongPassword123!',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid identifier or password',
+      });
+
+      // Should not set cookies on failed login
+      const cookies = res.headers['set-cookie'];
+      expect(cookies).toBeUndefined();
+    });
+
+    it('should return 401 with non-existent username', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: 'nonexistentuser',
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid identifier or password',
+      });
+    });
+
+    it('should return 401 with non-existent email', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: 'nonexistent@example.com',
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid identifier or password',
+      });
+    });
+
+    it('should return 400 when identifier is missing', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('errors');
+    });
+
+    it('should return 400 when password is missing', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('errors');
+    });
+
+    it('should not expose password in any response', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(200);
+      expect(JSON.stringify(res.body)).not.toContain(validUserData.password);
+      expect(res.body.data).not.toHaveProperty('password');
+    });
+
+    it('should set cookies with correct expiration times', async () => {
+      const res = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res.status).toBe(200);
+
+      const cookies = res.headers['set-cookie'] as unknown as string[];
+      const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const refreshTokenCookie = cookies.find((cookie: string) => cookie.startsWith('refreshToken='));
+
+      // Access token should have shorter expiration
+      expect(accessTokenCookie).toContain('Max-Age');
+
+      // Refresh token should have longer expiration
+      expect(refreshTokenCookie).toContain('Max-Age');
+    });
+
+    it('should allow login multiple times with same credentials', async () => {
+      // First login
+      const res1 = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res1.status).toBe(200);
+
+      // Small delay to ensure different token timestamps
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Second login
+      const res2 = await request(app)
+        .post('/v1/auth/login')
+        .send({
+          identifier: validUserData.username,
+          password: validUserData.password,
+        });
+
+      expect(res2.status).toBe(200);
+
+      // Tokens should be different (new tokens generated)
+      const cookies1 = res1.headers['set-cookie'] as unknown as string[];
+      const cookies2 = res2.headers['set-cookie'] as unknown as string[];
+
+      const token1 = cookies1.find((c: string) => c.startsWith('accessToken='));
+      const token2 = cookies2.find((c: string) => c.startsWith('accessToken='));
+      expect(token1).not.toBe(token2);
+    });
+  });
 });

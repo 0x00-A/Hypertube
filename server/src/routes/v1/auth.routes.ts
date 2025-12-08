@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { AuthController } from '../../controllers/auth.controller';
 import { validate } from '../../middleware/validate';
-import { SignUpSchema } from '../../validators/signup.schema';
+import { SignUpSchema, LogInSchema } from '../../validators/auth.schema';
 
 
 export const createAuthRoutes = (controller: AuthController) => {
@@ -12,6 +12,7 @@ export const createAuthRoutes = (controller: AuthController) => {
   });
 
   router.post('/signup', validate(SignUpSchema), (req, res, next) => controller.signUp(req, res, next));
+  router.post('/login', validate(LogInSchema), (req, res, next) => controller.logIn(req, res, next));
 
   return router;
 };

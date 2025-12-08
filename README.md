@@ -45,32 +45,99 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 ```bash
 git clone https://github.com/0x00-A/hypertube.git
 cd hypertube
+```
 
-### 2\. Environment Configuration ⚠️
+### 2. Environment Configuration ⚠️
 
-You must create a `.env` file in the client and server directory.
+You must create a `.env` file in both the client and server directories.
 
-### 3\. Run with Docker
+**Server `.env` example:**
+```env
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb://admin:password@mongo:27017/hypertube?authSource=admin
+ENABLE_REQUEST_LOGGING=true
+JWT_ACCESS_SECRET=your-access-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret-key
+JWT_ACCESS_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=30d
+```
+
+### 3. Run with Docker
 
 The entire application (Frontend, Backend, Database) is containerized.
 
 ```bash
+# Start all services
 make dev
+
+# Or start server only
+make server
+
+# Stop services
+make down
 ```
 
-Access the application at `http://localhost:3000`.
+Access the application at `http://localhost:3000` (client) and `http://localhost:3001` (server).
+
+### 4. Makefile Commands
+
+```bash
+# Development
+make dev              # Start all services in development mode
+make server           # Start server services only
+make down-server      # Stop server services
+
+# Testing
+make test             # Run all tests (client + server)
+make test-server      # Run server tests in Docker
+
+# Linting
+make lint             # Run linting on both client and server
+make lint-server      # Run server linting in Docker
+
+# Logs
+make logs-server      # View server app logs only
+make logs-server-all  # View all server container logs
+```
 
 ## 🧪 Running Tests
 
 This project adheres to strict coding standards. No console errors or warnings are permitted.
 
 ```bash
-# Run backend tests
-npm run test:server
+# Run all tests
+make test
 
-# Run frontend tests
-npm run test:client
+# Run server tests in Docker (recommended)
+make test-server
+
+# Run specific test file
+cd server && npm test -- --testPathPattern=auth.test.ts
 ```
+
+### Test Coverage
+- **Authentication Tests:** 23 integration tests
+  - Signup validation, security, and error handling
+  - Login authentication, JWT cookies, and session management
+
+## 📚 API Documentation
+
+The API is documented using Swagger/OpenAPI 3.1.0. Access the interactive documentation:
+
+```
+http://localhost:3001/api-docs
+```
+
+### Authentication Endpoints
+
+**POST** `/v1/auth/signup`
+- Register a new user
+- Returns user data and sets JWT cookies
+
+**POST** `/v1/auth/login`
+- Authenticate user with username or email
+- Returns user data and sets JWT cookies (HttpOnly, SameSite=Strict)
 
 ## 👥 Authors
 

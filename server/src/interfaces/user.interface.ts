@@ -26,4 +26,9 @@ export interface ISignupDTO {
   lastName?: string;
 }
 
+export interface ILoginDTO {
+  identifier: string;
+  password: string;
+}
+
 export interface IUpdateUserDTO extends Partial<ISignupDTO> {}

@@ -18,6 +18,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 // Services
 import { PasswordService } from './services/password.service';
+import { JWTService } from './services/jwt.service';
 // Repositories
 import { UserRepository } from './repositories/user.repository';
 
@@ -62,7 +63,7 @@ export const createApp = () => {
   });
 
   // authentication and authorization routes
-  const authService = new AuthService(new UserRepository(), new PasswordService());
+  const authService = new AuthService(new UserRepository(), new PasswordService(), new JWTService());
   const authController = new AuthController(authService);
   app.use('/v1/auth', createAuthRoutes(authController));
 

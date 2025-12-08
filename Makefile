@@ -18,8 +18,12 @@ down-server:
 	@echo "Stopping server services..."
 	docker compose -f server/docker-compose.dev.yml down
 
-## View logs for server services
+## View logs for server services (only app, not MongoDB)
 logs-server:
+	docker logs ntier-backend-dev -f
+
+## View all server logs including MongoDB
+logs-server-all:
 	docker compose -f server/docker-compose.dev.yml logs -f
 ## Start production environment
 # prod:
@@ -52,12 +56,22 @@ test:
 	cd ./client && npm test
 	cd ./server && npm test -- --passWithNoTests
 
+## Run server tests in Docker
+test-server:
+	@echo "Running server tests in Docker..."
+	cd ./server && docker compose -f docker-compose.dev.yml exec app npm test -- --passWithNoTests
+
 ## Run linting
 lint:
 	@echo "Linting frontend..."
 	cd ./client && npm run lint
 	@echo "Linting backend..."
 	cd ./server && npm run lint
+
+## Run server lint in Docker
+lint-server:
+	@echo "Running server lint in Docker..."
+	cd ./server && docker compose -f docker-compose.dev.yml exec app npm run lint
 
 ## Build for production
 # build:
