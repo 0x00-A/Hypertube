@@ -1,43 +1,29 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth.service';
-import { env } from "../config/env";
-import { ISignupDTO, ILoginDTO } from '../interfaces/user.interface';
-
-// Helper interface for type-safe access to validated request data
-interface ValidatedRequest<T> extends Request {
-    validated: {
-        body: T;
-        query?: unknown;
-        params?: unknown;
-    };
-}
-
-export class AuthController {
-    private _service: AuthService;
-
-    constructor(service: AuthService) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuthController = void 0;
+const env_1 = require("../config/env");
+class AuthController {
+    _service;
+    constructor(service) {
         this._service = service;
     }
-
-    async signUp(req: Request, res: Response, next: NextFunction) {
+    async signUp(req, res, next) {
         try {
-            const { body } = (req as ValidatedRequest<ISignupDTO>).validated;
-
+            const { body } = req.validated;
             const newUser = await this._service.signUp(body);
             return res.status(201).json({
                 status: 'success',
                 message: 'User registered successfully',
                 data: newUser,
             });
-        } catch (err) {
+        }
+        catch (err) {
             next(err);
         }
     }
-
-    async logIn(req: Request, res: Response, next: NextFunction) {
+    async logIn(req, res, next) {
         try {
-            const { body } = (req as ValidatedRequest<ILoginDTO>).validated;
-
+            const { body } = req.validated;
             const result = await this._service.logIn(body);
             if (!result) {
                 return res.status(401).json({
@@ -45,21 +31,19 @@ export class AuthController {
                     message: 'Invalid identifier or password',
                 });
             }
-
             // Set tokens in httpOnly cookies
             res.cookie('accessToken', result.access_token, {
                 httpOnly: true,
-                secure: env.NODE_ENV === 'production',
+                secure: env_1.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: parseInt(env.JWT_ACCESS_EXPIRES_IN) * 1000, // 1 hour
+                maxAge: parseInt(env_1.env.JWT_ACCESS_EXPIRES_IN) * 1000, // 1 hour
             });
             res.cookie('refreshToken', result.refresh_token, {
                 httpOnly: true,
-                secure: env.NODE_ENV === 'production',
+                secure: env_1.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: parseInt(env.JWT_REFRESH_EXPIRES_IN) * 24 * 60 * 60 * 1000, // 30 days
+                maxAge: parseInt(env_1.env.JWT_REFRESH_EXPIRES_IN) * 24 * 60 * 60 * 1000, // 30 days
             });
-
             return res.status(200).json({
                 status: 'success',
                 message: 'Login successful',
@@ -69,9 +53,10 @@ export class AuthController {
                     email: result.user.email,
                 },
             });
-
-        } catch (err) {
+        }
+        catch (err) {
             next(err);
         }
     }
 }
+exports.AuthController = AuthController;

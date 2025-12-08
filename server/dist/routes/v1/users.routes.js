@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const express_1 = require("express");
+// import { listUsers, getUser, patchUser } from '../../controllers/user.controller';
+const validate_1 = require("../../middleware/validate");
+const common_schema_1 = require("../../validators/common.schema");
+exports.router = (0, express_1.Router)();
+exports.router.get('/', listUsers);
+exports.router.get('/:id', (0, validate_1.validate)(common_schema_1.IdParamSchema), getUser);
+exports.router.patch('/:id', (0, validate_1.validate)(common_schema_1.IdParamSchema), patchUser);
