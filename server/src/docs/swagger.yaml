@@ -178,3 +178,325 @@ paths:
                   message:
                     type: string
                     example: Auth route is working
+
+  /v1/movies:
+    get:
+      summary: List movies with pagination and filters
+      tags:
+        - Movies
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 255
+          description: Search by title or synopsis (case-insensitive)
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [lastUpdated, rating, year, title]
+            default: lastUpdated
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order (ascending or descending)
+        - in: query
+          name: genre
+          schema:
+            type: string
+            maxLength: 100
+          description: Filter by genre (e.g., Action, Drama, Comedy)
+        - in: query
+          name: minRating
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          description: Filter by minimum IMDb rating
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2026
+          description: Filter by release year
+      responses:
+        '200':
+          description: Paginated list of movies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 100
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 5
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+
+  /v1/movies/{id}:
+    get:
+      summary: Get a single movie by ID
+      tags:
+        - Movies
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '200':
+          description: Movie found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Movie'
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Movie not found
+        '400':
+          description: Invalid ObjectId format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+
+components:
+  schemas:
+    Movie:
+      type: object
+      required:
+        - imdbId
+        - title
+        - year
+        - images
+        - torrents
+        - downloadStatus
+        - lastUpdated
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 507f1f77bcf86cd799439011
+        imdbId:
+          type: string
+          description: IMDb unique identifier
+          example: tt0111161
+        title:
+          type: string
+          description: Movie title
+          example: The Shawshank Redemption
+        year:
+          type: integer
+          minimum: 1900
+          maximum: 2026
+          description: Release year
+          example: 1994
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+          description: IMDb rating
+          example: 9.3
+        duration:
+          type: integer
+          description: Duration in minutes
+          example: 142
+        synopsis:
+          type: string
+          description: Movie plot summary
+          example: Two imprisoned men bond over a number of years...
+        genres:
+          type: array
+          items:
+            type: string
+          description: List of genres
+          example: [Drama, Crime]
+        language:
+          type: string
+          description: Original language
+          default: en
+          example: en
+        trailer:
+          type: string
+          description: YouTube trailer URL
+          example: https://www.youtube.com/watch?v=6hB3S9bIaco
+        images:
+          type: object
+          required:
+            - thumbnail
+            - poster
+            - backdrop
+          properties:
+            thumbnail:
+              type: string
+              description: Medium-sized image for lists
+              example: https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg
+            poster:
+              type: string
+              description: Large poster image for detail view
+              example: https://image.tmdb.org/t/p/original/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg
+            backdrop:
+              type: string
+              description: Background image for detail view
+              example: https://image.tmdb.org/t/p/original/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg
+        torrents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Torrent'
+          description: Available torrent sources
+        downloadStatus:
+          type: string
+          enum: [not_downloaded, downloading, downloaded]
+          default: not_downloaded
+          description: Current download status on the server
+          example: not_downloaded
+        lastWatched:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time this movie was watched (for 1-month deletion rule)
+          example: 2025-12-01T10:30:00Z
+        localPath:
+          type: string
+          nullable: true
+          description: Path to the downloaded file on the server
+          example: /var/hypertube/movies/tt0111161.mp4
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: 2025-12-08T10:00:00Z
+
+    Torrent:
+      type: object
+      required:
+        - url
+        - hash
+        - quality
+        - seeds
+        - peers
+        - size
+        - sizeBytes
+      properties:
+        url:
+          type: string
+          description: Magnet link or torrent URL
+          example: magnet:?xt=urn:btih:...
+        hash:
+          type: string
+          description: Torrent info hash
+          example: 08ada5a7a6183aae1e09d831df6748d566095a10
+        quality:
+          type: string
+          description: Video quality
+          example: 1080p
+        type:
+          type: string
+          description: File type
+          example: mp4
+        videoCodec:
+          type: string
+          description: Video codec
+          example: x264
+        seeds:
+          type: integer
+          minimum: 0
+          description: Number of seeders
+          example: 150
+        peers:
+          type: integer
+          minimum: 0
+          description: Number of peers
+          example: 45
+        size:
+          type: string
+          description: Human-readable file size
+          example: 1.4 GB
+        sizeBytes:
+          type: integer
+          description: File size in bytes
+          example: 1503238553
+        provider:
+          type: string
+          description: Torrent source provider
+          example: YTS

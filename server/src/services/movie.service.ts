@@ -1,12 +1,18 @@
 import { MovieRepository } from '../repositories/movie.repository';
-
-const repo = new MovieRepository();
+import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
 
 export class MovieService {
-  async list(page = 1, limit = 10) {
-    return repo.findAll({ page, limit });
+  private _movieRepsitory: MovieRepository;
+
+  constructor(movieRepository: MovieRepository) {
+    this._movieRepsitory = movieRepository;
   }
+
+  async list(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions = {}) {
+    return this._movieRepsitory.findAll(paginationOptions, filterOptions);
+  }
+
   async get(id: string) {
-    return repo.findById(id);
+    return this._movieRepsitory.findById(id);
   }
 }

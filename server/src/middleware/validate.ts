@@ -2,11 +2,14 @@ import { ZodSchema } from 'zod';
 import { RequestHandler } from 'express';
 import { IUser } from '../interfaces/user.interface';
 
+type ParsedRequest = { body?: unknown; query?: unknown; params?: unknown };
+
 declare global {
   namespace Express {
     interface Request {
       user?: IUser;
       role?: string;
+      validated?: ParsedRequest;
     }
   }
 }
@@ -21,7 +24,6 @@ export const validate =
       });
     }
     const parsed = result.data as { body?: unknown; query?: unknown; params?: unknown };
-    // Avoid mutating Express request getters; attach parsed values for controllers to opt-in use
-    (req as any).validated = parsed;
+    req.validated = parsed;
     next();
   };

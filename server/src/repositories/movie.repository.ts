@@ -1,38 +1,89 @@
 import { MovieModel } from '../models/Movie';
-import mongoose from 'mongoose';
+import mongoose, { FilterQuery } from 'mongoose';
 import { IMovieDocument } from '../models/movie.model.types';
-import { IPaginationOptions, IPaginatedResponse } from '../interfaces/pagination.interface';
+import {
+  IPaginationOptions,
+  MovieFilterOptions,
+  IPaginatedResponse,
+} from '../core/interfaces/IPagination';
 import { IMovie } from '../interfaces/movie.interface';
 
 export class MovieRepository {
-  async findAll(options?: IPaginationOptions): Promise<IPaginatedResponse<IMovie>> {
-    const page = options?.page || 1;
-    const limit = options?.limit || 10;
+  async findAll(
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions = {},
+  ): Promise<IPaginatedResponse<IMovie>> {
+    const page = paginationOptions.page || 1;
+    const limit = paginationOptions.limit || 10;
+    const sortBy = paginationOptions.sortBy || 'lastUpdated';
+    const sortOrder = paginationOptions.sortOrder === 'asc' ? 1 : -1;
+
     if (mongoose.connection.readyState !== 1) {
-      return { data: [], page, limit, total: 0, totalPages: 0 };
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      };
     }
+
     const skip = (page - 1) * limit;
+
+    // Build filter query
+    const filter: FilterQuery<IMovieDocument> = {};
+
+    if (filterOptions.search) {
+      filter.$or = [
+        { title: { $regex: filterOptions.search, $options: 'i' } },
+        { synopsis: { $regex: filterOptions.search, $options: 'i' } },
+      ];
+    }
+
+    if (filterOptions.genre) {
+      filter.genres = { $in: [filterOptions.genre] };
+    }
+
+    if (filterOptions.minRating !== undefined) {
+      filter.rating = { $gte: filterOptions.minRating };
+    }
+
+    if (filterOptions.year) {
+      filter.year = filterOptions.year;
+    }
+
+    // Execute queries
     const [data, total] = await Promise.all([
-      MovieModel.find().skip(skip).limit(limit),
-      MovieModel.countDocuments(),
+      MovieModel.find(filter)
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean<IMovie[]>(),
+      MovieModel.countDocuments(filter),
     ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
     return {
-      data: data as any,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
+      data: data as IMovie[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     };
   }
 
-  async findById(id: string): Promise<IMovieDocument | null> {
-    return MovieModel.findById(id) as any;
+  async findById(id: string): Promise<IMovie | null> {
+    return MovieModel.findById(id).lean<IMovie>();
   }
-
-  // async create(movieData: IMovie): Promise<IMovieDocument> {
-  //   const movie = new MovieModel(movieData);
-  //   return movie.save() as any;
-  // }
 
   async upsert(movieData: Partial<IMovie>) {
     await MovieModel.findOneAndUpdate({ imdbId: movieData.imdbId }, movieData, {
@@ -46,6 +97,6 @@ export class MovieRepository {
   }
 
   async findByImdbId(imdbId: string): Promise<IMovieDocument | null> {
-    return MovieModel.findOne({ imdbId: imdbId });
+    return MovieModel.findOne({ imdbId: imdbId }).exec();
   }
 }

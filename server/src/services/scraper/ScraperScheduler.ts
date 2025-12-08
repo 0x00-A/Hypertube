@@ -14,7 +14,14 @@ export class ScraperScheduler {
   }
 
   private async runStartupScrape() {
-    const movieCount = (await this._movieRepository.findAll({ limit: 50, page: 1 })).total;
+    const movieCount = (
+      await this._movieRepository.findAll({
+        limit: 50,
+        page: 1,
+        sortBy: 'lastUpdated',
+        sortOrder: 'desc',
+      })
+    ).pagination.total;
     if (movieCount < 50) {
       logger.info('Server Startup: Triggering initial quick scrape...');
       this.safeScrape(1, 1).catch((err) => logger.error(`Startup scrape failed: ${err.message}`));

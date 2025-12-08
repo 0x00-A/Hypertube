@@ -49,4 +49,7 @@ const movieSchema = new Schema({
   lastUpdated: { type: Date, default: Date.now }, // Last updated timestamp
 });
 
+movieSchema.index({ title: 'text', synopsis: 'text' });
+movieSchema.index({ year: 1, rating: -1, genres: 1 });
+
 export const MovieModel = model<IMovieDocument, IMovieModel>('Movie', movieSchema);
