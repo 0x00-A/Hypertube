@@ -55,7 +55,7 @@ export default function Register() {
 
   const handleSocialRegister = (provider: string) => {
     // TODO: Implement OAuth flow
-    toast.info(`${provider} registration coming soon`);
+    toast.success(`${provider} registration coming soon`);
   };
 
   return (

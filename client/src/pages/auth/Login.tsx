@@ -43,7 +43,7 @@ export default function Login() {
 
   const handleSocialLogin = (provider: string) => {
     // TODO: Implement OAuth flow
-    toast.info(`${provider} login coming soon`);
+    toast.success(`${provider} login coming soon`);
   };
 
   return (

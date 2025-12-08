@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Bell, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useAuthState } from '../../hooks/useAuth';
 
 type Tab = 'all' | 'trending' | 'popular' | 'new' | 'genres';
 
