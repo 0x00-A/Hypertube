@@ -303,7 +303,7 @@ npm test -- --testPathPattern=auth.test.ts --watch
 
 ## Expected Test Results
 
-- **Total Tests**: 23 (11 signup + 12 login)
+- **Total Tests**: 22 (11 signup + 11 login)
 - **Expected Result**: All tests passing
 - **Expected Warnings**: Error logs for duplicate user tests are intentional (testing error handling)
 
