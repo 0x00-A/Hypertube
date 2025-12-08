@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -54,7 +55,7 @@ export default function Register() {
 
   const handleSocialRegister = (provider: string) => {
     // TODO: Implement OAuth flow
-    console.log(`Register with ${provider}`);
+    toast.info(`${provider} registration coming soon`);
   };
 
   return (

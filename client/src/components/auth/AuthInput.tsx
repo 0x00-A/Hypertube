@@ -24,7 +24,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             placeholder={placeholder || label}
             className={clsx(
               'w-full border-b bg-transparent px-0 py-3 text-white transition-colors duration-200',
-              'placeholder:text-white focus:outline-none',
+              'placeholder:text-gray-500 focus:outline-none',
               type === 'password' && 'pr-10',
               IconComponent && 'pr-10',
               error

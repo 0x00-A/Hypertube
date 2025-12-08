@@ -266,7 +266,6 @@ For complete documentation, see `AUTHENTICATION_SETUP.md`
 - **Together** = Clean separation, each does what it's best at
 
 ### API Integration
-### API Integration
 Services are pre-configured to work with the backend API. Update the `VITE_API_URL` in `.env` to point to your backend.
 
 ### Styling

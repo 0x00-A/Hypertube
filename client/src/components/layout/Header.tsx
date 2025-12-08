@@ -21,7 +21,7 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [avatarError, setAvatarError] = useState(false);
-  const isLoggedIn = false; // TODO: Replace with actual auth state
+  const { isAuthenticated } = useAuthState();
 
   return (
     <header className="fixed top-0 left-0 right-0 h-[70px] bg-bg-primary z-30">
@@ -75,7 +75,7 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
           </button>
 
           {/* User Avatar or Auth Buttons */}
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <button
               className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center hover:opacity-80 transition-opacity overflow-hidden"
               aria-label="User menu"

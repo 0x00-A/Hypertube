@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import MovieSlideshow from '@/components/auth/MovieSlideshow';
+import MovieSlideshow from '../../components/auth/MovieSlideshow';
 import AuthInput from '../../components/auth/AuthInput';
 import SocialLoginButton from '../../components/auth/SocialLoginButton';
 import { useLogin } from '../../hooks/useAuth';
@@ -42,7 +43,7 @@ export default function Login() {
 
   const handleSocialLogin = (provider: string) => {
     // TODO: Implement OAuth flow
-    console.log(`Login with ${provider}`);
+    toast.info(`${provider} login coming soon`);
   };
 
   return (
