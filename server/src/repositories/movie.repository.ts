@@ -38,9 +38,10 @@ export class MovieRepository {
     const filter: FilterQuery<IMovieDocument> = {};
 
     if (filterOptions.search) {
+      const sanitizedSearch = filterOptions.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { title: { $regex: filterOptions.search, $options: 'i' } },
-        { synopsis: { $regex: filterOptions.search, $options: 'i' } },
+        { title: { $regex: sanitizedSearch, $options: 'i' } },
+        { synopsis: { $regex: sanitizedSearch, $options: 'i' } },
       ];
     }
 

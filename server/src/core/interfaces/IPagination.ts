@@ -14,7 +14,6 @@ export interface BaseFilterOptions {
 
 // Specific filters for Movies
 export interface MovieFilterOptions extends BaseFilterOptions {
-  genres?: string[];
   genre?: string;
   minRating?: number;
   year?: number;
