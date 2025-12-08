@@ -1,28 +1,88 @@
 import { httpClient } from './http';
-import { navigateTo } from '../utils/navigation';
-import type { LoginCredentials, RegisterData, AuthResponse, User } from '../types/auth.types';
+import type {
+  LoginCredentials,
+  RegisterData,
+  AuthResponse,
+  User,
+  ForgotPasswordData,
+  ResetPasswordData,
+  MessageResponse,
+  UpdateProfileData,
+  ChangePasswordData,
+} from '../types/auth.types';
+
+// ============================================================================
+// Authentication Service
+// ============================================================================
 
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  /**
+   * Login with email and password
+   */
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     return httpClient.post<AuthResponse>('/auth/login', credentials);
   },
 
-  async register(data: RegisterData): Promise<AuthResponse> {
+  /**
+   * Register a new user
+   */
+  register: async (data: RegisterData): Promise<AuthResponse> => {
     return httpClient.post<AuthResponse>('/auth/register', data);
   },
 
-  async logout(): Promise<void> {
-    try {
-      await httpClient.post('/auth/logout');
-      navigateTo('/auth/login');
-    } catch (error) {
-      // Still redirect to login even if logout fails (session might be expired)
-      navigateTo('/auth/login');
-      throw error;
-    }
+  /**
+   * Logout the current user
+   */
+  logout: async (): Promise<void> => {
+    await httpClient.post<void>('/auth/logout');
   },
 
-  async getCurrentUser(): Promise<User> {
+  /**
+   * Get current authenticated user
+   */
+  getCurrentUser: async (): Promise<User> => {
     return httpClient.get<User>('/auth/me');
+  },
+
+  /**
+   * Send password reset email
+   */
+  forgotPassword: async (data: ForgotPasswordData): Promise<MessageResponse> => {
+    return httpClient.post<MessageResponse>('/auth/forgot-password', data);
+  },
+
+  /**
+   * Reset password with token
+   */
+  resetPassword: async (data: ResetPasswordData): Promise<MessageResponse> => {
+    return httpClient.post<MessageResponse>('/auth/reset-password', data);
+  },
+
+  /**
+   * Update user profile
+   */
+  updateProfile: async (data: UpdateProfileData): Promise<User> => {
+    return httpClient.put<User>('/auth/profile', data);
+  },
+
+  /**
+   * Change user password
+   */
+  changePassword: async (data: ChangePasswordData): Promise<MessageResponse> => {
+    return httpClient.put<MessageResponse>('/auth/change-password', data);
+  },
+
+  /**
+   * Verify email with token
+   */
+  verifyEmail: async (token: string): Promise<MessageResponse> => {
+    return httpClient.post<MessageResponse>(`/auth/verify-email/${token}`);
+  },
+
+  /**
+   * Resend verification email
+   */
+  resendVerificationEmail: async (): Promise<MessageResponse> => {
+    return httpClient.post<MessageResponse>('/auth/resend-verification');
   },
 };
