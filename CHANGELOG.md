@@ -10,7 +10,7 @@
   - Password hashing using Argon2
   - JWT token generation with access and refresh tokens
   - Secure cookie-based token storage (HttpOnly, SameSite=Strict)
-- Comprehensive integration tests for authentication (23 tests)
+- Comprehensive integration tests for authentication (22 tests)
   - 11 signup tests covering validation, security, and error handling
   - 12 login tests covering authentication, cookies, and security
 - OpenAPI/Swagger documentation for authentication endpoints

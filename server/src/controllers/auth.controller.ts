@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { env } from "../config/env";
+import { ILoginDTO, ISignupDTO } from '../interfaces/user.interface';
 
 
 export class AuthController {
@@ -12,7 +13,7 @@ export class AuthController {
 
     async signUp(req: Request, res: Response, next: NextFunction) {
         try {
-            const { body } = (req as any).validated;
+            const body = req.validated!.body as ISignupDTO;
 
             const newUser = await this._service.signUp(body);
             return res.status(201).json({
@@ -27,7 +28,7 @@ export class AuthController {
 
     async logIn(req: Request, res: Response, next: NextFunction) {
         try {
-            const { body } = (req as any).validated;
+            const body = req.validated!.body as ILoginDTO;
 
             const result = await this._service.logIn(body);
             if (!result) {
@@ -42,13 +43,13 @@ export class AuthController {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: parseInt(env.JWT_ACCESS_EXPIRES_IN) * 1000, // 1 hour
+                maxAge: 1 * 60 * 60 * 1000, // 1 hour
             });
             res.cookie('refreshToken', result.refresh_token, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: parseInt(env.JWT_REFRESH_EXPIRES_IN) * 24 * 60 * 60 * 1000, // 30 days
+                maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
             });
 
             return res.status(200).json({

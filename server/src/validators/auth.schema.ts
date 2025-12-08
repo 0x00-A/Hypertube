@@ -13,7 +13,12 @@ export const SignUpSchema = z.object({
 export const LogInSchema = z.object({
   body: z.object({
     identifier: z.string().trim().min(1, 'Username or email is required').refine(
-      (val) => val.includes('@') ? z.string().email().safeParse(val).success : val.length >= 3,
+      (val) => {
+        if (val.includes('@')) {
+          return z.string().email().safeParse(val).success;
+        }
+        return val.length >= 3;
+      },
       { message: 'Must be a valid email or username (min 3 characters)' }
     ),
     password: z.string().min(1, 'Password is required'),

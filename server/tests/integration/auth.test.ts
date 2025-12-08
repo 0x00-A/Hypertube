@@ -412,7 +412,8 @@ describe('Auth Signup Integration Tests', () => {
       const cookies2 = res2.headers['set-cookie'] as unknown as string[];
 
       const token1 = cookies1.find((c: string) => c.startsWith('accessToken='));
-      const token2 = cookies2.find((c: string) => c.startsWith('accessToken='));      expect(token1).not.toBe(token2);
+      const token2 = cookies2.find((c: string) => c.startsWith('accessToken='));
+      expect(token1).not.toBe(token2);
     });
   });
 });

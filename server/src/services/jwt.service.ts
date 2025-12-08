@@ -1,26 +1,19 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from "../config/env";
 
-
 export class JWTService {
+    private readonly accessSecretKey: string = env.JWT_ACCESS_SECRET;
+    private readonly accessExpiresIn: string = env.JWT_ACCESS_EXPIRES_IN;
+    private readonly refreshSecretKey: string = env.JWT_REFRESH_SECRET;
+    private readonly refreshExpiresIn: string = env.JWT_REFRESH_EXPIRES_IN;
 
-    private accessSecretKey: string = env.JWT_ACCESS_SECRET;
-    private accessExpiresIn: string | number = env.JWT_ACCESS_EXPIRES_IN;
-    private refreshSecretKey: string = env.JWT_REFRESH_SECRET;
-    private refreshExpiresIn: string | number = env.JWT_REFRESH_EXPIRES_IN;
+    generateTokens(payload: object): { access_token: string, refresh_token: string } {
+        const accessOptions: SignOptions = { expiresIn: this.accessExpiresIn as unknown as SignOptions['expiresIn'] };
+        const refreshOptions: SignOptions = { expiresIn: this.refreshExpiresIn as unknown as SignOptions['expiresIn'] };
 
-    generateTokens(payload: object): {access_token:string, refresh_token:string} {
         return {
-            access_token: jwt.sign(payload, this.accessSecretKey, { expiresIn: this.accessExpiresIn as any }),
-            refresh_token: jwt.sign(payload, this.refreshSecretKey, { expiresIn: this.refreshExpiresIn as any }),
+            access_token: jwt.sign(payload, this.accessSecretKey, accessOptions),
+            refresh_token: jwt.sign(payload, this.refreshSecretKey, refreshOptions),
         }
     }
-
-    // verifyToken(token: string): object | null {
-    //     try {
-    //         return jwt.verify(token, this.secretKey) as object;
-    //     } catch (error) {
-    //         return null;
-    //     }
-    // }
 }

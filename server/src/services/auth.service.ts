@@ -3,8 +3,6 @@ import { UserRepository } from "../repositories/user.repository";
 import { PasswordService } from "./password.service";
 import { JWTService } from "./jwt.service";
 
-
-
 export class AuthService {
   private _repo;
   private _passwordService;
@@ -43,12 +41,12 @@ export class AuthService {
   }
 
   async logIn(body: ILoginDTO): Promise<{ access_token: string; refresh_token: string; user: IUser } | null> {
-    const user = await this._repo.findByUsername(body.identifier) || await this._repo.findByEmail(body.identifier);
-    if (!user) {
-      return null;
-    }
-    const isPasswordValid = await this._passwordService.verifyPassword(user.password, body.password);
-    if (!isPasswordValid) {
+    const user = body.identifier.includes('@') ? await this._repo.findByEmail(body.identifier)
+      : await this._repo.findByUsername(body.identifier);
+    const isPasswordValid = user
+      ? await this._passwordService.verifyPassword(user.password, body.password)
+      : await this._passwordService.hashPassword(body.password).then(() => false);
+    if (!user || !isPasswordValid) {
       return null;
     }
     const tokens = this._jwtService.generateTokens({ userId: user._id, email: user.email });
