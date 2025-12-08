@@ -1,16 +1,16 @@
-import { useState, forwardRef, InputHTMLAttributes } from 'react';
-import { Eye, EyeOff, type Icon } from 'lucide-react';
+import { useState, forwardRef, type InputHTMLAttributes } from 'react';
+import { Eye, EyeOff, type LucideIcon } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface AuthInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
-  icon?: Icon;
+  icon?: LucideIcon;
   error?: string;
   type?: 'text' | 'email' | 'password';
 }
 
 const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
-  ({ label, icon: Icon, error, type = 'text', className, placeholder, ...props }, ref) => {
+  ({ label, icon: IconComponent, error, type = 'text', className, placeholder, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const inputType = type === 'password' && showPassword ? 'text' : type;
 
@@ -26,7 +26,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
               'w-full border-b bg-transparent px-0 py-3 text-white transition-colors duration-200',
               'placeholder:text-white focus:outline-none',
               type === 'password' && 'pr-10',
-              Icon && 'pr-10',
+              IconComponent && 'pr-10',
               error
                 ? 'border-red-500 focus:border-red-500'
                 : 'border-gray-700 focus:border-white',
@@ -36,9 +36,9 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           />
 
           {/* Right Icon */}
-          {Icon && !type.includes('password') && (
+          {IconComponent && !type.includes('password') && (
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-              <Icon className="h-5 w-5 text-gray-400" />
+              <IconComponent className="h-5 w-5 text-gray-400" />
             </div>
           )}
 

@@ -14,11 +14,7 @@ export default function MovieSlideshow() {
   // Auto-rotate images
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % MOVIE_IMAGES.length;
-        console.log('Slideshow changing from', prevIndex, 'to', nextIndex);
-        return nextIndex;
-      });
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % MOVIE_IMAGES.length);
     }, SLIDE_INTERVAL);
 
     return () => clearInterval(interval);
