@@ -1,15 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useMutation } from '@tanstack/react-query';
 import MovieSlideshow from '../../components/auth/MovieSlideshow';
 import AuthInput from '../../components/auth/AuthInput';
 import SocialLoginButton from '../../components/auth/SocialLoginButton';
-import { authService } from '../../services/auth.service';
-import type { RegisterData } from '../../types/auth.types';
+import { useRegister } from '../../hooks/useAuth';
 
 // Validation schema
 const registerSchema = z
@@ -38,7 +36,7 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const navigate = useNavigate();
+  const registerMutation = useRegister();
 
   const {
     register,
@@ -46,17 +44,6 @@ export default function Register() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: (data: RegisterData) => authService.register(data),
-    onSuccess: () => {
-      navigate('/browse');
-    },
-    onError: (error: Error) => {
-      // Error handling will be improved with toast notifications
-      console.error('Registration failed:', error);
-    },
   });
 
   const onSubmit = (data: RegisterFormData) => {

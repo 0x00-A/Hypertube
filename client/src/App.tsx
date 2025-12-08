@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
 import { AuthProvider } from './components/auth/AuthProvider';
@@ -36,6 +37,29 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <NavigationSetup />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#1C1C1C',
+              color: '#FFFFFF',
+              border: '1px solid #333333',
+            },
+            success: {
+              iconTheme: {
+                primary: '#46D369',
+                secondary: '#FFFFFF',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#F44336',
+                secondary: '#FFFFFF',
+              },
+            },
+          }}
+        />
         <Routes>
           {/* Auth routes without layout */}
           <Route path="/auth/login" element={<Login />} />

@@ -20,6 +20,7 @@ interface HeaderProps {
 export default function Header({ isSidebarCollapsed }: HeaderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [avatarError, setAvatarError] = useState(false);
   const isLoggedIn = false; // TODO: Replace with actual auth state
 
   return (
@@ -79,16 +80,18 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
               className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center hover:opacity-80 transition-opacity overflow-hidden"
               aria-label="User menu"
             >
-              <img 
-                src="https://via.placeholder.com/40" 
-                alt="User avatar" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-              <span className="hidden text-sm font-semibold text-white">DF</span>
+              {!avatarError ? (
+                <img 
+                  src="https://via.placeholder.com/40" 
+                  alt="User avatar" 
+                  className="w-full h-full object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <span className="text-sm font-semibold text-white" aria-label="User initials">
+                  DF
+                </span>
+              )}
             </button>
           ) : (
             <div className="flex items-center gap-3">

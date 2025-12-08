@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { authService } from '../services/auth.service';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { setUser, clearUser, updateUser, initializeAuth } from '../redux/slices/authSlice';
@@ -85,11 +86,13 @@ export const useLogin = () => {
       // Cache user data in React Query
       queryClient.setQueryData(queryKeys.auth.currentUser(), response.user);
       
+      toast.success('Login successful!');
+      
       // Navigate to home page
       navigate('/');
     },
     onError: (error: AuthError) => {
-      console.error('Login failed:', error);
+      toast.error(error.message || 'Login failed. Please try again.');
     },
   });
 };
@@ -112,11 +115,13 @@ export const useRegister = () => {
       // Cache user data in React Query
       queryClient.setQueryData(queryKeys.auth.currentUser(), response.user);
       
+      toast.success('Registration successful! Welcome to Hypertube!');
+      
       // Navigate to home page
       navigate('/');
     },
     onError: (error: AuthError) => {
-      console.error('Registration failed:', error);
+      toast.error(error.message || 'Registration failed. Please try again.');
     },
   });
 };
@@ -142,13 +147,13 @@ export const useLogout = () => {
       // Navigate to login page
       navigate('/auth/login');
     },
-    onError: (error: AuthError) => {
+    onError: () => {
       // Even if logout fails on server, clear local state
       dispatch(clearUser());
       queryClient.clear();
       navigate('/auth/login');
       
-      console.error('Logout failed:', error);
+      toast.error('Logout failed, but you have been logged out locally.');
     },
   });
 };
@@ -160,8 +165,11 @@ export const useLogout = () => {
 export const useForgotPassword = () => {
   return useMutation({
     mutationFn: (data: ForgotPasswordData) => authService.forgotPassword(data),
+    onSuccess: () => {
+      toast.success('Password reset email sent! Check your inbox.');
+    },
     onError: (error: AuthError) => {
-      console.error('Forgot password failed:', error);
+      toast.error(error.message || 'Failed to send reset email. Please try again.');
     },
   });
 };
@@ -176,11 +184,12 @@ export const useResetPassword = () => {
   return useMutation({
     mutationFn: (data: ResetPasswordData) => authService.resetPassword(data),
     onSuccess: () => {
+      toast.success('Password reset successful! You can now log in.');
       // Navigate to login page after successful reset
       navigate('/auth/login');
     },
     onError: (error: AuthError) => {
-      console.error('Reset password failed:', error);
+      toast.error(error.message || 'Password reset failed. Please try again.');
     },
   });
 };
@@ -215,6 +224,8 @@ export const useUpdateProfile = () => {
       
       // Update cache
       queryClient.setQueryData(queryKeys.auth.currentUser(), updatedUser);
+      
+      toast.success('Profile updated successfully!');
     },
     onError: (error: AuthError, _variables, context) => {
       // Rollback on error
@@ -223,7 +234,7 @@ export const useUpdateProfile = () => {
         dispatch(setUser(context.previousUser));
       }
       
-      console.error('Update profile failed:', error);
+      toast.error(error.message || 'Failed to update profile. Please try again.');
     },
   });
 };
@@ -235,8 +246,11 @@ export const useUpdateProfile = () => {
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: (data: ChangePasswordData) => authService.changePassword(data),
+    onSuccess: () => {
+      toast.success('Password changed successfully!');
+    },
     onError: (error: AuthError) => {
-      console.error('Change password failed:', error);
+      toast.error(error.message || 'Failed to change password. Please try again.');
     },
   });
 };
@@ -251,10 +265,11 @@ export const useVerifyEmail = () => {
   return useMutation({
     mutationFn: (token: string) => authService.verifyEmail(token),
     onSuccess: () => {
+      toast.success('Email verified successfully!');
       navigate('/');
     },
     onError: (error: AuthError) => {
-      console.error('Email verification failed:', error);
+      toast.error(error.message || 'Email verification failed. Please try again.');
     },
   });
 };
@@ -266,8 +281,11 @@ export const useVerifyEmail = () => {
 export const useResendVerificationEmail = () => {
   return useMutation({
     mutationFn: authService.resendVerificationEmail,
+    onSuccess: () => {
+      toast.success('Verification email sent! Check your inbox.');
+    },
     onError: (error: AuthError) => {
-      console.error('Resend verification email failed:', error);
+      toast.error(error.message || 'Failed to resend verification email.');
     },
   });
 };

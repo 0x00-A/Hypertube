@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useMutation } from '@tanstack/react-query';
 import MovieSlideshow from '@/components/auth/MovieSlideshow';
 import AuthInput from '../../components/auth/AuthInput';
 import SocialLoginButton from '../../components/auth/SocialLoginButton';
-import { authService } from '../../services/auth.service';
-import type { LoginCredentials } from '../../types/auth.types';
+import { useLogin } from '../../hooks/useAuth';
 
 // Validation schema
 const loginSchema = z.object({
@@ -22,7 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
-  const navigate = useNavigate();
+  const loginMutation = useLogin();
 
   const {
     register,
@@ -32,22 +30,14 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: (data: LoginCredentials) => authService.login(data),
-    onSuccess: () => {
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      }
-      navigate('/browse');
-    },
-    onError: (error: Error) => {
-      // Error handling will be improved with toast notifications
-      console.error('Login failed:', error);
-    },
-  });
-
   const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        }
+      },
+    });
   };
 
   const handleSocialLogin = (provider: string) => {
