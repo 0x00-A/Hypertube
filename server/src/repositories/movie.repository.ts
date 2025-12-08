@@ -10,12 +10,13 @@ import { IMovie } from '../interfaces/movie.interface';
 
 export class MovieRepository {
   async findAll(
-    options: IPaginationOptions & MovieFilterOptions,
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions = {},
   ): Promise<IPaginatedResponse<IMovie>> {
-    const page = options.page || 1;
-    const limit = options.limit || 10;
-    const sortBy = options.sortBy || 'lastUpdated';
-    const sortOrder = options.sortOrder === 'asc' ? 1 : -1;
+    const page = paginationOptions.page || 1;
+    const limit = paginationOptions.limit || 10;
+    const sortBy = paginationOptions.sortBy || 'lastUpdated';
+    const sortOrder = paginationOptions.sortOrder === 'asc' ? 1 : -1;
 
     if (mongoose.connection.readyState !== 1) {
       return {
@@ -36,23 +37,23 @@ export class MovieRepository {
     // Build filter query
     const filter: FilterQuery<IMovieDocument> = {};
 
-    if (options.search) {
+    if (filterOptions.search) {
       filter.$or = [
-        { title: { $regex: options.search, $options: 'i' } },
-        { synopsis: { $regex: options.search, $options: 'i' } },
+        { title: { $regex: filterOptions.search, $options: 'i' } },
+        { synopsis: { $regex: filterOptions.search, $options: 'i' } },
       ];
     }
 
-    if (options.genre) {
-      filter.genres = { $in: [options.genre] };
+    if (filterOptions.genre) {
+      filter.genres = { $in: [filterOptions.genre] };
     }
 
-    if (options.minRating !== undefined) {
-      filter.rating = { $gte: options.minRating };
+    if (filterOptions.minRating !== undefined) {
+      filter.rating = { $gte: filterOptions.minRating };
     }
 
-    if (options.year) {
-      filter.year = options.year;
+    if (filterOptions.year) {
+      filter.year = filterOptions.year;
     }
 
     // Execute queries

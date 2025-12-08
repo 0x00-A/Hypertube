@@ -8,8 +8,8 @@ export class MovieService {
     this._movieRepsitory = movieRepository;
   }
 
-  async list(options: IPaginationOptions & MovieFilterOptions) {
-    return this._movieRepsitory.findAll(options);
+  async list(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions = {}) {
+    return this._movieRepsitory.findAll(paginationOptions, filterOptions);
   }
 
   async get(id: string) {

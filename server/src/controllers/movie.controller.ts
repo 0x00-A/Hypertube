@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { MovieService } from '../services/movie.service';
+import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
 
 export class MovieController {
   private _movieService: MovieService;
@@ -10,27 +11,23 @@ export class MovieController {
 
   async listMovies(req: Request, res: Response, next: NextFunction) {
     try {
-      const query = req.validated?.query as {
-        page?: number;
-        limit?: number;
-        sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
-        search?: string;
-        genre?: string;
-        minRating?: number;
-        year?: number;
-      };
+      const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
 
-      const result = await this._movieService.list({
+      const paginationOptions: IPaginationOptions = {
         page: query.page || 1,
-        limit: query.limit || 20,
+        limit: query.limit || 10,
         sortBy: query.sortBy || 'lastUpdated',
         sortOrder: query.sortOrder || 'desc',
+      };
+
+      const filterOptions: MovieFilterOptions = {
         search: query.search,
         genre: query.genre,
         minRating: query.minRating,
         year: query.year,
-      });
+      };
+
+      const result = await this._movieService.list(paginationOptions, filterOptions);
 
       res.json(result);
     } catch (err) {

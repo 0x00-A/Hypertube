@@ -1,6 +1,5 @@
 import { IResponse } from './IResponse';
 
-// 2. Pagination Request Options
 export interface IPaginationOptions {
   page: number;
   limit: number;
@@ -8,7 +7,6 @@ export interface IPaginationOptions {
   sortOrder: 'asc' | 'desc';
 }
 
-// 3. Filter Options (Extended for Movies)
 export interface BaseFilterOptions {
   search?: string;
   isActive?: boolean;
@@ -22,7 +20,6 @@ export interface MovieFilterOptions extends BaseFilterOptions {
   year?: number;
 }
 
-// 4. Paginated Response Structure
 export interface IPaginatedResponse<T> extends IResponse<T[]> {
   pagination: {
     total: number;
