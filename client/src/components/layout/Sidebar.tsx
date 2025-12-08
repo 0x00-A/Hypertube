@@ -69,12 +69,14 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         {/* Top gradient: from gray (border-color) to white at button position */}
         <div 
           className="absolute top-0 right-0 w-[2px] pointer-events-none bg-gradient-to-b from-border to-white" 
-          style={{ height: '62px' }} 
+          style={{ height: '62px' }}
+          aria-hidden="true"
         />
         {/* Bottom gradient: from white at button position to gray (border-color) */}
         <div 
           className="absolute right-0 w-[2px] pointer-events-none bg-gradient-to-b from-white to-border" 
-          style={{ top: '108px', bottom: '0' }} 
+          style={{ top: '108px', bottom: '0' }}
+          aria-hidden="true"
         />
         
         {/* Logo Section */}

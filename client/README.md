@@ -165,29 +165,17 @@ Full page components that use layouts and components.
 
 ### Architecture
 
-The authentication system uses **Redux Toolkit** for client state and **React Query** for server state:
-
-```
-## 🎬 Features
-
-- ✅ User authentication (login, register, password reset)
-- ✅ Redux Toolkit + React Query state management
-- ✅ Cookie-based secure authentication
-- ✅ Browse movies with search and filters (public access)
-- ✅ Movie details with video player
-- ✅ User profiles (public and editable)
-- ✅ Personal library of watched movies
-- ✅ Comment system
-- 🔄 Real-time features (to be implemented)
-│  - API queries (getCurrentUser)         │
-│  - Automatic caching & refetching       │
-└─────────────────────────────────────────┘
-```
+The authentication system uses **Redux Toolkit** for client state and **React Query** for server state.
 
 ### How It Works
 
 1. **Cookie-Based Auth**: HTTP-only cookies for secure token storage
 2. **AuthProvider**: Initializes auth state on app startup
+3. **Smart Caching**: React Query caches user data intelligently
+4. **Auto State Management**: Login/logout automatically updates Redux & cache
+5. **401 Handling**: Automatic redirect on unauthorized requests
+
+### Available Hooks
 3. **Smart Caching**: React Query caches user data intelligently
 4. **Auto State Management**: Login/logout automatically updates Redux & cache
 5. **401 Handling**: Automatic redirect on unauthorized requests
@@ -239,13 +227,15 @@ For complete documentation, see `AUTHENTICATION_SETUP.md`
 ## 🎬 Features
 
 - ✅ User authentication (login, register, password reset)
+- ✅ Redux Toolkit + React Query state management
+- ✅ Cookie-based secure authentication
 - ✅ Browse movies with search and filters
 - ✅ Movie details with video player
 - ✅ User profiles (public and editable)
 - ✅ Personal library of watched movies
 - ✅ Comment system
-- 🔄 Redux state management (to be implemented)
 - 🔄 Real-time features (to be implemented)
+
 ## 📝 Development Notes
 
 ### State Management

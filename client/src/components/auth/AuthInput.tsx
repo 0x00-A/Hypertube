@@ -36,7 +36,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           />
 
           {/* Right Icon */}
-          {IconComponent && !type.includes('password') && (
+          {IconComponent && type !== 'password' && (
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
               <IconComponent className="h-5 w-5 text-gray-400" />
             </div>

@@ -54,10 +54,8 @@ class HttpClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError<ErrorResponse>) => {
-        const originalRequest = error.config;
-
         // Handle 401 Unauthorized
-        if (error.response?.status === 401 && originalRequest) {
+        if (error.response?.status === 401) {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
           }

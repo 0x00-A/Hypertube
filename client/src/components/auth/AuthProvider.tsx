@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppDispatch } from '../../redux/hooks';
 import { clearUser } from '../../redux/slices/authSlice';
-import { useInitializeAuth } from '../../hooks/useAuth.js';
+import { useInitializeAuth } from '../../hooks/useAuth';
 
 // ============================================================================
 // Auth Provider Component

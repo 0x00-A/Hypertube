@@ -56,11 +56,17 @@ export default function Header({ isSidebarCollapsed }: HeaderProps) {
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative">
+            {/* TODO: Implement search functionality - navigate to /browse?search={query} on submit */}
             <input
               type="text"
               placeholder="Search the movies ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  // TODO: navigate(`/browse?search=${encodeURIComponent(searchQuery)}`);
+                }
+              }}
               className="w-[280px] pl-10 pr-4 py-2.5 bg-transparent border border-border rounded-lg text-sm text-white placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary transition-all"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />

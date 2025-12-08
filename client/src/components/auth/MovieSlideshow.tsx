@@ -10,6 +10,7 @@ const SLIDE_INTERVAL = 4000; // 4 seconds per image
 
 export default function MovieSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   // Auto-rotate images
   useEffect(() => {
@@ -19,6 +20,17 @@ export default function MovieSlideshow() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleImageError = (index: number) => {
+    setImageErrors((prev) => ({ ...prev, [index]: true }));
+  };
+
+  const getImageSrc = (index: number) => {
+    if (imageErrors[index]) {
+      return 'https://via.placeholder.com/1920x1080/1a1a1a/666666?text=Movie+Poster';
+    }
+    return MOVIE_IMAGES[index];
+  };
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -45,15 +57,16 @@ export default function MovieSlideshow() {
           className="absolute inset-0"
         >
           <img
-            src={MOVIE_IMAGES[currentIndex]}
+            src={getImageSrc(currentIndex)}
             alt="Movie poster"
             className="h-full w-full object-cover"
+            onError={() => handleImageError(currentIndex)}
           />
         </motion.div>
       </AnimatePresence>
 
       {/* Gradient overlay for better contrast */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent" />
 
       {/* Optional: Branding/Text Overlay */}
       <div className="absolute bottom-8 left-8 z-10">
