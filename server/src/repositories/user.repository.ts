@@ -5,7 +5,7 @@ import { IUserDocument } from '../models/user.model.types';
 
 // Interface for the Repository (Good for testing/mocking)
 export interface IUserRepository {
-  create(user: ISignupDTO): Partial<IUser>;
+  create(user: ISignupDTO): Promise<Partial<IUser>>;
   findByEmail(email: string): Promise<Partial<IUser> | null>;
   findByUsername(username: string): Promise<Partial<IUser> | null>;
   findById(id: string): Promise<Partial<IUser> | null>;

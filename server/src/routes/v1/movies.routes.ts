@@ -9,6 +9,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
   // /v1/movies GET
   router.get('/', validate(MovieListQuerySchema), movieController.listMovies.bind(movieController));
 
+  
   // /v1/movies/{id} GET
   router.get('/:id', validate(MovieIdParamSchema), movieController.getMovie.bind(movieController));
 

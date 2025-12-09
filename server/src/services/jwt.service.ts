@@ -9,6 +9,11 @@ export class JWTService {
     private readonly accessExpiresIn: string = env.JWT_ACCESS_EXPIRES_IN;
     private readonly refreshSecretKey: string = env.JWT_REFRESH_SECRET;
     private readonly refreshExpiresIn: string = env.JWT_REFRESH_EXPIRES_IN;
+    private _repo : UserRepository;
+
+    constructor(repo: UserRepository) {
+        this._repo = repo;
+    }
 
     private generateAccessToken(payload: IJWTPayload): string {
         const options: SignOptions = { expiresIn: this.accessExpiresIn as unknown as SignOptions['expiresIn'] };
@@ -32,8 +37,7 @@ export class JWTService {
 
         try {
             const decoded = jwt.verify(token, secretKey);
-            const repo = new UserRepository();
-            const user = await repo.findById((decoded as IJWTPayload).userId);
+            const user = await this._repo.findById((decoded as IJWTPayload).userId);
             if (!user) {
                 return {
                     success: false,

@@ -487,13 +487,13 @@ describe('Auth Signup Integration Tests', () => {
       });
     });
 
-    it('should return 401 when refresh token is expired', async () => {
-      // Create an expired token (this is a mock - in real scenario, you'd use a token with past expiry)
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
+    it('should return 401 when refresh token has invalid signature', async () => {
+      // Token with invalid signature (will fail verification before expiry check)
+      const tokenWithInvalidSignature = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
 
       const res = await request(app)
         .post('/api/v1/auth/refresh-token')
-        .set('Cookie', [`refreshToken=${expiredToken}`]);
+        .set('Cookie', [`refreshToken=${tokenWithInvalidSignature}`]);
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
@@ -559,7 +559,7 @@ describe('Auth Signup Integration Tests', () => {
 
       // Access protected route
       const res = await request(app)
-        .get('/v1/movies')
+        .get('/api/v1/protected')
         .set('Cookie', [`accessToken=${accessToken}`]);
 
       // Should not get 401 (might get 404 or other status depending on movies route implementation)
@@ -567,7 +567,7 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should deny access to protected route without access token', async () => {
-      const res = await request(app).get('/v1/movies');
+      const res = await request(app).get('/api/v1/protected');
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
@@ -578,7 +578,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should deny access to protected route with invalid access token', async () => {
       const res = await request(app)
-        .get('/v1/movies')
+        .get('/api/v1/protected')
         .set('Cookie', ['accessToken=invalid.token.here']);
 
       expect(res.status).toBe(401);
@@ -588,12 +588,13 @@ describe('Auth Signup Integration Tests', () => {
       });
     });
 
-    it('should deny access with expired access token', async () => {
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
+    it('should deny access with token having invalid signature', async () => {
+      // Token with invalid signature (will fail verification)
+      const tokenWithInvalidSignature = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
 
       const res = await request(app)
-        .get('/v1/movies')
-        .set('Cookie', [`accessToken=${expiredToken}`]);
+        .get('/api/v1/protected')
+        .set('Cookie', [`accessToken=${tokenWithInvalidSignature}`]);
 
       expect(res.status).toBe(401);
       expect(res.body).toHaveProperty('status', 'error');
@@ -614,7 +615,7 @@ describe('Auth Signup Integration Tests', () => {
 
       // Access protected route (assuming movies route returns something)
       const res = await request(app)
-        .get('/v1/movies')
+        .get('/api/v1/protected')
         .set('Cookie', [`accessToken=${accessToken}`]);
 
       // Should not be 401 - authentication succeeded
@@ -625,7 +626,7 @@ describe('Auth Signup Integration Tests', () => {
       // This test would need actual expired token generation
       // For now, test with invalid token format
       const res = await request(app)
-        .get('/v1/movies')
+        .get('/api/v1/protected')
         .set('Cookie', ['accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid']);
 
       expect(res.status).toBe(401);

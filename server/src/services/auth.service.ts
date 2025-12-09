@@ -47,17 +47,21 @@ export class AuthService {
     const user = body.identifier.includes('@')
       ? await this._repo.findByEmail(body.identifier)
       : await this._repo.findByUsername(body.identifier);
-    const isPasswordValid = user
-      ? await this._passwordService.verifyPassword(user.password!, body.password)
-      : await this._passwordService.hashPassword(body.password).then(() => false);
-    if (!user || !isPasswordValid) {
+    if (!user || !user.password) {
+      return null;
+    }
+    const isPasswordValid = await this._passwordService.verifyPassword(user.password!, body.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+    if (!user._id) {
       return null;
     }
     const payload: IJWTPayload = { userId: user._id! };
     const tokens = this._jwtService.generateTokens(payload);
-    
+
     // Remove password before returning user
-    const { password, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
     return {
       ...tokens,
       user: userWithoutPassword,

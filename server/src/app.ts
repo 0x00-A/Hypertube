@@ -9,12 +9,12 @@ import { createAuthRoutes } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
+import { auth } from './middleware/auth';
 import { env } from './config/env';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
 import { dbHealth } from './config/database';
 import { createControllers } from './bootstrap/controllers';
-import { auth } from './middleware/auth';
 
 export const createApp = () => {
   const app = express();
@@ -51,9 +51,14 @@ export const createApp = () => {
   const { movieController, authController } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
 
-  // Protected routes (apply auth middleware to specific routes)
-  app.use('/v1/movies', auth, createMovieRouter(movieController));
-  // app.use('/v1/comments', auth, commentsRouter);
+  // Test endpoint for auth middleware (protected)
+  app.get('/api/v1/protected', auth, (_req, res) => {
+    res.json({ status: 'success', message: 'Protected route accessed', data: { user: _req.user } });
+  });
+
+  // Other routes (not protected by default)
+  app.use('/v1/movies', createMovieRouter(movieController));
+  // app.use('/v1/comments', commentsRouter);
 
 
   // accounts routes

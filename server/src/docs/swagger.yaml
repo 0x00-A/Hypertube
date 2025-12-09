@@ -179,19 +179,18 @@ paths:
                     type: string
                     example: Auth route is working
 
-  /api/v1/refresh-token:
+  /api/v1/auth/refresh-token:
     post:
       summary: Refresh access token using refresh token
       tags:
         - Authentication
-      requestCookie:
+      parameters:
         - name: refresh_token
+          in: cookie
           description: Refresh token issued during login
           required: true
           schema:
             type: string
-            description: Refresh token issued during login
-            example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
       responses:
         '200':
           description: New access token issued
