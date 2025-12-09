@@ -38,7 +38,7 @@ export const errorHandler = (
     message = 'Validation failed';
 
     const validationErrors = Object.values(err.errors).map((e) => ({
-      field: e.path,
+      path: e.path,
       message: e.message,
     }));
 

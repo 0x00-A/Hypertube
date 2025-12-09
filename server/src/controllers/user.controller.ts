@@ -1,37 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import { NotFoundError } from '../core/errors/customErrors';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const service = new UserService();
 
-// export async function listUsers(req: Request, res: Response, next: NextFunction) {
-//   try {
-//     const page = parseInt((req.query.page as string) || '1', 10);
-//     const limit = parseInt((req.query.limit as string) || '10', 10);
-//     const result = await service.list(page, limit);
-//     res.json({
-//       data: result.data,
-//       page: result.page,
-//       limit: result.limit,
-//       total: result.total,
-//       totalPages: result.totalPages,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// }
+// export const listUsers = asyncHandler(async (req: Request, res: Response) => {
+//   const page = parseInt((req.query.page as string) || '1', 10);
+//   const limit = parseInt((req.query.limit as string) || '10', 10);
+//   const result = await service.list(page, limit);
+//   res.json({
+//     data: result.data,
+//     page: result.page,
+//     limit: result.limit,
+//     total: result.total,
+//     totalPages: result.totalPages,
+//   });
+// });
 
-export async function getUser(req: Request, res: Response, next: NextFunction) {
-  try {
-    const user = await service.get(req.params.id);
-    if (!user) {
-      throw new NotFoundError('User not found');
-    }
-    res.json(user);
-  } catch (err) {
-    next(err);
+export const getUser = asyncHandler(async (req: Request, res: Response) => {
+  const user = await service.get(req.params.id);
+  if (!user) {
+    throw new NotFoundError('User not found');
   }
-}
+  res.json(user);
+});
 
 // export async function patchUser(req: Request, res: Response, next: NextFunction) {
 //   try {
