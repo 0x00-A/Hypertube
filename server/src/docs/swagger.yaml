@@ -5,7 +5,7 @@ info:
   description: API for Hypertube streaming platform
 
 paths:
-  /v1/auth/signup:
+  /api/v1/auth/signup:
     post:
       summary: Register a new user
       tags:
@@ -84,7 +84,7 @@ paths:
         '500':
           description: Internal server error
 
-  /v1/auth/login:
+  /api/v1/auth/login:
     post:
       summary: Login with username/email and password
       tags:
@@ -162,7 +162,7 @@ paths:
         '500':
           description: Internal server error
 
-  /v1/auth:
+  /api/v1/auth:
     get:
       summary: Health check for auth routes
       tags:
@@ -178,6 +178,44 @@ paths:
                   message:
                     type: string
                     example: Auth route is working
+
+  /api/v1/refresh-token:
+    post:
+      summary: Refresh access token using refresh token
+      tags:
+        - Authentication
+      requestCookie:
+        - name: refresh_token
+          description: Refresh token issued during login
+          required: true
+          schema:
+            type: string
+            description: Refresh token issued during login
+            example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Invalid or expired refresh token
 
   /v1/movies:
     get:

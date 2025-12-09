@@ -5,6 +5,7 @@ import { UserRepository } from "../repositories/user.repository";
 import { PasswordService } from "./password.service";
 import { JWTService } from "./jwt.service";
 
+
 export class AuthService {
   private _repo: UserRepository;
   private _passwordService: PasswordService;
@@ -43,7 +44,8 @@ export class AuthService {
   }
 
   async logIn(body: ILoginDTO): Promise<{ access_token: string; refresh_token: string; user: Partial<IUser> } | null> {
-    const user = body.identifier.includes('@') ? await this._repo.findByEmail(body.identifier)
+    const user = body.identifier.includes('@')
+      ? await this._repo.findByEmail(body.identifier)
       : await this._repo.findByUsername(body.identifier);
     const isPasswordValid = user
       ? await this._passwordService.verifyPassword(user.password!, body.password)
@@ -53,9 +55,20 @@ export class AuthService {
     }
     const payload: IJWTPayload = { userId: user._id! };
     const tokens = this._jwtService.generateTokens(payload);
+    
+    // Remove password before returning user
+    const { password, ...userWithoutPassword } = user;
     return {
       ...tokens,
-      user,
+      user: userWithoutPassword,
     };
+  }
+
+  async refreshToken(refreshToken: string): Promise<{access_token: string} | null> {
+    const verifyResult = await this._jwtService.verifyToken(refreshToken, false, true);
+    if (!verifyResult.success) {
+      return null;
+    }
+    return { access_token: verifyResult.newAccessToken! };
   }
 }

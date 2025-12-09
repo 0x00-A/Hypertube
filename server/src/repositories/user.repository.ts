@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { UserModel } from '../models/User';
 import { IUser } from '../interfaces/user.interface';
 import { ISignupDTO } from '../interfaces/auth.interface';
@@ -19,20 +18,20 @@ export class UserRepository {
       _id: doc._id.toString(),
       username: doc.username,
       email: doc.email,
-      password: doc.password,
       firstName: doc.firstName,
       lastName: doc.lastName,
       createdAt: doc.createdAt,
+      password: doc.password
     };
   }
 
   async findByUsername(username: string): Promise<Partial<IUser> | null> {
-    const doc = await UserModel.findOne({ username }).exec();
+    const doc = await UserModel.findOne({ username }).select('+password').exec();
     return this.toIUser(doc);
   }
 
   async findByEmail(email: string): Promise<Partial<IUser>  | null> {
-    const doc = await UserModel.findOne({ email }).exec();
+    const doc = await UserModel.findOne({ email }).select('+password').exec();
     return this.toIUser(doc);
   }
 

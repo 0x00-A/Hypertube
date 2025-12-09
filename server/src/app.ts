@@ -25,7 +25,6 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use(auth);
 
   app.use(
     rateLimit({
@@ -40,20 +39,22 @@ export const createApp = () => {
     app.use(requestLogger);
   }
 
+  // Public routes (no auth required)
+  app.get('/health', (_req, res) => {
+    const dbStatus = dbHealth();
+    res.json({ status: 'ok', db: dbStatus });
+  });
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // Initialize controllers
   const { movieController, authController } = createControllers();
+  app.use('/api/v1/auth', createAuthRoutes(authController));
 
-  app.use('/v1/movies', createMovieRouter(movieController));
-  // app.use('/v1/comments', commentsRouter);
-  app.use('/v1/auth', createAuthRoutes(authController));
+  // Protected routes (apply auth middleware to specific routes)
+  app.use('/v1/movies', auth, createMovieRouter(movieController));
+  // app.use('/v1/comments', auth, commentsRouter);
 
-  app.get('/health', (_req, res) => {
-    const dbStatus = dbHealth();
-    res.json({ status: 'ok', db: dbStatus });
-  });
 
   // accounts routes
   // app.use('/v1/accounts', usersRouter);

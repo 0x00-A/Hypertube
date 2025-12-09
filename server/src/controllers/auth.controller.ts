@@ -42,12 +42,14 @@ export class AuthController {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: 'strict',
+                path: '/',
                 maxAge: 1 * 60 * 60 * 1000, // 1 hour
             });
             res.cookie('refreshToken', result.refresh_token, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: 'strict',
+                path: '/api/v1/auth/refresh-token',
                 maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
             });
 
@@ -61,6 +63,32 @@ export class AuthController {
                 },
             });
 
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async refreshToken(req: Request, res: Response, next: NextFunction) {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                return res.status(401).json({ status: 'error', message: 'No refresh token provided' });
+            }
+            const result = await this._service.refreshToken(refreshToken);
+            if (!result) {
+                return res.status(401).json({ status: 'error', message: 'Invalid or expired refresh token' });
+            }
+            res.cookie('accessToken', result.access_token, {
+                httpOnly: true,
+                secure: env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/',
+                maxAge: 1 * 60 * 60 * 1000, // 1 hour
+            });
+            return res.status(200).json({
+                status: 'success',
+                message: 'Token refreshed successfully',
+            });
         } catch (err) {
             next(err);
         }

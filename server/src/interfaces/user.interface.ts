@@ -12,7 +12,7 @@ export interface IUser {
   _id?: string;
   username: string;
   email: string;
-  password: string;
+  password?: string; // Optional, excluded by default with select: false
   firstName?: string;
   lastName?: string;
   createdAt?: Date;

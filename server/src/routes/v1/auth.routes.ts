@@ -13,6 +13,7 @@ export const createAuthRoutes = (controller: AuthController) => {
 
   router.post('/signup', validate(SignUpSchema), (req, res, next) => controller.signUp(req, res, next));
   router.post('/login', validate(LogInSchema), (req, res, next) => controller.logIn(req, res, next));
+  router.post('/refresh-token', (req, res, next) => controller.refreshToken(req, res, next));
 
   return router;
 };

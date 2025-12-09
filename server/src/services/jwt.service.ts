@@ -1,22 +1,8 @@
 import jwt, { SignOptions, TokenExpiredError, NotBeforeError } from 'jsonwebtoken';
 import { env } from "../config/env";
-import { IJWTPayload } from '../interfaces/auth.interface';
-import { th } from 'zod/v4/locales';
+import { IJWTPayload, JWTVerifyResult } from '../interfaces/auth.interface';
+import { UserRepository } from '../repositories/user.repository';
 
-export enum JWTErrorType {
-    EXPIRED = 'EXPIRED',
-    INVALID = 'INVALID',
-    NOT_BEFORE = 'NOT_BEFORE',
-}
-
-export interface JWTVerifyResult {
-    success: boolean;
-    payload?: IJWTPayload;
-    error?: {
-        type: JWTErrorType;
-        message: string;
-    };
-}
 
 export class JWTService {
     private readonly accessSecretKey: string = env.JWT_ACCESS_SECRET;
@@ -41,87 +27,53 @@ export class JWTService {
         }
     }
 
-    refreshAccessToken(refreshToken: string): JWTVerifyResult {
-        const refreshVerification = this.verifyRefreshToken(refreshToken);
-        if (!refreshVerification.success) {
-            return refreshVerification;
-        }
-        const newAccessToken = this.generateTokens({ userId: refreshVerification.payload!.userId }).access_token;
-        return {
-            success: true,
-            payload: { userId: refreshVerification.payload!.userId },
-        };
-    }
+    async verifyToken(token: string, access: boolean, refresh: boolean): Promise<JWTVerifyResult> {
+        const secretKey = access ? this.accessSecretKey : refresh ? this.refreshSecretKey : '';
 
-    verifyAccessToken(token: string): JWTVerifyResult {
         try {
-            const payload = jwt.verify(token, this.accessSecretKey) as IJWTPayload;
+            const decoded = jwt.verify(token, secretKey);
+            const repo = new UserRepository();
+            const user = await repo.findById((decoded as IJWTPayload).userId);
+            if (!user) {
+                return {
+                    success: false,
+                    error: {
+                        type: 'INVALID',
+                        message: 'User not found',
+                    },
+                };
+            }
             return {
                 success: true,
-                payload,
+                newAccessToken: access ? undefined : this.generateAccessToken({ userId: user._id! }),
+                user: user,
             };
         } catch (error) {
             if (error instanceof TokenExpiredError) {
-                return {
+                return ({
                     success: false,
                     error: {
-                        type: JWTErrorType.EXPIRED,
-                        message: 'Access token has expired',
+                        type: 'EXPIRED',
+                        message: 'Token has expired',
                     },
-                };
-            }
-            if (error instanceof NotBeforeError) {
-                return {
+                });
+            } else if (error instanceof NotBeforeError) {
+                return ({
                     success: false,
                     error: {
-                        type: JWTErrorType.NOT_BEFORE,
-                        message: 'Access token is not yet valid',
+                        type: 'NOT_BEFORE',
+                        message: 'Token is not yet valid',
                     },
-                };
-            }
-            return {
-                success: false,
-                error: {
-                    type: JWTErrorType.INVALID,
-                    message: 'Invalid access token',
-                },
-            };
-        }
-    }
-
-    verifyRefreshToken(token: string): JWTVerifyResult {
-        try {
-            const payload = jwt.verify(token, this.refreshSecretKey) as IJWTPayload;
-            return {
-                success: true,
-                payload,
-            };
-        } catch (error) {
-            if (error instanceof TokenExpiredError) {
-                return {
+                });
+            } else {
+                return ({
                     success: false,
                     error: {
-                        type: JWTErrorType.EXPIRED,
-                        message: 'Refresh token has expired',
+                        type: 'INVALID',
+                        message: 'Invalid token',
                     },
-                };
+                });
             }
-            if (error instanceof NotBeforeError) {
-                return {
-                    success: false,
-                    error: {
-                        type: JWTErrorType.NOT_BEFORE,
-                        message: 'Refresh token is not yet valid',
-                    },
-                };
-            }
-            return {
-                success: false,
-                error: {
-                    type: JWTErrorType.INVALID,
-                    message: 'Invalid refresh token',
-                },
-            };
         }
     }
 }
