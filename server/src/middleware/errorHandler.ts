@@ -1,8 +1,107 @@
 import { Request, Response, NextFunction } from 'express';
-import pino from 'pino';
-const logger = pino();
+import { AppError } from '../core/errors/AppError';
+import { logger } from '../utils/logger';
+import { Error as MongooseError } from 'mongoose';
 
-export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
-  logger.error({ err }, 'Unhandled error');
-  res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
+interface MongoServerError extends Error {
+  code?: number;
+  keyValue?: Record<string, unknown>;
 }
+
+export const errorHandler = (
+  err: Error | AppError | MongooseError.ValidationError | MongoServerError,
+  req: Request,
+  res: Response,
+  _next: NextFunction,
+) => {
+  let statusCode = 500;
+  let message = 'Internal Server Error';
+
+  // 1. Operational errors (AppError)
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    message = err.message;
+
+    logger.info({ statusCode, message, path: req.originalUrl }, 'Operational error');
+
+    return res.status(statusCode).json({
+      status: statusCode >= 500 ? 'error' : 'fail',
+      message,
+      ...(err.validationErrors && { validationErrors: err.validationErrors }),
+      path: req.originalUrl,
+    });
+  }
+
+  // 2. Mongoose validation errors
+  if (err.name === 'ValidationError' && err instanceof MongooseError.ValidationError) {
+    statusCode = 400;
+    message = 'Validation failed';
+
+    const validationErrors = Object.values(err.errors).map((e) => ({
+      field: e.path,
+      message: e.message,
+    }));
+
+    logger.warn({ validationErrors, path: req.originalUrl }, 'Mongoose validation error');
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      validationErrors,
+      path: req.originalUrl,
+    });
+  }
+
+  // 3. MongoDB duplicate key error (11000)
+  const mongoErr = err as MongoServerError;
+  if (err.name === 'MongoServerError' && mongoErr.code === 11000) {
+    statusCode = 400;
+    const field = mongoErr.keyValue ? Object.keys(mongoErr.keyValue)[0] : 'unknown';
+    message = `Duplicate value for field: ${field}. Please use another value.`;
+
+    logger.warn({ field, path: req.originalUrl }, 'MongoDB duplicate key error');
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      path: req.originalUrl,
+    });
+  }
+
+  // 4. JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token. Please log in again.';
+
+    logger.warn({ path: req.originalUrl }, 'Invalid JWT token');
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      path: req.originalUrl,
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired. Please log in again.';
+
+    logger.warn({ path: req.originalUrl }, 'JWT token expired');
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      path: req.originalUrl,
+    });
+  }
+
+  // 5. Unknown/programmer errors
+  logger.error({ err, path: req.originalUrl }, '💥 Unhandled/Unexpected error');
+
+  // Never leak internal error details in production
+  return res.status(statusCode).json({
+    status: 'error',
+    message,
+    path: req.originalUrl,
+  });
+};

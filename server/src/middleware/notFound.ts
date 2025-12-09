@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { NotFoundError } from '../core/errors/customErrors';
 
-export function notFoundHandler(req: Request, res: Response, _next: NextFunction) {
-  res.status(404).json({ message: 'Route not found', path: req.originalUrl });
+export function notFoundHandler(_req: Request, _res: Response, next: NextFunction) {
+  next(new NotFoundError('Route not found'));
 }
