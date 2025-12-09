@@ -71,9 +71,7 @@ export class AuthController {
         throw new UnauthorizedError('No refresh token provided');
       }
       const result = await this._service.refreshToken(refreshToken);
-      if (!result) {
-        throw new UnauthorizedError('Invalid or expired refresh token');
-      }
+
       res.cookie('accessToken', result.access_token, {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',

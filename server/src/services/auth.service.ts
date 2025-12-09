@@ -73,11 +73,8 @@ export class AuthService {
     };
   }
 
-  async refreshToken(refreshToken: string): Promise<{ access_token: string } | null> {
+  async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
     const verifyResult = await this._jwtService.verifyToken(refreshToken, false, true);
-    if (!verifyResult.success) {
-      return null;
-    }
     return { access_token: verifyResult.newAccessToken! };
   }
 }
