@@ -20,7 +20,12 @@ export const createApp = () => {
   app.disable('x-powered-by');
 
   app.use(helmet());
-  app.use(cors());
+  app.use(
+    cors({
+      origin: env.isDev ? 'http://localhost:5173' : process.env.CLIENT_URL,
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
