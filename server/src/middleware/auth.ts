@@ -1,18 +1,25 @@
 import { RequestHandler } from 'express';
-import jwt from 'jsonwebtoken';
+import { JWTService } from '../services/jwt.service';
+import { UserRepository } from '../repositories/user.repository';
 
-export const auth: RequestHandler = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+export const auth: RequestHandler = async (req, res, next) => {
+  const accessToken = req.cookies.accessToken;
+
+  if (!accessToken) {
+    return res.status(401).json({ status: 'error', message: 'Unauthorized: No access token provided' });
   }
-  const token = header.substring(7);
-  try {
-    const secret = process.env.JWT_SECRET || 'dev-secret';
-    const payload = jwt.verify(token, secret);
-    (req as any).user = payload;
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+
+  const jwtService = new JWTService(new UserRepository());
+  const result = await jwtService.verifyToken(accessToken, true, false);
+
+  if (result.success) {
+    req.user = result.user;
+    return next();
+  } else {
+    return res.status(401).json({
+      status: 'error',
+      message: result.error?.message || 'Unauthorized',
+      errorType: result.error?.type
+    });
   }
 };

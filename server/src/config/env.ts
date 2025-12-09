@@ -15,4 +15,5 @@ export const env = cleanEnv(process.env, {
   JWT_REFRESH_SECRET: str(),
   JWT_ACCESS_EXPIRES_IN: str({ default: '1h' }),
   JWT_REFRESH_EXPIRES_IN: str({ default: '30d' }),
+  JWT_REFRESH_PATH: str({ default: '/api/v1/auth/refresh-token' }),
 });

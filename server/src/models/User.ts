@@ -6,7 +6,7 @@ const userSchema = new Schema({
   email: { type: String, required: true, unique: true }, // Private [cite: 49]
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  password: { type: String }, // Nullable if using OmniAuth only
+  password: { type: String, select: false, required: true }, // Excluded by default, nullable if using OmniAuth only
 
   // Auth Provider Logic (42 + Secondary)
   // oauth: {

@@ -1,12 +1,15 @@
-import { ISignupDTO, ILoginDTO, IUser } from "../interfaces/user.interface";
+import { ISignupDTO, ILoginDTO } from "../interfaces/auth.interface";
+import { IUser } from "../interfaces/user.interface";
+import { IJWTPayload } from "../interfaces/auth.interface";
 import { UserRepository } from "../repositories/user.repository";
 import { PasswordService } from "./password.service";
 import { JWTService } from "./jwt.service";
 
+
 export class AuthService {
-  private _repo;
-  private _passwordService;
-  private _jwtService;
+  private _repo: UserRepository;
+  private _passwordService: PasswordService;
+  private _jwtService: JWTService;
 
   constructor(repo: UserRepository, passwordService: PasswordService, jwtService: JWTService) {
     this._repo = repo;
@@ -40,19 +43,36 @@ export class AuthService {
     };
   }
 
-  async logIn(body: ILoginDTO): Promise<{ access_token: string; refresh_token: string; user: IUser } | null> {
-    const user = body.identifier.includes('@') ? await this._repo.findByEmail(body.identifier)
+  async logIn(body: ILoginDTO): Promise<{ access_token: string; refresh_token: string; user: Partial<IUser> } | null> {
+    const user = body.identifier.includes('@')
+      ? await this._repo.findByEmail(body.identifier)
       : await this._repo.findByUsername(body.identifier);
-    const isPasswordValid = user
-      ? await this._passwordService.verifyPassword(user.password, body.password)
-      : await this._passwordService.hashPassword(body.password).then(() => false);
-    if (!user || !isPasswordValid) {
+    if (!user || !user.password) {
       return null;
     }
-    const tokens = this._jwtService.generateTokens({ userId: user._id, email: user.email });
+    const isPasswordValid = await this._passwordService.verifyPassword(user.password!, body.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+    if (!user._id) {
+      return null;
+    }
+    const payload: IJWTPayload = { userId: user._id! };
+    const tokens = this._jwtService.generateTokens(payload);
+
+    // Remove password before returning user
+    const { ...userWithoutPassword } = user;
     return {
       ...tokens,
-      user,
+      user: userWithoutPassword,
     };
+  }
+
+  async refreshToken(refreshToken: string): Promise<{access_token: string} | null> {
+    const verifyResult = await this._jwtService.verifyToken(refreshToken, false, true);
+    if (!verifyResult.success) {
+      return null;
+    }
+    return { access_token: verifyResult.newAccessToken! };
   }
 }

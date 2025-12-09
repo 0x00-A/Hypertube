@@ -6,17 +6,17 @@ This project was initialized using `express-generator` and refactored into a cle
 
 ```text
 src/
-  app.ts            # Express app composition
+  app.ts            # Express app composition with auth middleware
   server.ts         # Startup + graceful shutdown
   config/           # env.ts (validation), database.ts (mongoose lifecycle)
-  interfaces/       # Domain interfaces (Movie, User, Comment, Pagination)
+  interfaces/       # Domain interfaces (Movie, User, Comment, Auth, JWT)
   models/           # Mongoose schemas
   repositories/     # Data access classes
-  services/         # Business/service layer stubs
+  services/         # Business/service layer (auth, JWT, password)
   controllers/      # Transport layer (HTTP) handlers
   routes/v1/        # Versioned route modules
-  middleware/       # errorHandler, notFound, requestLogger
-  validators/       # Placeholder validation schemas
+  middleware/       # auth (JWT verification), errorHandler, notFound, requestLogger, validate
+  validators/       # Zod schemas for request validation
   utils/            # Shared helpers (pagination)
   docs/             # swagger.ts (OpenAPI 3.1 spec)
 ```
@@ -50,9 +50,22 @@ Defined in `src/docs/swagger.ts` with placeholder schemas (Movie, User, Comment)
 
 ## Placeholder Domain APIs
 
+### Authentication (Public Routes)
+- **POST** `/api/v1/auth/signup` - User registration
+- **POST** `/api/v1/auth/login` - User login (returns JWT tokens in httpOnly cookies)
+- **POST** `/api/v1/auth/refresh-token` - Refresh access token using refresh token
+
+### Protected Routes (Require Authentication)
 - Movies: `GET /v1/movies`, `GET /v1/movies/:id`
 - Users: `GET /v1/users`, `GET /v1/users/:id`, `PATCH /v1/users/:id`
 - Comments: `GET /v1/comments`, `POST /v1/comments`, `DELETE /v1/comments/:id`
+
+Protected routes require a valid access token in cookies. The auth middleware:
+- Verifies JWT access tokens
+- Attaches user data to `req.user`
+- Returns proper error types (EXPIRED, INVALID, NOT_BEFORE)
+- Uses discriminated union for type-safe error handling
+
 Each uses service → repository → model stack with minimal placeholder logic.
 
 ## Pagination & Filters

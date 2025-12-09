@@ -16,7 +16,7 @@ export const createControllers = () => {
   // Auth dependencies
   const userRepository = new UserRepository();
   const passwordService = new PasswordService();
-  const jwtService = new JWTService();
+  const jwtService = new JWTService(userRepository);
   const authService = new AuthService(userRepository, passwordService, jwtService);
   const authController = new AuthController(authService);
 

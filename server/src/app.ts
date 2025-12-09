@@ -9,6 +9,7 @@ import { createAuthRoutes } from './routes/v1/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
+import { auth } from './middleware/auth';
 import { env } from './config/env';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
@@ -38,20 +39,27 @@ export const createApp = () => {
     app.use(requestLogger);
   }
 
+  // Public routes (no auth required)
+  app.get('/health', (_req, res) => {
+    const dbStatus = dbHealth();
+    res.json({ status: 'ok', db: dbStatus });
+  });
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // Initialize controllers
   const { movieController, authController } = createControllers();
+  app.use('/api/v1/auth', createAuthRoutes(authController));
 
+  // Test endpoint for auth middleware (protected)
+  app.get('/api/v1/protected', auth, (_req, res) => {
+    res.json({ status: 'success', message: 'Protected route accessed', data: { user: _req.user } });
+  });
+
+  // Other routes (not protected by default)
   app.use('/v1/movies', createMovieRouter(movieController));
   // app.use('/v1/comments', commentsRouter);
-  app.use('/v1/auth', createAuthRoutes(authController));
 
-  app.get('/health', (_req, res) => {
-    const dbStatus = dbHealth();
-    res.json({ status: 'ok', db: dbStatus });
-  });
 
   // accounts routes
   // app.use('/v1/accounts', usersRouter);

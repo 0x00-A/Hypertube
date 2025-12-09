@@ -1,4 +1,4 @@
-import { ISignupDTO, ILoginDTO } from '../interfaces/user.interface';
+import { ISignupDTO, ILoginDTO, IUser } from '../interfaces/user.interface';
 
 declare global {
   namespace Express {
@@ -8,6 +8,7 @@ declare global {
         params?: Record<string, any>;
         query?: Record<string, any>;
       };
+      user?: Partial<IUser>;
     }
   }
 }
