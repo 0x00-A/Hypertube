@@ -71,8 +71,8 @@ describe('Auth Signup Integration Tests', () => {
       const res = await request(app).post('/api/v1/auth/signup').send(incompleteData);
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
-      expect(res.body.errors.length).toBeGreaterThan(0);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors.length).toBeGreaterThan(0);
     });
 
     it('should return 400 when email format is invalid', async () => {
@@ -84,8 +84,8 @@ describe('Auth Signup Integration Tests', () => {
       const res = await request(app).post('/api/v1/auth/signup').send(invalidEmailData);
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
-      expect(res.body.errors).toEqual(
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             message: expect.stringContaining('email'),
@@ -103,8 +103,8 @@ describe('Auth Signup Integration Tests', () => {
       const res = await request(app).post('/api/v1/auth/signup').send(invalidUsernameData);
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
-      expect(res.body.errors).toEqual(
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             message: expect.stringContaining('3 characters'),
@@ -122,8 +122,8 @@ describe('Auth Signup Integration Tests', () => {
       const res = await request(app).post('/api/v1/auth/signup').send(shortPasswordData);
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
-      expect(res.body.errors).toEqual(
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             message: expect.stringContaining('6 characters'),
@@ -132,7 +132,7 @@ describe('Auth Signup Integration Tests', () => {
       );
     });
 
-    it('should return 500 when trying to register with duplicate username', async () => {
+    it('should return 409 when trying to register with duplicate username', async () => {
       // First registration
       await request(app).post('/api/v1/auth/signup').send(validUserData);
 
@@ -144,10 +144,12 @@ describe('Auth Signup Integration Tests', () => {
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(409);
+      expect(res.body).toHaveProperty('message');
+      expect(res.body.message).toContain('Username already taken');
     });
 
-    it('should return 500 when trying to register with duplicate email', async () => {
+    it('should return 409 when trying to register with duplicate email', async () => {
       // First registration
       await request(app).post('/api/v1/auth/signup').send(validUserData);
 
@@ -159,7 +161,9 @@ describe('Auth Signup Integration Tests', () => {
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(409);
+      expect(res.body).toHaveProperty('message');
+      expect(res.body.message).toContain('Email already exists');
     });
 
     it('should trim whitespace from email and username', async () => {
@@ -190,8 +194,8 @@ describe('Auth Signup Integration Tests', () => {
 
       const user = await UserModel.findOne({ email: validUserData.email });
       expect(user).toBeTruthy();
-    //   expect(user?.language).toBe('en'); // Default language
-    //   expect(user?.watchedMovies).toEqual([]); // Empty watched movies
+      //   expect(user?.language).toBe('en'); // Default language
+      //   expect(user?.watchedMovies).toEqual([]); // Empty watched movies
     });
   });
 
@@ -210,12 +214,10 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should successfully login with username and set cookies', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
@@ -235,19 +237,19 @@ describe('Auth Signup Integration Tests', () => {
       expect(accessTokenCookie).toContain('SameSite=Strict');
 
       // Check refreshToken cookie
-      const refreshTokenCookie = cookies.find((cookie: string) => cookie.startsWith('refreshToken='));
+      const refreshTokenCookie = cookies.find((cookie: string) =>
+        cookie.startsWith('refreshToken='),
+      );
       expect(refreshTokenCookie).toBeDefined();
       expect(refreshTokenCookie).toContain('HttpOnly');
       expect(refreshTokenCookie).toContain('SameSite=Strict');
     });
 
     it('should successfully login with email and set cookies', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.email,
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.email,
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
@@ -262,12 +264,10 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return user information in response', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toMatchObject({
@@ -279,16 +279,14 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 401 with invalid password', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: 'WrongPassword123!',
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: 'WrongPassword123!',
+      });
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'Invalid identifier or password',
       });
 
@@ -298,64 +296,54 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 401 with non-existent username', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: 'nonexistentuser',
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: 'nonexistentuser',
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'Invalid identifier or password',
       });
     });
 
     it('should return 401 with non-existent email', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: 'nonexistent@example.com',
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: 'nonexistent@example.com',
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'Invalid identifier or password',
       });
     });
 
     it('should return 400 when identifier is missing', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
+      expect(res.body).toHaveProperty('validationErrors');
     });
 
     it('should return 400 when password is missing', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+      });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('errors');
+      expect(res.body).toHaveProperty('validationErrors');
     });
 
     it('should not expose password in any response', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(200);
       expect(JSON.stringify(res.body)).not.toContain(validUserData.password);
@@ -363,18 +351,18 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should set cookies with correct expiration times', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res.status).toBe(200);
 
       const cookies = res.headers['set-cookie'] as unknown as string[];
       const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
-      const refreshTokenCookie = cookies.find((cookie: string) => cookie.startsWith('refreshToken='));
+      const refreshTokenCookie = cookies.find((cookie: string) =>
+        cookie.startsWith('refreshToken='),
+      );
 
       // Access token should have shorter expiration
       expect(accessTokenCookie).toContain('Max-Age');
@@ -385,25 +373,21 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should allow login multiple times with same credentials', async () => {
       // First login
-      const res1 = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res1 = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res1.status).toBe(200);
 
       // Small delay to ensure different token timestamps
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Second login
-      const res2 = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const res2 = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(res2.status).toBe(200);
 
@@ -433,12 +417,10 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should successfully refresh access token with valid refresh token', async () => {
       // Login to get tokens
-      const loginRes = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       expect(loginRes.status).toBe(200);
       const cookies = loginRes.headers['set-cookie'] as unknown as string[];
@@ -470,7 +452,7 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'No refresh token provided',
       });
     });
@@ -482,14 +464,15 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
-        message: 'Invalid or expired refresh token',
+        status: 'fail',
+        message: 'Invalid token',
       });
     });
 
     it('should return 401 when refresh token has invalid signature', async () => {
       // Token with invalid signature (will fail verification before expiry check)
-      const tokenWithInvalidSignature = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
+      const tokenWithInvalidSignature =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
 
       const res = await request(app)
         .post('/api/v1/auth/refresh-token')
@@ -497,26 +480,30 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
-        message: 'Invalid or expired refresh token',
+        status: 'fail',
+        message: 'Invalid token',
       });
     });
 
     it('should generate a new access token different from the old one', async () => {
       // Login to get initial tokens
-      const loginRes = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       const loginCookies = loginRes.headers['set-cookie'] as unknown as string[];
-      const oldAccessToken = loginCookies.find((c: string) => c.startsWith('accessToken='))!.split(';')[0].split('=')[1];
-      const refreshToken = loginCookies.find((c: string) => c.startsWith('refreshToken='))!.split(';')[0].split('=')[1];
+      const oldAccessToken = loginCookies
+        .find((c: string) => c.startsWith('accessToken='))!
+        .split(';')[0]
+        .split('=')[1];
+      const refreshToken = loginCookies
+        .find((c: string) => c.startsWith('refreshToken='))!
+        .split(';')[0]
+        .split('=')[1];
 
       // Wait a moment to ensure different token
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Refresh token
       const refreshRes = await request(app)
@@ -524,7 +511,10 @@ describe('Auth Signup Integration Tests', () => {
         .set('Cookie', [`refreshToken=${refreshToken}`]);
 
       const refreshCookies = refreshRes.headers['set-cookie'] as unknown as string[];
-      const newAccessToken = refreshCookies.find((c: string) => c.startsWith('accessToken='))!.split(';')[0].split('=')[1];
+      const newAccessToken = refreshCookies
+        .find((c: string) => c.startsWith('accessToken='))!
+        .split(';')[0]
+        .split('=')[1];
 
       expect(newAccessToken).toBeTruthy();
       expect(newAccessToken).not.toBe(oldAccessToken);
@@ -547,15 +537,16 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should allow access to protected route with valid access token', async () => {
       // Login to get tokens
-      const loginRes = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       const cookies = loginRes.headers['set-cookie'] as unknown as string[];
-      const accessToken = cookies.find((c: string) => c.startsWith('accessToken='))!.split(';')[0].split('=')[1];
+      const accessToken = cookies
+        .find((c: string) => c.startsWith('accessToken='))!
+        .split(';')[0]
+        .split('=')[1];
 
       // Access protected route
       const res = await request(app)
@@ -571,7 +562,7 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'Unauthorized: No access token provided',
       });
     });
@@ -583,35 +574,37 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        status: 'error',
+        status: 'fail',
         message: 'Invalid token',
       });
     });
 
     it('should deny access with token having invalid signature', async () => {
       // Token with invalid signature (will fail verification)
-      const tokenWithInvalidSignature = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
+      const tokenWithInvalidSignature =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU3YTExMmQwZjU1ZDI0ZmRiMmE4NjIiLCJpYXQiOjE3MzM3NzYxNDYsImV4cCI6MTczMzc3NjE0Nn0.invalid';
 
       const res = await request(app)
         .get('/api/v1/protected')
         .set('Cookie', [`accessToken=${tokenWithInvalidSignature}`]);
 
       expect(res.status).toBe(401);
-      expect(res.body).toHaveProperty('status', 'error');
+      expect(res.body).toHaveProperty('status', 'fail');
       expect(res.body.message).toMatch(/Invalid token|Token has expired/);
     });
 
     it('should attach user data to request object on successful authentication', async () => {
       // Login to get tokens
-      const loginRes = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-          identifier: validUserData.username,
-          password: validUserData.password,
-        });
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.username,
+        password: validUserData.password,
+      });
 
       const cookies = loginRes.headers['set-cookie'] as unknown as string[];
-      const accessToken = cookies.find((c: string) => c.startsWith('accessToken='))!.split(';')[0].split('=')[1];
+      const accessToken = cookies
+        .find((c: string) => c.startsWith('accessToken='))!
+        .split(';')[0]
+        .split('=')[1];
 
       // Access protected route (assuming movies route returns something)
       const res = await request(app)
@@ -630,7 +623,7 @@ describe('Auth Signup Integration Tests', () => {
         .set('Cookie', ['accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid']);
 
       expect(res.status).toBe(401);
-      expect(res.body).toHaveProperty('status', 'error');
+      expect(res.body).toHaveProperty('status', 'fail');
     });
 
     it('should allow public routes without authentication', async () => {

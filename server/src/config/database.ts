@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
-import pino from 'pino';
 import { env } from './env';
-
-const logger = pino();
+import { logger } from '../utils/logger';
 
 let connectionAttempts = 0;
 const MAX_RETRIES = 5;

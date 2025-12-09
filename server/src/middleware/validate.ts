@@ -1,6 +1,8 @@
-import { ZodSchema } from 'zod';
+import { z } from 'zod';
 import { RequestHandler } from 'express';
 import { IUser } from '../interfaces/user.interface';
+import { BadRequestError } from '../core/errors/customErrors';
+import { ValidationError } from '../core/errors/AppError';
 
 type ParsedRequest = { body?: unknown; query?: unknown; params?: unknown };
 
@@ -15,13 +17,16 @@ declare global {
 }
 
 export const validate =
-  (schema: ZodSchema<any>): RequestHandler =>
-  (req, res, next) => {
+  (schema: z.ZodType<any>): RequestHandler =>
+  (req, _res, next) => {
     const result = schema.safeParse({ body: req.body, query: req.query, params: req.params });
     if (!result.success) {
-      return res.status(400).json({
-        errors: result.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
-      });
+      const errors = result.error.issues.map<ValidationError>((i) => ({
+        path: i.path.join('.'),
+        message: i.message,
+      }));
+
+      return next(new BadRequestError(errors));
     }
     const parsed = result.data as { body?: unknown; query?: unknown; params?: unknown };
     req.validated = parsed;
