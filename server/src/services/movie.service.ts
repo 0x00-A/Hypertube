@@ -2,17 +2,17 @@ import { MovieRepository } from '../repositories/movie.repository';
 import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
 
 export class MovieService {
-  private _movieRepsitory: MovieRepository;
+  private _movieRepository: MovieRepository;
 
   constructor(movieRepository: MovieRepository) {
-    this._movieRepsitory = movieRepository;
+    this._movieRepository = movieRepository;
   }
 
   async list(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions = {}) {
-    return this._movieRepsitory.findAll(paginationOptions, filterOptions);
+    return this._movieRepository.findAll(paginationOptions, filterOptions);
   }
 
   async get(id: string) {
-    return this._movieRepsitory.findById(id);
+    return this._movieRepository.findById(id);
   }
 }

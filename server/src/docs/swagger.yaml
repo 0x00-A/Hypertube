@@ -239,7 +239,7 @@ paths:
             type: integer
             minimum: 1900
             maximum: 2026
-          description: Filter by release year
+          description: Filter by release year (minimum is 1900, maximum is current year + 1)
       responses:
         '200':
           description: Paginated list of movies
