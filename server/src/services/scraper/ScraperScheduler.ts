@@ -8,6 +8,7 @@ export class ScraperScheduler {
   private _movieRepository = new MovieRepository();
   private _isScraping: boolean = false;
   private _cronTask: ScheduledTask | null = null;
+  private _abortController: AbortController | null = null;
 
   public init(): void {
     this.runStartupScrape();
@@ -23,8 +24,13 @@ export class ScraperScheduler {
       logger.info('Cron job stopped successfully');
     }
 
+    if (this._abortController) {
+      this._abortController.abort();
+      logger.info('Scrape operation aborted');
+    }
+
     if (this._isScraping) {
-      logger.warn('Scrape in progress will complete before shutdown');
+      logger.warn('Scrape in progress will complete current page then exit');
     }
   }
 
@@ -45,7 +51,6 @@ export class ScraperScheduler {
   }
 
   private scheduleNightlyScrape(): void {
-    // Store the cron task so we can stop it during shutdown
     this._cronTask = cron.schedule('0 3 * * *', async () => {
       logger.info('Cron Job: Starting nightly deep scrape...');
       await this.safeScrape(1, 50);
@@ -61,19 +66,21 @@ export class ScraperScheduler {
     }
 
     this._isScraping = true;
+    this._abortController = new AbortController();
     const startTime = Date.now();
 
     try {
       for (let i = startPage; i <= endPage; i++) {
-        // Exit early if scheduler was stopped
-        if (!this._cronTask) {
+        // Check abort signal before each page
+        if (this._abortController.signal.aborted) {
           logger.info('Scrape cancelled: Scheduler stopped');
           break;
         }
 
         await this._engine.scrapePage(i);
 
-        if (i < endPage) {
+        // Check abort signal before delay
+        if (i < endPage && !this._abortController.signal.aborted) {
           await new Promise((r) => setTimeout(r, 3000));
         }
       }
@@ -85,6 +92,7 @@ export class ScraperScheduler {
       logger.error({ err }, 'Critical Scraper Error');
     } finally {
       this._isScraping = false;
+      this._abortController = null;
     }
   }
 }

@@ -3,6 +3,10 @@ import { JWTService } from '../services/jwt.service';
 import { UserRepository } from '../repositories/user.repository';
 import { UnauthorizedError } from '../core/errors/customErrors';
 
+// Singleton instances - reused across all requests
+const userRepository = new UserRepository();
+const jwtService = new JWTService(userRepository);
+
 export const auth: RequestHandler = async (req, res, next) => {
   try {
     const accessToken = req.cookies.accessToken;
@@ -11,7 +15,6 @@ export const auth: RequestHandler = async (req, res, next) => {
       throw new UnauthorizedError('Unauthorized: No access token provided');
     }
 
-    const jwtService = new JWTService(new UserRepository());
     const result = await jwtService.verifyToken(accessToken, true, false);
 
     req.user = result.user;

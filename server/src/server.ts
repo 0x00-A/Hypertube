@@ -69,7 +69,7 @@ process.on('unhandledRejection', (reason: Error | unknown, promise: Promise<unkn
     },
     '💥 UNHANDLED REJECTION! Shutting down gracefully...',
   );
-  shutdown('UNHANDLED_REJECTION');
+  void shutdown('UNHANDLED_REJECTION');
 });
 
 // Handle uncaught exceptions
@@ -81,7 +81,7 @@ process.on('uncaughtException', (err: Error) => {
     },
     '💥 UNCAUGHT EXCEPTION! Shutting down immediately...',
   );
-  shutdown('UNCAUGHT_EXCEPTION');
+  void shutdown('UNCAUGHT_EXCEPTION');
 });
 
 // Handle termination signals (Docker/Kubernetes)
