@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { MovieService } from '../services/movie.service';
 import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
+import { NotFoundError } from '../core/errors/customErrors';
 
 export class MovieController {
   private _movieService: MovieService;
@@ -38,7 +39,11 @@ export class MovieController {
   async getMovie(req: Request, res: Response, next: NextFunction) {
     try {
       const movie = await this._movieService.get(req.params.id);
-      if (!movie) return res.status(404).json({ message: 'Movie not found' });
+
+      if (!movie) {
+        throw new NotFoundError('Movie not found');
+      }
+
       res.json({ data: movie });
     } catch (err) {
       next(err);

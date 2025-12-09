@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
+import { NotFoundError } from '../core/errors/customErrors';
+
 const service = new UserService();
 
 // export async function listUsers(req: Request, res: Response, next: NextFunction) {
@@ -22,18 +24,20 @@ const service = new UserService();
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await service.get(req.params.id);
-    if (!user) return res.status(404).json({ message: 'Not found' });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
     res.json(user);
   } catch (err) {
     next(err);
   }
 }
 
-  // export async function patchUser(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const updated = await service.patch(req.params.id, req.body);
-  //     if (!updated) return res.status(404).json({ message: 'Not found' });
-  //     res.json(updated);
-  //   } catch (err) {
-  //     next(err);
-  //   }
+// export async function patchUser(req: Request, res: Response, next: NextFunction) {
+//   try {
+//     const updated = await service.patch(req.params.id, req.body);
+//     if (!updated) return res.status(404).json({ message: 'Not found' });
+//     res.json(updated);
+//   } catch (err) {
+//     next(err);
+//   }
