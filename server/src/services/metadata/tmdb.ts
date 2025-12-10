@@ -44,7 +44,7 @@ export async function getMetadata(imdbId: string) {
   return {
     title: details.title,
     year:
-      typeof details.release_date === 'string' && details.release_date.contains('-')
+      typeof details.release_date === 'string' && details.release_date.includes('-')
         ? parseInt(details.release_date.split('-')[0], 10)
         : 0,
     synopsis: details.overview,

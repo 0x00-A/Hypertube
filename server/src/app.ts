@@ -50,6 +50,7 @@ export const createApp = () => {
   // Initialize controllers
   const { movieController, authController } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
+  app.use('/api/v1/movies', createMovieRouter(movieController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {
@@ -57,9 +58,7 @@ export const createApp = () => {
   });
 
   // Other routes (not protected by default)
-  app.use('/v1/movies', createMovieRouter(movieController));
   // app.use('/v1/comments', commentsRouter);
-
 
   // accounts routes
   // app.use('/v1/accounts', usersRouter);
