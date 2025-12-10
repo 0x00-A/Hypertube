@@ -92,6 +92,4 @@ For detailed implementation patterns, refer to:
 
 - `server/guides/GLOBAL_ERROR_HANDLING.md` - Custom error classes and global error handler usage
 - `server/guides/ASYNC_HANDLER_PATTERN.md` - AsyncHandler wrapper implementation and best practices
-- `server/guides/ASYNC_HANDLER_PATTERN.md` - AsyncHandler wrapper implementation and best
-
 when you create .md guides explaining something place in the guides folder server/guides.
