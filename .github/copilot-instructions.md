@@ -22,29 +22,8 @@ You are an expert full-stack developer assisting with the "Hypertube" project. T
 ## 📝 Coding Standards
 
 1.  **TypeScript First:** Always provide full type definitions. Do not use `any`. Use interfaces for `User`, `Movie`, and `Comment` models.
-2.  **Error Handling:**
-    - **Backend:** Use the `asyncHandler` wrapper for ALL async route handlers and middleware. Never use manual try-catch blocks in controllers.
-    - **Custom Errors:** Always throw `AppError` subclasses (`NotFoundError`, `UnauthorizedError`, `BadRequestError`, `ConflictError`, `ForbiddenError`) instead of generic `Error`.
-    - **Global Error Handler:** All errors are caught by the global error handler which returns consistent JSON responses:
-      - 4xx errors: `{ status: 'fail', message, path, validationErrors? }`
-      - 5xx errors: `{ status: 'error', message, path }`
-    - **Frontend:** Handle API errors gracefully (show toast notifications, not just console logs).
-3.  **Dependency Injection:**
-    - Always use constructor injection for services and repositories.
-    - Create singleton instances at module level for middleware (e.g., `const userRepository = new UserRepository()`).
-    - Never instantiate services/repositories inside request handlers.
-4.  **AsyncHandler Pattern:**
-    - Class methods: `method = asyncHandler(async (req: Request, res: Response) => {})`
-    - Functional handlers: `export const handler = asyncHandler(async (req, res) => {})`
-    - Middleware: Include `next` parameter and call it: `asyncHandler(async (req, res, next) => { /* logic */; next(); })`
-5.  **Logging:**
-    - **Backend:** Always use Pino logger from `utils/logger` instead of `console.log/error/warn`.
-    - Use appropriate log levels: `logger.info()`, `logger.error()`, `logger.warn()`, `logger.debug()`.
-    - Structure logs with context: `logger.info({ userId, action }, 'User performed action')`.
-6.  **Comments:** Explain complex logic, especially in the `ffmpeg` transcoding pipeline and the `torrent-stream` engine.
-7.  **File Structure:**
-    - Frontend: Feature-based (`src/pages/Movie/MoviePlayer.tsx`).
-    - Backend: Controller-Service-Repository pattern.
+
+**Strict No-Any Policy:** - The use of `any` is strictly prohibited in all TypeScript code (including tests, mocks, and error handling). - All variables, parameters, and error objects must have explicit, correct type annotations (e.g., use `IMovie`, `ITorrent`, `unknown`, etc.). - All error handling must use `unknown` for error types and perform type narrowing as needed. - All code reviews and code generation must reject any usage of `any` and require proper type safety throughout the codebase. 2. **Error Handling:** - **Backend:** Use the `asyncHandler` wrapper for ALL async route handlers and middleware. Never use manual try-catch blocks in controllers. - **Custom Errors:** Always throw `AppError` subclasses (`NotFoundError`, `UnauthorizedError`, `BadRequestError`, `ConflictError`, `ForbiddenError`) instead of generic `Error`. - **Global Error Handler:** All errors are caught by the global error handler which returns consistent JSON responses: - 4xx errors: `{ status: 'fail', message, path, validationErrors? }` - 5xx errors: `{ status: 'error', message, path }` - **Frontend:** Handle API errors gracefully (show toast notifications, not just console logs). 3. **Dependency Injection:** - Always use constructor injection for services and repositories. - Create singleton instances at module level for middleware (e.g., `const userRepository = new UserRepository()`). - Never instantiate services/repositories inside request handlers. 4. **AsyncHandler Pattern:** - Class methods: `method = asyncHandler(async (req: Request, res: Response) => {})` - Functional handlers: `export const handler = asyncHandler(async (req, res) => {})` - Middleware: Include `next` parameter and call it: `asyncHandler(async (req, res, next) => { /* logic */; next(); })` 5. **Logging:** - **Backend:** Always use Pino logger from `utils/logger` instead of `console.log/error/warn`. - Use appropriate log levels: `logger.info()`, `logger.error()`, `logger.warn()`, `logger.debug()`. - Structure logs with context: `logger.info({ userId, action }, 'User performed action')`. 6. **Comments:** Explain complex logic, especially in the `ffmpeg` transcoding pipeline and the `torrent-stream` engine. 7. **File Structure:** - Frontend: Feature-based (`src/pages/Movie/MoviePlayer.tsx`). - Backend: Controller-Service-Repository pattern.
 
 ## 💡 Specific Implementation Details
 
@@ -92,6 +71,4 @@ For detailed implementation patterns, refer to:
 
 - `server/guides/GLOBAL_ERROR_HANDLING.md` - Custom error classes and global error handler usage
 - `server/guides/ASYNC_HANDLER_PATTERN.md` - AsyncHandler wrapper implementation and best practices
-- `server/guides/ASYNC_HANDLER_PATTERN.md` - Async route handler patterns
-
 when you create .md guides explaining something place in the guides folder server/guides.
