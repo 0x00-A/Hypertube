@@ -21,7 +21,10 @@ export const createApp = () => {
   app.disable('x-powered-by');
 
   const corsOptions = {
-    origin: env.NODE_ENV === 'production' ? env.CLIENT_URL : true,
+    origin:
+      env.NODE_ENV === 'production'
+        ? env.CLIENT_URL
+        : ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
