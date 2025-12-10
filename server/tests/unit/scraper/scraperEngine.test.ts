@@ -1,5 +1,5 @@
 import { ScraperEngine } from '../../../../server/src/services/scraper/ScraperEngine';
-import { IScrapedMovie } from '../../../../server/src/interfaces/movie.interface';
+import { IScrapedMovie, IMovie, ITorrent } from '../../../../server/src/interfaces/movie.interface';
 
 jest.mock('../../../../server/src/services/metadata/tmdb', () => ({
   getMetadata: jest.fn(),
@@ -101,9 +101,17 @@ describe('ScraperEngine (unit)', () => {
       ],
     };
 
-    const existingMovie = {
+    const existingMovie: IMovie & { save: jest.Mock } = {
       imdbId: 'tt2222222',
       title: 'Existing Movie',
+      year: 2020,
+      rating: undefined,
+      duration: undefined,
+      synopsis: undefined,
+      genres: undefined,
+      language: undefined,
+      trailer: undefined,
+      images: { thumbnail: '', poster: '', backdrop: '' },
       torrents: [
         {
           url: 'magnet:?xt=urn:btih:oldhash',
@@ -118,6 +126,9 @@ describe('ScraperEngine (unit)', () => {
           provider: 'YTS',
         },
       ],
+      downloadStatus: 'not_downloaded',
+      lastWatched: undefined,
+      localPath: undefined,
       lastUpdated: new Date('2020-01-01'),
       save: jest.fn().mockResolvedValue(true),
     };
@@ -133,7 +144,7 @@ describe('ScraperEngine (unit)', () => {
     // Assert
     expect(mockFindByImdbId).toHaveBeenCalledWith('tt2222222');
     expect((existingMovie.save as jest.Mock).mock.calls.length).toBe(1);
-    expect(existingMovie.torrents.some((t: any) => t.hash === 'newhash')).toBe(true);
+    expect(existingMovie.torrents.some((t: ITorrent) => t.hash === 'newhash')).toBe(true);
   });
 
   it('scrapePage invokes all providers and calls fillMetadataAndUpsertMovie for each result', async () => {

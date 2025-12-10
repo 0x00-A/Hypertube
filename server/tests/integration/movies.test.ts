@@ -195,7 +195,7 @@ describe('Movies API Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
-      res.body.data.forEach((movie: any) => {
+      res.body.data.forEach((movie: IMovie) => {
         expect(movie.rating).toBeGreaterThanOrEqual(8.0);
       });
     });
@@ -244,7 +244,7 @@ describe('Movies API Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
-      res.body.data.forEach((movie: any) => {
+      res.body.data.forEach((movie: IMovie) => {
         expect(movie.genres).toContain('Action');
         expect(movie.rating).toBeGreaterThanOrEqual(8.0);
         expect(movie.year).toBe(2023);
