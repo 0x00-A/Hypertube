@@ -21,7 +21,7 @@ export default function MainLayout() {
         <Header isSidebarCollapsed={isSidebarCollapsed} />
 
         {/* Main Content with proper top margin */}
-        <main className="flex-1 mt-[70px] overflow-y-auto">
+        <main className="flex-1 pt-[70px] overflow-y-auto">
           <Outlet />
         </main>
 
