@@ -1,5 +1,5 @@
 import { ScraperEngine } from '../../../src/services/scraper/ScraperEngine';
-import { IScrapedMovie } from '../../../src/interfaces/movie.interface';
+import { IMovie, IScrapedMovie, ITorrent } from '../../../src/interfaces/movie.interface';
 
 jest.mock('../../../src/services/metadata/tmdb', () => ({
   getMetadata: jest.fn(),
