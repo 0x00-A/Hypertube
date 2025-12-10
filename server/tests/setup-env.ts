@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3001';
 process.env.ENABLE_REQUEST_LOGGING = 'false';
+process.env.CLIENT_URL = 'http://localhost:5173';
 
 // YTS has multiple mirror URLs - try yts.lt if yts.mx is blocked
 if (!process.env.YTS_BASE_API_URL) {
