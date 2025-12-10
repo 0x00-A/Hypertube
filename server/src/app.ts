@@ -20,8 +20,19 @@ export const createApp = () => {
   const app = express();
   app.disable('x-powered-by');
 
-  app.use(helmet());
-  app.use(cors());
+  const corsOptions = {
+    origin: env.NODE_ENV === 'production' ? env.CLIENT_URL : true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  };
+
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+  app.use(cors(corsOptions));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
