@@ -1,11 +1,11 @@
-import { ScraperEngine } from '../../../../server/src/services/scraper/ScraperEngine';
-import { IScrapedMovie } from '../../../../server/src/interfaces/movie.interface';
+import { ScraperEngine } from '../../../src/services/scraper/ScraperEngine';
+import { IScrapedMovie } from '../../../src/interfaces/movie.interface';
 
-jest.mock('../../../../server/src/services/metadata/tmdb', () => ({
+jest.mock('../../../src/services/metadata/tmdb', () => ({
   getMetadata: jest.fn(),
 }));
 
-import { getMetadata } from '../../../../server/src/services/metadata/tmdb';
+import { getMetadata } from '../../../src/services/metadata/tmdb';
 
 describe('ScraperEngine (unit)', () => {
   let engine: ScraperEngine;
