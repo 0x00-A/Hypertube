@@ -102,23 +102,15 @@ export const useLogin = () => {
 // ============================================================================
 
 export const useRegister = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: RegisterData) => authService.register(data),
-    onSuccess: (response) => {
-      // Update Redux state
-      dispatch(setUser(response.user));
+    onSuccess: () => {
+      toast.success('Registration successful! Please login to continue.');
       
-      // Cache user data in React Query
-      queryClient.setQueryData(queryKeys.auth.currentUser(), response.user);
-      
-      toast.success('Registration successful! Welcome to Hypertube!');
-      
-      // Navigate to home page
-      navigate('/');
+      // Navigate to login page
+      navigate('/auth/login');
     },
     onError: (error: AuthError) => {
       toast.error(error.message || 'Registration failed. Please try again.');

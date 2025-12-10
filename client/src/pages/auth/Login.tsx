@@ -13,7 +13,15 @@ import { useLogin } from '../../hooks/useAuth';
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  identifier: z.string().trim().min(1, 'Username or email is required').refine(
+    (val) => {
+      if (val.includes('@')) {
+        return z.string().email().safeParse(val).success;
+      }
+      return val.length >= 3;
+    },
+    { message: 'Must be a valid email or username (min 3 characters)' }
+  ),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -68,13 +76,13 @@ export default function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Input */}
+            {/* Username or Email Input */}
             <AuthInput
-              {...register('email')}
-              type="email"
-              placeholder="Email"
+              {...register('identifier')}
+              type="text"
+              placeholder="Username or Email"
               icon={Mail}
-              error={errors.email?.message}
+              error={errors.identifier?.message}
             />
 
             {/* Password Input */}

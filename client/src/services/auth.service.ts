@@ -27,7 +27,7 @@ export const authService = {
    * Register a new user
    */
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    return httpClient.post<AuthResponse>('/auth/register', data);
+    return httpClient.post<AuthResponse>('/auth/signup', data);
   },
 
   /**
