@@ -45,7 +45,7 @@ RUN_SCRAPER_INTEGRATION=true npm test -- tests/integration/scraper.integration.t
 **Real provider behavior:**
 
 - Uses actual YTS API (requires internet connection)
-- Uses actual TMDB API (requires valid `TMDB_API_ACCESS_TOKEN` in `.env`)
+- Uses actual TMDB API (requires valid `TMDB_API_ACCESS_TOKEN` in `.env.test`)
 - Tests may take longer (~10-30 seconds)
 - Results depend on current API data
 - Tests verify data structure, not exact values
@@ -94,7 +94,7 @@ RUN_SCRAPER_INTEGRATION=true npm test -- tests/integration/scraper.integration.t
 - YTS API must be accessible (uses `yts.lt` by default)
 - Runs in ~9-10 seconds
 
-> **Note:** The `.env` file is automatically loaded during tests. If you don't have a `.env` file, create one in the `server/` directory with the TMDB token.
+> **Note:** The `.env.test` file is automatically loaded during tests. If you don't have a `.env.test` file, create one in the `server/` directory with the TMDB token.
 
 ## Configuration
 
