@@ -21,7 +21,25 @@
   - 5 refresh-token tests for token renewal
   - 7 auth middleware tests for route protection
   - 1 example test for protected route behavior
-- OpenAPI/Swagger documentation for authentication endpoints
+- OAuth 2.0 authentication system with Passport.js
+  - Google OAuth integration with profile and email scopes
+  - 42 School OAuth integration
+  - Automatic account linking when email matches existing user
+  - Secure random password generation for OAuth users (Argon2 hashing)
+  - OAuth callback handlers with JWT token generation
+  - Redirect-based authentication flow with error handling
+  - GET /api/v1/oauth/google - Initiate Google OAuth
+  - GET /api/v1/oauth/google/callback - Handle Google OAuth callback
+  - GET /api/v1/oauth/42 - Initiate 42 OAuth
+  - GET /api/v1/oauth/42/callback - Handle 42 OAuth callback
+- Comprehensive OAuth integration tests (14 tests)
+  - OAuth route redirect tests for Google and 42
+  - User creation with OAuth providers
+  - Existing user account linking
+  - Username generation from OAuth profile data
+  - Fallback values for missing profile fields
+  - Error handling for missing email or profile data
+- OpenAPI/Swagger documentation for authentication and OAuth endpoints
 - MongoDB integration with Mongoose ODM
 - Repository-Service-Controller architecture pattern
 - Input validation using Zod schemas

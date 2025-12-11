@@ -4,8 +4,8 @@ export interface IWatchedMovie {
 }
 
 export interface IOAuth {
-  fortytwoId?: string;
-  googleId?: string;
+  provider: 'google' | 'fortytwo';
+  id: string;
 }
 
 export interface IUser {
@@ -16,4 +16,5 @@ export interface IUser {
   firstName?: string;
   lastName?: string;
   createdAt?: Date;
+  oauth?: IOAuth;
 }

@@ -3,16 +3,15 @@ import { IUserDocument, IUserModel } from './user.model.types';
 
 const userSchema = new Schema({
   username: { type: String, required: true, unique: true, minlength: 3, maxlength: 30 },
-  email: { type: String, required: true, unique: true }, // Private [cite: 49]
+  email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  password: { type: String, select: false, required: true }, // Excluded by default, nullable if using OmniAuth only
-
-  // Auth Provider Logic (42 + Secondary)
-  // oauth: {
-  //   fortytwoId: { type: String, select: false }, // Store ID, don't expose
-  //   googleId: { type: String, select: false },
-  // },
+  password: { type: String, select: false, required: true },
+  oauth: {
+    provider: { type: String, enum: ['google', 'fortytwo'] },
+    id: { type: String },
+    _id: false,
+  },
 
   // Track watched movies for the thumbnail UI [cite: 66]
   // watchedMovies: [

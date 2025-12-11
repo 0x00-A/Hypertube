@@ -7,6 +7,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from '../services/password.service';
 import { JWTService } from '../services/jwt.service';
 import { scraperEngine } from '../services/scraper/ScraperEngine';
+import { OAuthController } from '../controllers/oauth.controller';
 
 export const createControllers = () => {
   // Movie dependencies
@@ -19,7 +20,10 @@ export const createControllers = () => {
   const passwordService = new PasswordService();
   const jwtService = new JWTService(userRepository);
   const authService = new AuthService(userRepository, passwordService, jwtService);
-  const authController = new AuthController(authService);
+  const authController = new AuthController(authService, jwtService);
 
-  return { movieController, authController };
+  // OAuth dependencies
+  const oauthController = new OAuthController(jwtService);
+
+  return { movieController, authController, oauthController };
 };

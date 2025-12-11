@@ -8,8 +8,9 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 ## ✨ Key Features
 
 ### 🔐 Authentication & Security
-* **Multiple Strategies:** Secure login via username/password and OmniAuth (42 School, Google/GitHub).
-* **Security First:** Passwords are hashed (never plain text), and all forms are protected against SQL injections and XSS attacks.
+* **Multiple Strategies:** Secure login via username/password and OAuth 2.0 (42 School, Google).
+* **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management.
+* **Security First:** Passwords are hashed with Argon2 (never plain text), JWT tokens in httpOnly cookies, and all forms are protected against SQL injections and XSS attacks.
 * **Profile Management:** Users can edit profiles, upload avatars, and view other user profiles while maintaining email privacy.
 
 ### 🕵️‍♂️ Smart Library
@@ -61,6 +62,15 @@ JWT_ACCESS_SECRET=your-access-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret-key
 JWT_ACCESS_EXPIRES_IN=1h
 JWT_REFRESH_EXPIRES_IN=30d
+
+# OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/api/v1/oauth/google/callback
+FORTYTWO_CLIENT_ID=your-42-client-id
+FORTYTWO_CLIENT_SECRET=your-42-client-secret
+FORTYTWO_CALLBACK_URL=http://localhost:3001/api/v1/oauth/42/callback
+CLIENT_URL=http://localhost:3000
 ```
 
 ### 3. Run with Docker
@@ -117,9 +127,14 @@ cd server && npm test -- --testPathPattern=auth.test.ts
 ```
 
 ### Test Coverage
-- **Authentication Tests:** 23 integration tests
+- **Authentication Tests:** 35 integration tests
   - Signup validation, security, and error handling
   - Login authentication, JWT cookies, and session management
+  - Token refresh and protected route middleware
+- **OAuth Tests:** 14 integration tests
+  - Google and 42 OAuth flows
+  - Account creation and linking
+  - Error handling and edge cases
 
 ## 📚 API Documentation
 
@@ -133,11 +148,32 @@ http://localhost:3001/api-docs
 
 **POST** `/v1/auth/signup`
 - Register a new user
-- Returns user data and sets JWT cookies
+- Returns success message and sets JWT cookies
 
 **POST** `/v1/auth/login`
 - Authenticate user with username or email
-- Returns user data and sets JWT cookies (HttpOnly, SameSite=Strict)
+- Returns success message and sets JWT cookies (HttpOnly, SameSite=Strict)
+
+**POST** `/v1/auth/refresh-token`
+- Refresh access token using refresh token cookie
+- Returns new access token in httpOnly cookie
+
+### OAuth Endpoints
+
+**GET** `/v1/oauth/google`
+- Redirects to Google OAuth consent screen
+- Scopes: profile, email
+
+**GET** `/v1/oauth/google/callback`
+- Handles Google OAuth callback
+- Sets JWT cookies and redirects to client with status
+
+**GET** `/v1/oauth/42`
+- Redirects to 42 School OAuth authorization page
+
+**GET** `/v1/oauth/42/callback`
+- Handles 42 OAuth callback
+- Sets JWT cookies and redirects to client with status
 
 ## 👥 Authors
 

@@ -1,5 +1,5 @@
 import { UserModel } from '../models/User';
-import { IUser } from '../interfaces/user.interface';
+import { IUser, IOAuth } from '../interfaces/user.interface';
 import { ISignupDTO } from '../interfaces/auth.interface';
 import { IUserDocument } from '../models/user.model.types';
 
@@ -9,6 +9,9 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<Partial<IUser> | null>;
   findByUsername(username: string): Promise<Partial<IUser> | null>;
   findById(id: string): Promise<Partial<IUser> | null>;
+  findByOAuthProvider(oauth: IOAuth): Promise<Partial<IUser> | null>;
+  createOauthUser(oauthData: Partial<IUser>): Promise<Partial<IUser>>;
+  linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null>;
 }
 
 export class UserRepository {
@@ -21,7 +24,8 @@ export class UserRepository {
       firstName: doc.firstName,
       lastName: doc.lastName,
       createdAt: doc.createdAt,
-      password: doc.password
+      password: doc.password,
+      oauth: doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined
     };
   }
 
@@ -35,13 +39,43 @@ export class UserRepository {
     return this.toIUser(doc);
   }
 
-  async create(userData: ISignupDTO): Promise<Partial<IUser>> {
-    const doc = await UserModel.create(userData);
-    return this.toIUser(doc)!;
-  }
-
   async findById(id: string): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findById(id).exec();
     return this.toIUser(doc);
   }
+
+  async findByOAuthProvider(oauth: IOAuth): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({
+      'oauth.provider': oauth.provider,
+      'oauth.id': oauth.id
+    }).select('+oauth').exec();
+    if (!doc) return null;
+    return this.toIUser(doc);
+  }
+
+  async linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findByIdAndUpdate(userId, {
+      'oauth.provider': oauth.provider,
+      'oauth.id': oauth.id
+    }, { new: true }).exec();
+    if (!doc) return null;
+    return this.toIUser(doc);
+  }
+
+  async create(userData: ISignupDTO): Promise<Partial<IUser>> {
+    const doc = await UserModel.create(userData);
+    if (!doc || !doc._id) {
+      throw new Error('Failed to create user');
+    }
+    return this.toIUser(doc)!;
+  }
+
+  async createOauthUser(oauthData: Partial<IUser>): Promise<Partial<IUser>> {
+    const doc = await UserModel.create(oauthData);
+    if (!doc || !doc._id) {
+      throw new Error('Failed to create OAuth user');
+    }
+    return this.toIUser(doc)!;
+  }
+
 }
