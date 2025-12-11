@@ -41,7 +41,7 @@ export class MovieRepository {
       const sanitizedSearch = filterOptions.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
         { title: { $regex: sanitizedSearch, $options: 'i' } },
-        { synopsis: { $regex: sanitizedSearch, $options: 'i' } },
+        // { synopsis: { $regex: sanitizedSearch, $options: 'i' } },
       ];
     }
 
@@ -99,5 +99,11 @@ export class MovieRepository {
 
   async findByImdbId(imdbId: string): Promise<IMovieDocument | null> {
     return MovieModel.findOne({ imdbId: imdbId }).exec();
+  }
+
+  async searchByTitle(title: string, limit: number = 10): Promise<IMovie[]> {
+    return MovieModel.find({ title: { $regex: title, $options: 'i' } })
+      .limit(limit)
+      .lean<IMovie[]>();
   }
 }

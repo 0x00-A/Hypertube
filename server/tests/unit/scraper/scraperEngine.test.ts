@@ -109,7 +109,7 @@ describe('ScraperEngine (unit)', () => {
       duration: undefined,
       synopsis: undefined,
       genres: undefined,
-      language: undefined,
+      originalLanguage: undefined,
       trailer: undefined,
       images: { thumbnail: '', poster: '', backdrop: '' },
       torrents: [

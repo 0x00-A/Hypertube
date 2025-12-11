@@ -16,7 +16,7 @@ export class MovieController {
 
     const paginationOptions: IPaginationOptions = {
       page: query.page || 1,
-      limit: query.limit || 10,
+      limit: query.limit || 20,
       sortBy: query.sortBy || 'lastUpdated',
       sortOrder: query.sortOrder || 'desc',
     };
@@ -41,5 +41,26 @@ export class MovieController {
     }
 
     res.json({ data: movie });
+  });
+
+  searchExternalMovies = asyncHandler(async (req: Request, res: Response) => {
+    const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
+
+    const paginationOptions: IPaginationOptions = {
+      page: query.page || 1,
+      limit: query.limit || 20,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder || 'desc',
+    };
+
+    const filterOptions: MovieFilterOptions = {
+      search: query.search,
+      genre: query.genre,
+      minRating: query.minRating,
+      year: query.year,
+    };
+
+    const results = await this._movieService.searchExternal(paginationOptions, filterOptions);
+    res.json({ data: results });
   });
 }

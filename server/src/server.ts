@@ -2,11 +2,10 @@ import { createApp } from './app';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { env } from './config/env';
 import { logger } from './utils/logger';
-import { ScraperScheduler } from './services/scraper/ScraperScheduler';
 import http from 'http';
+import { scraperScheduler as scheduler } from './services/scraper/ScraperScheduler';
 
 let server: http.Server | null = null;
-let scheduler: ScraperScheduler | null = null;
 let isShuttingDown = false;
 
 const shutdown = async (signal: string) => {
@@ -100,7 +99,6 @@ process.on('SIGTERM', () => {
     const port = env.PORT;
     server = app.listen(port, () => logger.info({ port }, 'Server started'));
 
-    scheduler = new ScraperScheduler();
     scheduler.init();
   } catch (err) {
     logger.error({ err }, 'Startup failure');

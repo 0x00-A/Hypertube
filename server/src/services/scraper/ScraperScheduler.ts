@@ -1,10 +1,10 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { ScraperEngine } from './ScraperEngine';
 import { logger } from '../../utils/logger';
 import { MovieRepository } from '../../repositories/movie.repository';
+import { scraperEngine } from './ScraperEngine';
 
 export class ScraperScheduler {
-  private _engine = new ScraperEngine();
+  private _engine = scraperEngine;
   private _movieRepository = new MovieRepository();
   private _isScraping: boolean = false;
   private _cronTask: ScheduledTask | null = null;
@@ -46,7 +46,7 @@ export class ScraperScheduler {
 
     if (movieCount < 50) {
       logger.info('Server Startup: Triggering initial quick scrape...');
-      this.safeScrape(1, 1).catch((err) => logger.error({ err }, 'Startup scrape failed'));
+      this.safeScrape(1, 2).catch((err) => logger.error({ err }, 'Startup scrape failed'));
     }
   }
 
@@ -96,3 +96,5 @@ export class ScraperScheduler {
     }
   }
 }
+
+export const scraperScheduler = new ScraperScheduler();

@@ -2,6 +2,32 @@ import axios from 'axios';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 
+export interface TmdbMovie {
+  adult: boolean;
+  backdrop_path: string;
+  id: number;
+  title: string;
+  original_title: string;
+  overview: string;
+  poster_path: string;
+  media_type: string;
+  original_language: string;
+  genre_ids: number[];
+  popularity: number;
+  release_date: string;
+  video: boolean;
+  vote_average: number;
+  vote_count: number;
+}
+
+export interface TmdbFindApiResponse {
+  movie_results: TmdbMovie[];
+  person_results: unknown[];
+  tv_results: unknown[];
+  tv_episode_results: unknown[];
+  tv_season_results: unknown[];
+}
+
 const TMDB_KEY = env.TMDB_API_ACCESS_TOKEN;
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p';
@@ -19,13 +45,17 @@ export async function getMetadata(imdbId: string) {
 
   // find is better than search because it guarantees the exact match
   const url = `${TMDB_BASE}/find/${imdbId}?external_source=imdb_id`;
-  const { data } = await axios.get(url, {
+  const { data } = await axios.get<TmdbFindApiResponse>(url, {
     headers: {
       Authorization: `Bearer ${TMDB_KEY}`,
     },
   });
-  const tmdbMovie = data.movie_results[0];
-  if (!tmdbMovie) return null;
+  const tmdbMovie: TmdbMovie | undefined = data.movie_results[0];
+  if (!tmdbMovie) {
+    logger.warn(`TMDB metadata not found for ${imdbId}.`);
+    logger.debug({ data }, 'TMDB full response');
+    return null;
+  }
 
   // fetch Details and Trailer
   const detailUrl = `${TMDB_BASE}/movie/${tmdbMovie.id}?append_to_response=videos`;
@@ -36,27 +66,62 @@ export async function getMetadata(imdbId: string) {
   });
   const details = detailRes.data;
 
-  const youtubeTrailer = details.videos.results.find(
-    (v: { site: string; type: string }) => v.site === 'YouTube' && v.type === 'Trailer',
-  );
-  const trailerUrl = youtubeTrailer ? `https://www.youtube.com/watch?v=${youtubeTrailer.key}` : '';
+  // Robust helpers for null/invalid fields
+  const parseDuration = (runtime: unknown): number | null => {
+    if (typeof runtime !== 'number' || isNaN(runtime) || runtime <= 0) return null;
+    return runtime;
+  };
+  const parseRating = (vote_average: unknown): number | null => {
+    if (typeof vote_average !== 'number' || isNaN(vote_average) || vote_average < 0) return null;
+    return vote_average;
+  };
+  const parseYear = (release_date: unknown): number => {
+    if (typeof release_date === 'string' && release_date.match(/^\d{4}/)) {
+      const year = parseInt(release_date.split('-')[0], 10);
+      return isNaN(year) ? 0 : year;
+    }
+    return 0;
+  };
+  const parseString = (val: unknown): string => (typeof val === 'string' ? val : '');
+  const parseGenres = (genres: unknown): string[] => {
+    if (Array.isArray(genres)) {
+      return genres
+        .map((g) => (typeof g === 'object' && g && 'name' in g ? String((g as any).name) : null))
+        .filter((g): g is string => !!g);
+    }
+    return [];
+  };
+  const parseImages = (poster_path: unknown, backdrop_path: unknown) => ({
+    poster:
+      typeof poster_path === 'string' && poster_path ? `${IMAGE_BASE}/w500${poster_path}` : '',
+    backdrop:
+      typeof backdrop_path === 'string' && backdrop_path
+        ? `${IMAGE_BASE}/original${backdrop_path}`
+        : '',
+    thumbnail:
+      typeof poster_path === 'string' && poster_path ? `${IMAGE_BASE}/w200${poster_path}` : '',
+  });
+  const youtubeTrailer =
+    details.videos && details.videos.results && Array.isArray(details.videos.results)
+      ? details.videos.results.find(
+          (v: { site?: string; type?: string }) =>
+            v && v.site === 'YouTube' && v.type === 'Trailer',
+        )
+      : undefined;
+  const trailerUrl =
+    youtubeTrailer && youtubeTrailer.key
+      ? `https://www.youtube.com/watch?v=${youtubeTrailer.key}`
+      : '';
 
   return {
-    title: details.title,
-    year:
-      typeof details.release_date === 'string' && details.release_date.includes('-')
-        ? parseInt(details.release_date.split('-')[0], 10)
-        : 0,
-    synopsis: details.overview,
-    duration: details.runtime,
-    rating: details.vote_average,
-    genres: details.genres.map((g: { id: number; name: string }) => g.name),
-    language: details.original_language,
-    images: {
-      poster: `${IMAGE_BASE}/w500${details.poster_path}`,
-      backdrop: `${IMAGE_BASE}/original${details.backdrop_path}`,
-      thumbnail: `${IMAGE_BASE}/w200${details.poster_path}`,
-    },
+    title: parseString(details.title),
+    year: parseYear(details.release_date),
+    synopsis: parseString(details.overview),
+    duration: parseDuration(details.runtime),
+    rating: parseRating(details.vote_average),
+    genres: parseGenres(details.genres),
+    originalLanguage: parseString(details.original_language) || 'en',
+    images: parseImages(details.poster_path, details.backdrop_path),
     trailer: trailerUrl,
   };
 }
