@@ -74,20 +74,20 @@ export class YtsProvider extends BaseProvider {
     filters: Partial<IPaginationOptions & MovieFilterOptions>,
   ): Promise<IScrapedMovie[]> {
     try {
-      const { data } = await this.api.get<YtsListResponse>(
-        `/list_movies.json?query_term=${filters.search || ''}`,
-        {
-          params: {
-            page: filters.page || 1,
-            limit: 25,
-            sort_by: filters.sortBy || 'download_count',
-            sort_order: filters.sortOrder || 'desc',
-            genre: filters.genre,
-            minimum_rating: filters.minRating,
-            year: filters.year,
-          },
-        },
-      );
+      const params = {
+        page: filters.page || 1,
+        limit: 25,
+        sort_by: filters.sortBy || 'download_count',
+        sort_order: filters.sortOrder || 'desc',
+        genre: filters.genre,
+        minimum_rating: filters.minRating,
+        year: filters.year,
+        query_term: filters.search || '',
+      };
+
+      const { data } = await this.api.get<YtsListResponse>(`/list_movies.json`, {
+        params,
+      });
 
       // log the above params
       logger.info(

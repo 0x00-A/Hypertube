@@ -1,13 +1,15 @@
 import { MovieRepository } from '../repositories/movie.repository';
 import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
-import { scraperEngine } from './scraper/ScraperEngine';
 import { logger } from '../utils/logger';
+import { ScraperEngine } from './scraper/ScraperEngine';
 
 export class MovieService {
   private _movieRepository: MovieRepository;
+  private _scraperEngine: ScraperEngine;
 
-  constructor(movieRepository: MovieRepository) {
+  constructor(movieRepository: MovieRepository, scraperEngine: ScraperEngine) {
     this._movieRepository = movieRepository;
+    this._scraperEngine = scraperEngine;
   }
 
   async list(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions = {}) {
@@ -39,7 +41,7 @@ export class MovieService {
 
     // less than 10, scrape external sources and query again
     if (!results.data || results.data.length < 10) {
-      await scraperEngine.searchQuery(paginationOptions, filterOptions);
+      await this._scraperEngine.searchQuery(paginationOptions, filterOptions);
       results = await this.searchDatabase(paginationOptions, filterOptions);
 
       if (results.data) {

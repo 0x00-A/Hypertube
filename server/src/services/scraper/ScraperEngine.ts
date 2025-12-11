@@ -40,8 +40,7 @@ export class ScraperEngine {
       `Found ${partialMovies.length} movies from all providers for query "${filterOptions.search}".`,
     );
 
-    // log data found titie + year
-    logger.info(
+    logger.debug(
       `Logging data found: ${JSON.stringify(partialMovies.map((m) => ({ title: m.title, year: m.year })))}`,
     );
 

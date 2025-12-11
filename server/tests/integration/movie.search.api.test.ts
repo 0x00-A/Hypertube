@@ -2,7 +2,7 @@ import request from 'supertest';
 import { createApp } from '../../src/app';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { ScraperEngine } from '../../src/services/scraper/ScraperEngine';
+import { scraperEngine } from '../../src/services/scraper/ScraperEngine';
 import { MovieRepository } from '../../src/repositories/movie.repository';
 import { BaseProvider } from '../../src/services/scraper/providers/BaseProvider';
 import { IScrapedMovie } from '../../src/interfaces/movie.interface';
@@ -31,7 +31,6 @@ class MockYtsProvider extends BaseProvider {
 describe('Movie Search API', () => {
   let mongoServer: MongoMemoryServer;
   let app: ReturnType<typeof createApp>;
-  let engine: ScraperEngine;
 
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -45,9 +44,8 @@ describe('Movie Search API', () => {
 
   beforeEach(async () => {
     await mongoose.connection.dropDatabase();
-    engine = new ScraperEngine();
-    // Replace providers with mock
-    (engine as any)._providers = [new MockYtsProvider()];
+    // Replace providers in the singleton
+    (scraperEngine as any)._providers = [new MockYtsProvider()];
     app = createApp();
   });
 
