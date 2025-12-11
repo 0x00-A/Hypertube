@@ -2,6 +2,7 @@ import { IScrapedMovie } from '../../../interfaces/movie.interface';
 import { BaseProvider } from './BaseProvider';
 import { env } from '../../../config/env';
 import { logger } from '../../../utils/logger';
+import { IPaginationOptions, MovieFilterOptions } from '../../../core/interfaces/IPagination';
 
 type YtsMovie = {
   id: number;
@@ -57,7 +58,7 @@ export class YtsProvider extends BaseProvider {
   async scrape(page: number): Promise<IScrapedMovie[]> {
     try {
       const { data } = await this.api.get<YtsListResponse>('/list_movies.json', {
-        params: { page, limit: 50, sort_by: 'download_count' },
+        params: { page, limit: 50 },
       });
 
       const movies = data.data.movies || [];
@@ -65,6 +66,49 @@ export class YtsProvider extends BaseProvider {
       return movies.map((m: YtsMovie) => this.normalize(m));
     } catch (error) {
       logger.error(`[YTS] Error scraping page ${page}: ${(error as Error).message}`);
+      return [];
+    }
+  }
+
+  async search(
+    filters: Partial<IPaginationOptions & MovieFilterOptions>,
+  ): Promise<IScrapedMovie[]> {
+    try {
+      const params = {
+        page: filters.page || 1,
+        limit: 25,
+        sort_by: filters.sortBy || 'download_count',
+        sort_order: filters.sortOrder || 'desc',
+        genre: filters.genre,
+        minimum_rating: filters.minRating,
+        year: filters.year,
+        query_term: filters.search || '',
+      };
+
+      const { data } = await this.api.get<YtsListResponse>(`/list_movies.json`, {
+        params,
+      });
+
+      // log the above params
+      logger.info(
+        `[YTS] Search params: ${JSON.stringify({
+          page: filters.page || 1,
+          limit: filters.limit || 20,
+          sort_by: filters.sortBy || 'download_count',
+          sort_order: filters.sortOrder || 'desc',
+          genre: filters.genre,
+          minimum_rating: filters.minRating,
+          year: filters.year,
+        })}`,
+      );
+
+      const movies = data.data.movies || [];
+
+      return movies.map((m: YtsMovie) => this.normalize(m));
+    } catch (error) {
+      logger.error(
+        `[YTS] Error searching for "${filters.search || ''}": ${(error as Error).message}`,
+      );
       return [];
     }
   }

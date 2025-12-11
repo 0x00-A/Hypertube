@@ -216,7 +216,7 @@ paths:
                     type: string
                     example: Invalid or expired refresh token
 
-  /v1/movies:
+  /api/v1/movies:
     get:
       summary: List movies with pagination and filters
       tags:
@@ -310,6 +310,44 @@ paths:
                       hasPrevPage:
                         type: boolean
                         example: false
+                example:
+                  data:
+                    - _id: '507f1f77bcf86cd799439011'
+                      imdbId: 'tt0111161'
+                      title: 'The Shawshank Redemption'
+                      year: 1994
+                      rating: 9.3
+                      duration: 142
+                      synopsis: 'Two imprisoned men bond over a number of years...'
+                      genres: ['Drama', 'Crime']
+                      language: 'en'
+                      trailer: 'https://www.youtube.com/watch?v=6hB3S9bIaco'
+                      images:
+                        thumbnail: 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg'
+                        poster: 'https://image.tmdb.org/t/p/original/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg'
+                        backdrop: 'https://image.tmdb.org/t/p/original/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg'
+                      torrents:
+                        - url: 'magnet:?xt=urn:btih:...'
+                          hash: '08ada5a7a6183aae1e09d831df6748d566095a10'
+                          quality: '1080p'
+                          type: 'mp4'
+                          videoCodec: 'x264'
+                          seeds: 150
+                          peers: 45
+                          size: '1.4 GB'
+                          sizeBytes: 1503238553
+                          provider: 'YTS'
+                      downloadStatus: 'not_downloaded'
+                      lastWatched: null
+                      localPath: null
+                      lastUpdated: '2025-12-08T10:00:00Z'
+                  pagination:
+                    total: 100
+                    page: 1
+                    limit: 20
+                    totalPages: 5
+                    hasNextPage: true
+                    hasPrevPage: false
         '400':
           description: Invalid query parameters
           content:
@@ -317,7 +355,16 @@ paths:
               schema:
                 type: object
                 properties:
-                  errors:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid query parameters
+                  path:
+                    type: string
+                    example: /v1/movies
+                  validationErrors:
                     type: array
                     items:
                       type: object
@@ -326,8 +373,37 @@ paths:
                           type: string
                         message:
                           type: string
+              example:
+                status: fail
+                message: Invalid query parameters
+                path: /v1/movies
+                validationErrors:
+                  - path: 'year'
+                    message: 'year must be between 1900 and 2026'
+                  - path: 'minRating'
+                    message: 'minRating must be between 0 and 10'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Internal server error
+                  path:
+                    type: string
+                    example: /v1/movies
+              example:
+                status: error
+                message: Internal server error
+                path: /v1/movies
 
-  /v1/movies/{id}:
+  /api/v1/movies/{id}:
     get:
       summary: Get a single movie by ID
       tags:
@@ -376,6 +452,168 @@ paths:
                           type: string
                         message:
                           type: string
+
+  /api/v1/movies/search:
+    get:
+      summary: Search movies from external sources and database
+      tags:
+        - Movies
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          required: true
+          description: Search by title or synopsis (case-insensitive)
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order (ascending or descending)
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [title, year, rating]
+          description: Field to sort by
+        - in: query
+          name: genre
+          schema:
+            type: string
+            maxLength: 100
+          description: Filter by genre (e.g., Action, Drama, Comedy)
+        - in: query
+          name: minRating
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+          description: Filter by minimum IMDb rating
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2026
+          description: Filter by release year (minimum is 1900, maximum is current year + 1)
+      responses:
+        '200':
+          description: Paginated list of movies from external sources and database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+              example:
+                data:
+                  - _id: '507f1f77bcf86cd799439011'
+                    imdbId: 'tt0111161'
+                    title: 'The Shawshank Redemption'
+                    year: 1994
+                    rating: 9.3
+                    duration: 142
+                    synopsis: 'Two imprisoned men bond over a number of years...'
+                    genres: ['Drama', 'Crime']
+                    language: 'en'
+                    trailer: 'https://www.youtube.com/watch?v=6hB3S9bIaco'
+                    images:
+                      thumbnail: 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg'
+                      poster: 'https://image.tmdb.org/t/p/original/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg'
+                      backdrop: 'https://image.tmdb.org/t/p/original/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg'
+                    torrents:
+                      - url: 'magnet:?xt=urn:btih:...'
+                        hash: '08ada5a7a6183aae1e09d831df6748d566095a10'
+                        quality: '1080p'
+                        type: 'mp4'
+                        videoCodec: 'x264'
+                        seeds: 150
+                        peers: 45
+                        size: '1.4 GB'
+                        sizeBytes: 1503238553
+                        provider: 'YTS'
+                    downloadStatus: 'not_downloaded'
+                    lastWatched: null
+                    localPath: null
+                    lastUpdated: '2025-12-08T10:00:00Z'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid query parameters
+                  path:
+                    type: string
+                    example: /api/v1/movies/search
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+              example:
+                status: fail
+                message: Invalid query parameters
+                path: /api/v1/movies/search
+                validationErrors:
+                  - path: 'search'
+                    message: 'search is required and must be between 1 and 255 characters'
+                  - path: 'year'
+                    message: 'year must be between 1900 and 2026'
+                  - path: 'minRating'
+                    message: 'minRating must be between 0 and 10'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Internal server error
+                  path:
+                    type: string
+                    example: /api/v1/movies/search
+              example:
+                status: error
+                message: Internal server error
+                path: /api/v1/movies/search
 
 components:
   schemas:
@@ -428,7 +666,7 @@ components:
             type: string
           description: List of genres
           example: [Drama, Crime]
-        language:
+        originalLanguage:
           type: string
           description: Original language
           default: en

@@ -12,13 +12,14 @@ export interface ITorrent {
 }
 export interface IMovie {
   imdbId: string;
+  // tmdbId: string;
   title: string;
   year: number;
-  rating?: number;
-  duration?: number;
+  rating?: number | null | undefined;
+  duration?: number | null | undefined;
   synopsis?: string;
   genres?: string[];
-  language?: string;
+  originalLanguage?: string;
   trailer?: string;
   images: {
     thumbnail: string;

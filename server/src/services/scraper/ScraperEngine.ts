@@ -4,6 +4,8 @@ import { MovieRepository } from '../../repositories/movie.repository';
 import { getMetadata } from '../metadata/tmdb';
 import { logger } from '../../utils/logger';
 import { BaseProvider } from './providers/BaseProvider';
+import { IPaginationOptions, MovieFilterOptions } from '../../core/interfaces/IPagination';
+import { getOmdbMetadata } from '../metadata/omdb';
 
 export class ScraperEngine {
   private _providers: BaseProvider[] = [new YtsProvider()];
@@ -18,6 +20,29 @@ export class ScraperEngine {
     const partialMovies = results.flat();
 
     logger.info(`Scraped ${partialMovies.length} movies from all providers on page ${page}.`);
+
+    for (const partial of partialMovies) {
+      await this.fillMetadataAndUpsertMovie(partial);
+    }
+  }
+
+  async searchQuery(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions) {
+    logger.info(`searching query ${filterOptions.search} ---`);
+
+    const promises = this._providers.map((provider) =>
+      provider.search({ ...paginationOptions, ...filterOptions }),
+    );
+    const results = await Promise.all(promises);
+
+    const partialMovies = results.flat();
+
+    logger.info(
+      `Found ${partialMovies.length} movies from all providers for query "${filterOptions.search}".`,
+    );
+
+    logger.debug(
+      `Logging data found: ${JSON.stringify(partialMovies.map((m) => ({ title: m.title, year: m.year })))}`,
+    );
 
     for (const partial of partialMovies) {
       await this.fillMetadataAndUpsertMovie(partial);
@@ -45,21 +70,39 @@ export class ScraperEngine {
         logger.info(`Updated torrents for ${existingMovie.title}`);
       }
     } else {
-      logger.info(`✨ New Movie Found: ${partial.title}. Fetching metadata...`);
-      const metadata = await getMetadata(partial.imdbId);
+      logger.info(`New Movie Found: ${partial.title}. Fetching metadata...`);
+      let metadata = await getMetadata(partial.imdbId);
+
+      if (!metadata) {
+        metadata = await getOmdbMetadata(partial.imdbId);
+      }
 
       if (metadata) {
         const completeMovie = {
-          ...partial,
           ...metadata,
-          torrents: partial.torrents,
+          ...partial,
+          // torrents: partial.torrents,
+          // year: partial.year || metadata.year,
+          title: metadata.title,
+          // slug: partial.slug,
         };
 
-        await this._movieRepository.create(completeMovie);
-        logger.info(`Created DB Entry: ${completeMovie.title}`);
+        try {
+          await this._movieRepository.create(completeMovie);
+          logger.info(`Created DB Entry: ${completeMovie.title} ${completeMovie.year}`);
+        } catch (error) {
+          // log complete partial and metadata object for debugging
+          logger.debug(
+            `Error creating movie ${completeMovie.title}: ${(error as Error).message}\nPartial: ${JSON.stringify(
+              partial,
+            )}\nMetadata: ${JSON.stringify(metadata)}`,
+          );
+        }
       } else {
-        logger.warn(`⚠️ Failed to find metadata for ${partial.imdbId}. Skipping.`);
+        logger.warn(`Failed to find metadata for ${partial.imdbId}. Skipping.`);
       }
     }
   }
 }
+
+export const scraperEngine = new ScraperEngine();

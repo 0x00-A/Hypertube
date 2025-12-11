@@ -96,7 +96,7 @@ export const errorHandler = (
   }
 
   // 5. Unknown/programmer errors
-  logger.error({ err, path: req.originalUrl }, '💥 Unhandled/Unexpected error');
+  logger.error({ err, path: req.originalUrl }, 'Unhandled/Unexpected error');
 
   // Never leak internal error details in production
   return res.status(statusCode).json({

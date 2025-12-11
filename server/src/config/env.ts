@@ -8,9 +8,11 @@ export const env = cleanEnv(process.env, {
   MONGODB_URI: str(),
   CLIENT_URL: str(),
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
+  LOG_LEVEL: str({ default: 'info' }),
 
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
   TMDB_API_ACCESS_TOKEN: str(),
+  OMDB_API_KEY: str(),
 
   JWT_ACCESS_SECRET: str(),
   JWT_REFRESH_SECRET: str(),

@@ -69,6 +69,15 @@ class MockYtsProvider extends BaseProvider {
       },
     ];
   }
+
+  // Implement the abstract search method to satisfy BaseProvider
+  async search(
+    _filters: Partial<Record<string, unknown>>, // Accept any filter shape for test
+    page: number = 1,
+  ): Promise<IScrapedMovie[]> {
+    // For test purposes, just return the same as scrape for page 1, or empty for others
+    return this.scrape(page);
+  }
 }
 
 // Mock TMDB metadata service - conditionally based on RUN_SCRAPER_INTEGRATION
@@ -164,6 +173,31 @@ describe('ScraperEngine Integration Test', () => {
     if (!useRealProviders) {
       (engine as any)._providers = [new MockYtsProvider()];
     }
+  });
+
+  describe('searchQuery - End-to-End', () => {
+    it('should search and upsert movies to MongoDB using the search method', async () => {
+      if (!useRealProviders) {
+        // Call searchQuery with a search term
+        await engine.searchQuery(
+          { page: 1, limit: 10, sortBy: 'lastUpdated', sortOrder: 'desc' },
+          { search: 'Shawshank' },
+        );
+
+        // Verify movies were saved to the database
+        const response = await movieRepository.findAll({
+          page: 1,
+          limit: 10,
+          sortBy: 'lastUpdated',
+          sortOrder: 'desc',
+        });
+        expect(response.data).toBeDefined();
+        expect(response.data!.length).toBe(2);
+        const shawshank = response.data!.find((m: IMovie) => m.imdbId === 'tt0111161');
+        expect(shawshank).toBeDefined();
+        expect(shawshank!.title).toBe('The Shawshank Redemption');
+      }
+    });
   });
 
   describe('scrapePage - End-to-End', () => {

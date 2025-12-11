@@ -17,7 +17,7 @@ describe('Movies API Integration Tests', () => {
     duration: 120,
     synopsis: 'A test movie for integration testing',
     genres: ['Action', 'Thriller'],
-    language: 'en',
+    originalLanguage: 'en',
     trailer: 'https://youtube.com/watch?v=test1',
     images: {
       thumbnail: 'https://example.com/thumb1.jpg',
@@ -50,7 +50,7 @@ describe('Movies API Integration Tests', () => {
     duration: 95,
     synopsis: 'Another test movie',
     genres: ['Comedy', 'Drama'],
-    language: 'en',
+    originalLanguage: 'en',
     trailer: 'https://youtube.com/watch?v=test2',
     images: {
       thumbnail: 'https://example.com/thumb2.jpg',
@@ -83,7 +83,7 @@ describe('Movies API Integration Tests', () => {
     duration: 110,
     synopsis: 'Movie for search testing',
     genres: ['Horror'],
-    language: 'en',
+    originalLanguage: 'en',
     images: {
       thumbnail: 'https://example.com/thumb3.jpg',
       poster: 'https://example.com/poster3.jpg',

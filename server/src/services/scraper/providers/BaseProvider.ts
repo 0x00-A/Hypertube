@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { IScrapedMovie } from '../../../interfaces/movie.interface';
 import axiosRetry from 'axios-retry';
+import { BaseFilterOptions, IPaginationOptions } from '../../../core/interfaces/IPagination';
 
 export abstract class BaseProvider {
   protected api: AxiosInstance;
@@ -18,6 +19,9 @@ export abstract class BaseProvider {
   }
 
   abstract scrape(page: number): Promise<IScrapedMovie[]>;
+  abstract search(
+    filters: Partial<IPaginationOptions & BaseFilterOptions>,
+  ): Promise<IScrapedMovie[]>;
 }
 
 // function parseRetryAfter(header?: string): number | null {
