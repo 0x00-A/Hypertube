@@ -203,7 +203,7 @@ describe('OAuth Integration Tests', () => {
 
       const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
 
-      expect(user.username).toBe('jane.smith');
+      expect(user.username).toBe('janesmith'); // Dots are removed by sanitization
     });
 
     it('should throw error if Google profile has no email', async () => {
@@ -214,6 +214,53 @@ describe('OAuth Integration Tests', () => {
       });
 
       await expect(oauthService.handleGoogleOAuth(mockGoogleProfile)).rejects.toThrow('Google account must have an email address');
+    });
+
+    it('should generate unique username when preferred username is taken', async () => {
+      // Create a regular user with username 'john'
+      await userRepo.create({
+        email: 'john.regular@example.com',
+        username: 'john',
+        password: 'hashedpassword123',
+        firstName: 'John',
+        lastName: 'Regular',
+      });
+
+      // Try to create OAuth user with same email prefix
+      const mockGoogleProfile = createGoogleProfile({
+        id: 'google456',
+        email: 'john@gmail.com',
+        given_name: 'John',
+        family_name: 'OAuth',
+      });
+
+      const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
+
+      expect(user.username).toBe('john2'); // Should append number to avoid collision
+      expect(user.email).toBe('john@gmail.com');
+    });
+
+    it('should handle multiple OAuth users with same email prefix', async () => {
+      // Create first OAuth user
+      const mockProfile1 = createGoogleProfile({
+        id: 'google111',
+        email: 'jane@provider1.com',
+        given_name: 'Jane',
+        family_name: 'Doe',
+      });
+      const user1 = await oauthService.handleGoogleOAuth(mockProfile1);
+
+      // Create second OAuth user with same email prefix
+      const mockProfile2 = createGoogleProfile({
+        id: 'google222',
+        email: 'jane@provider2.com',
+        given_name: 'Jane',
+        family_name: 'Smith',
+      });
+      const user2 = await oauthService.handleGoogleOAuth(mockProfile2);
+
+      expect(user1.username).toBe('jane');
+      expect(user2.username).toBe('jane2');
     });
   });
 
@@ -288,6 +335,25 @@ describe('OAuth Integration Tests', () => {
       expect(user.firstName).toBe('User');
       expect(user.lastName).toBe('FortyTwo');
     });
+
+    it('should generate unique username when 42 login is taken', async () => {
+      // Create a regular user with username 'jsmith'
+      await userRepo.create({
+        email: 'jsmith.regular@example.com',
+        username: 'jsmith',
+        password: 'hashedpassword123',
+        firstName: 'John',
+        lastName: 'Smith',
+      });
+
+      // Try to create 42 OAuth user with same login
+      const mockFortyTwoProfile = createFortyTwoProfile(67890, 'jsmith@student.42.fr', 'jsmith', 'Jane', 'Smith');
+
+      const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
+
+      expect(user.username).toBe('jsmith2'); // Should append number to avoid collision
+      expect(user.email).toBe('jsmith@student.42.fr');
+    });
   });
 
   describe('OAuth Error Handling', () => {
@@ -306,6 +372,44 @@ describe('OAuth Integration Tests', () => {
 
       // Reconnect for other tests
       await connectDatabase();
+    });
+
+    it('should handle non-existent user when linking OAuth account', async () => {
+      const nonExistentId = new mongoose.Types.ObjectId().toString();
+      const result = await userRepo.linkOAuthAccount(nonExistentId, {
+        provider: 'google',
+        id: 'google123'
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('should properly update OAuth fields without data loss', async () => {
+      // Create a user with initial data
+      const user = await userRepo.create({
+        email: 'test@example.com',
+        username: 'testuser',
+        password: 'hashedpassword123',
+        firstName: 'Test',
+        lastName: 'User',
+      });
+
+      // Link OAuth account
+      const linkedUser = await userRepo.linkOAuthAccount(user._id!, {
+        provider: 'google',
+        id: 'google123'
+      });
+
+      expect(linkedUser).not.toBeNull();
+      expect(linkedUser?.email).toBe('test@example.com');
+      expect(linkedUser?.username).toBe('testuser');
+      expect(linkedUser?.firstName).toBe('Test');
+      expect(linkedUser?.lastName).toBe('User');
+
+      // Verify oauth was set correctly in database
+      const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
+      expect(dbUser?.oauth?.provider).toBe('google');
+      expect(dbUser?.oauth?.id).toBe('google123');
     });
   });
 });

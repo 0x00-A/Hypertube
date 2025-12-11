@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { passport } from '../config/passport';
 import { JWTService } from '../services/jwt.service';
 import { IUser } from '../interfaces/user.interface';
+import { logger } from '../utils/logger';
 
 export class OAuthController {
   constructor(private _jwtService: JWTService) {}
@@ -17,6 +18,7 @@ export class OAuthController {
   googleCallback = (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('google', { session: false }, (err: Error | null, user: IUser | false) => {
       if (err || !user) {
+        logger.error({ err, provider: 'google' }, 'OAuth authentication failed')
         return res.redirect(`${env.CLIENT_URL}?error=oauth_failed`);
       }
       const tokens = this._jwtService.generateTokens({ userId: user._id! });
@@ -50,6 +52,7 @@ export class OAuthController {
   fortyTwoCallback = (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('42', { session: false }, (err: Error | null, user: IUser | false) => {
       if (err || !user) {
+        logger.error({ err, provider: 'fortytwo' }, 'OAuth authentication failed')
         return res.redirect(`${env.CLIENT_URL}?error=oauth_failed`);
       }
 

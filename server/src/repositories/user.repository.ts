@@ -54,10 +54,22 @@ export class UserRepository {
   }
 
   async linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null> {
-    const doc = await UserModel.findByIdAndUpdate(userId, {
-      'oauth.provider': oauth.provider,
-      'oauth.id': oauth.id
-    }, { new: true }).exec();
+    const existingUser = await UserModel.findById(userId).exec();
+    if (!existingUser) {
+      return null;
+    }
+
+    const doc = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          'oauth.provider': oauth.provider,
+          'oauth.id': oauth.id
+        }
+      },
+      { new: true, runValidators: true }
+    ).exec();
+
     if (!doc) return null;
     return this.toIUser(doc);
   }
