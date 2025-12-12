@@ -56,31 +56,49 @@ paths:
                   message:
                     type: string
                     example: User registered successfully
-                  data:
-                    type: object
-                    properties:
-                      userId:
-                        type: string
-                      email:
-                        type: string
-                      username:
-                        type: string
         '400':
-          description: Validation error or user already exists
+          description: Validation error
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  errors:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation Error
+                  path:
+                    type: string
+                    example: /api/v1/auth/signup
+                  validationErrors:
                     type: array
                     items:
                       type: object
                       properties:
                         path:
-                          type: string
+                          type: array
+                          items:
+                            type: string
                         message:
                           type: string
+        '409':
+          description: Username or email already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Username already taken
+                  path:
+                    type: string
+                    example: /api/v1/auth/signup
         '500':
           description: Internal server error
 
@@ -109,7 +127,12 @@ paths:
                   example: SecurePass123!
       responses:
         '200':
-          description: Login successful
+          description: Login successful - sets httpOnly cookies for accessToken and refreshToken
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: accessToken=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600
           content:
             application/json:
               schema:
@@ -121,15 +144,6 @@ paths:
                   message:
                     type: string
                     example: Login successful
-                  data:
-                    type: object
-                    properties:
-                      userId:
-                        type: string
-                      username:
-                        type: string
-                      email:
-                        type: string
         '400':
           description: Validation error - missing or invalid fields
           content:
@@ -137,13 +151,24 @@ paths:
               schema:
                 type: object
                 properties:
-                  errors:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation Error
+                  path:
+                    type: string
+                    example: /api/v1/auth/login
+                  validationErrors:
                     type: array
                     items:
                       type: object
                       properties:
                         path:
-                          type: string
+                          type: array
+                          items:
+                            type: string
                         message:
                           type: string
         '401':
@@ -155,10 +180,13 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: error
+                    example: fail
                   message:
                     type: string
-                    example: Invalid  identifier or password
+                    example: Invalid identifier or password
+                  path:
+                    type: string
+                    example: /api/v1/auth/login
         '500':
           description: Internal server error
 
@@ -193,17 +221,12 @@ paths:
             type: string
       responses:
         '200':
-          description: New access token issued
-          content:
-            application/json:
+          description: New access token issued - sets httpOnly cookie
+          headers:
+            Set-Cookie:
               schema:
-                type: object
-                properties:
-                  access_token:
-                    type: string
-                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        '401':
-          description: Invalid or expired refresh token
+                type: string
+                example: accessToken=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600
           content:
             application/json:
               schema:
@@ -211,10 +234,130 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: error
+                    example: success
                   message:
                     type: string
-                    example: Invalid or expired refresh token
+                    example: Token refreshed successfully
+        '401':
+          description: Invalid, expired, or missing refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: No refresh token provided
+                  path:
+                    type: string
+                    example: /api/v1/auth/refresh-token
+
+  /api/v1/oauth:
+    get:
+      summary: OAuth health check
+      tags:
+        - OAuth
+      responses:
+        '200':
+          description: OAuth routes are working
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OAuth route is working
+
+  /api/v1/oauth/google:
+    get:
+      summary: Initiate Google OAuth authentication
+      tags:
+        - OAuth
+      description: Redirects the user to Google's OAuth consent screen
+      responses:
+        '302':
+          description: Redirect to Google OAuth consent screen
+          headers:
+            Location:
+              schema:
+                type: string
+                example: https://accounts.google.com/o/oauth2/v2/auth?...
+
+  /api/v1/oauth/google/callback:
+    get:
+      summary: Google OAuth callback
+      tags:
+        - OAuth
+      description: Google redirects here after user authentication. Sets JWT tokens in httpOnly cookies and redirects to frontend.
+      parameters:
+        - name: code
+          in: query
+          description: Authorization code from Google
+          required: true
+          schema:
+            type: string
+        - name: scope
+          in: query
+          description: Granted scopes
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to frontend with authentication status
+          headers:
+            Location:
+              schema:
+                type: string
+                example: http://localhost:3000?status=oauth_success
+            Set-Cookie:
+              schema:
+                type: string
+                example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
+
+  /api/v1/oauth/42:
+    get:
+      summary: Initiate 42 OAuth authentication
+      tags:
+        - OAuth
+      description: Redirects the user to 42's OAuth consent screen
+      responses:
+        '302':
+          description: Redirect to 42 OAuth consent screen
+          headers:
+            Location:
+              schema:
+                type: string
+                example: https://api.intra.42.fr/oauth/authorize?...
+
+  /api/v1/oauth/42/callback:
+    get:
+      summary: 42 OAuth callback
+      tags:
+        - OAuth
+      description: 42 redirects here after user authentication. Sets JWT tokens in httpOnly cookies and redirects to frontend.
+      parameters:
+        - name: code
+          in: query
+          description: Authorization code from 42
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to frontend with authentication status
+          headers:
+            Location:
+              schema:
+                type: string
+                example: http://localhost:3000?status=oauth_success
+            Set-Cookie:
+              schema:
+                type: string
+                example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
 
   /api/v1/movies:
     get:

@@ -1,59 +1,53 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { env } from '../config/env';
-import { ILoginDTO, ISignupDTO } from '../interfaces/auth.interface';
+import { IJWTPayload, ILoginDTO, ISignupDTO } from '../interfaces/auth.interface';
 import { UnauthorizedError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
+import { JWTService } from '../services/jwt.service';
 
 export class AuthController {
-  private _service: AuthService;
 
-  constructor(service: AuthService) {
-    this._service = service;
-  }
+  constructor(private _authService: AuthService, private _jwtService: JWTService) {}
 
   signUp = asyncHandler(async (req: Request, res: Response) => {
     const body = req.validated!.body as ISignupDTO;
 
-    const newUser = await this._service.signUp(body);
+    await this._authService.signUp(body);
     return res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
-      data: newUser,
     });
   });
 
   logIn = asyncHandler(async (req: Request, res: Response) => {
     const body = req.validated!.body as ILoginDTO;
 
-    const result = await this._service.logIn(body);
-    if (!result) {
+    const user = await this._authService.logIn(body);
+    if (!user) {
       throw new UnauthorizedError('Invalid identifier or password');
     }
-    // Set tokens in httpOnly cookies
-    res.cookie('accessToken', result.access_token, {
+    const payload: IJWTPayload = { userId: user._id! };
+    const tokens = this._jwtService.generateTokens(payload);
+
+    res.cookie('accessToken', tokens.access_token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 1 * 60 * 60 * 1000, // 1 hour
+      maxAge: env.MAX_AGE_ACCESS_TOKEN
     });
-    res.cookie('refreshToken', result.refresh_token, {
+    res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/api/v1/auth/refresh-token',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      maxAge: env.MAX_AGE_REFRESH_TOKEN
     });
 
     return res.status(200).json({
       status: 'success',
       message: 'Login successful',
-      data: {
-        userId: result.user._id,
-        username: result.user.username,
-        email: result.user.email,
-      },
     });
   });
 
@@ -62,14 +56,14 @@ export class AuthController {
     if (!refreshToken) {
       throw new UnauthorizedError('No refresh token provided');
     }
-    const result = await this._service.refreshToken(refreshToken);
+    const result = await this._jwtService.refreshToken(refreshToken);
 
     res.cookie('accessToken', result.access_token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 1 * 60 * 60 * 1000, // 1 hour
+      maxAge: env.MAX_AGE_ACCESS_TOKEN
     });
     return res.status(200).json({
       status: 'success',

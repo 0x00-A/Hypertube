@@ -1,25 +1,19 @@
 import { ISignupDTO, ILoginDTO } from '../interfaces/auth.interface';
 import { IUser } from '../interfaces/user.interface';
-import { IJWTPayload } from '../interfaces/auth.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from './password.service';
-import { JWTService } from './jwt.service';
 import { ConflictError } from '../core/errors/customErrors';
 
 export class AuthService {
-  private _repo: UserRepository;
-  private _passwordService: PasswordService;
-  private _jwtService: JWTService;
 
-  constructor(repo: UserRepository, passwordService: PasswordService, jwtService: JWTService) {
-    this._repo = repo;
-    this._passwordService = passwordService;
-    this._jwtService = jwtService;
-  }
+  constructor(
+    private _userRepo: UserRepository,
+    private _passwordService: PasswordService
+  ) {}
 
   async signUp(userData: ISignupDTO) {
-    const exist_username = await this._repo.findByUsername(userData.username);
-    const exist_email = await this._repo.findByEmail(userData.email);
+    const exist_username = await this._userRepo.findByUsername(userData.username);
+    const exist_email = await this._userRepo.findByEmail(userData.email);
     if (exist_username) {
       throw new ConflictError('Username already taken');
     }
@@ -27,28 +21,23 @@ export class AuthService {
       throw new ConflictError('Email already exists');
     }
     const hashedPassword = await this._passwordService.hashPassword(userData.password);
-    const newUser: ISignupDTO = {
+    await this._userRepo.create({
       username: userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
       password: hashedPassword,
-    };
-    const newUserCreated = await this._repo.create(newUser);
+    });
     // then you should send verification email
-    return {
-      userId: newUserCreated._id,
-      username: newUserCreated.username,
-      email: newUserCreated.email,
-    };
+    return true;
   }
 
   async logIn(
     body: ILoginDTO,
-  ): Promise<{ access_token: string; refresh_token: string; user: Partial<IUser> } | null> {
+  ): Promise<Partial<IUser> | null> {
     const user = body.identifier.includes('@')
-      ? await this._repo.findByEmail(body.identifier)
-      : await this._repo.findByUsername(body.identifier);
+      ? await this._userRepo.findByEmail(body.identifier)
+      : await this._userRepo.findByUsername(body.identifier);
     if (!user || !user.password) {
       return null;
     }
@@ -56,25 +45,12 @@ export class AuthService {
       user.password!,
       body.password,
     );
-    if (!isPasswordValid) {
+    if (!isPasswordValid || !user._id) {
       return null;
     }
-    if (!user._id) {
-      return null;
-    }
-    const payload: IJWTPayload = { userId: user._id! };
-    const tokens = this._jwtService.generateTokens(payload);
-
     // Remove password before returning user
-    const { ...userWithoutPassword } = user;
-    return {
-      ...tokens,
-      user: userWithoutPassword,
-    };
+    const { password: _password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
-  async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
-    const verifyResult = await this._jwtService.verifyToken(refreshToken, false, true);
-    return { access_token: verifyResult.newAccessToken! };
-  }
 }

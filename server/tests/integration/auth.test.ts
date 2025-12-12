@@ -42,13 +42,13 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body).toMatchObject({
         status: 'success',
         message: 'User registered successfully',
-        data: {
-          username: validUserData.username,
-          email: validUserData.email,
-        },
       });
-      expect(res.body.data).toHaveProperty('userId');
-      expect(res.body.data.userId).toBeTruthy();
+      expect(res.body).not.toHaveProperty('data');
+
+      // Verify user was created in database
+      const user = await UserModel.findOne({ email: validUserData.email });
+      expect(user).toBeTruthy();
+      expect(user?.username).toBe(validUserData.username);
     });
 
     it('should hash the password before storing', async () => {
@@ -176,17 +176,20 @@ describe('Auth Signup Integration Tests', () => {
       const res = await request(app).post('/api/v1/auth/signup').send(dataWithSpaces);
 
       expect(res.status).toBe(201);
-      expect(res.body.data.username).toBe('testuser');
-      expect(res.body.data.email).toBe('test@example.com');
+
+      // Verify trimmed values in database
+      const user = await UserModel.findOne({ email: 'test@example.com' });
+      expect(user).toBeTruthy();
+      expect(user?.username).toBe('testuser');
+      expect(user?.email).toBe('test@example.com');
     });
 
     it('should not expose sensitive data in response', async () => {
       const res = await request(app).post('/api/v1/auth/signup').send(validUserData);
 
       expect(res.status).toBe(201);
-      expect(res.body.data).not.toHaveProperty('password');
-      expect(res.body.data).not.toHaveProperty('__v');
-      expect(res.body.data).not.toHaveProperty('_id');
+      expect(res.body).not.toHaveProperty('data');
+      expect(JSON.stringify(res.body)).not.toContain('password');
     });
 
     it('should create user with correct default values', async () => {
@@ -263,19 +266,19 @@ describe('Auth Signup Integration Tests', () => {
       expect(cookies).toHaveLength(2);
     });
 
-    it('should return user information in response', async () => {
+    it('should return success message without exposing user data', async () => {
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
       });
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toMatchObject({
-        username: validUserData.username,
-        email: validUserData.email,
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Login successful',
       });
-      expect(res.body.data).toHaveProperty('userId');
-      expect(res.body.data.userId).toBeTruthy();
+      expect(res.body).not.toHaveProperty('data');
+      expect(JSON.stringify(res.body)).not.toContain('password');
     });
 
     it('should return 401 with invalid password', async () => {
@@ -339,7 +342,7 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body).toHaveProperty('validationErrors');
     });
 
-    it('should not expose password in any response', async () => {
+    it('should not expose password or user data in response', async () => {
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -347,7 +350,8 @@ describe('Auth Signup Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(JSON.stringify(res.body)).not.toContain(validUserData.password);
-      expect(res.body.data).not.toHaveProperty('password');
+      expect(res.body).not.toHaveProperty('data');
+      expect(res.body).not.toHaveProperty('user');
     });
 
     it('should set cookies with correct expiration times', async () => {

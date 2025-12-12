@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
-import { cleanEnv, str, port, bool } from 'envalid';
+import { cleanEnv, str, port, bool, num } from 'envalid';
 
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({ choices: ['development', 'test', 'production'] }),
@@ -21,4 +21,14 @@ export const env = cleanEnv(process.env, {
   JWT_ACCESS_EXPIRES_IN: str({ default: '1h' }),
   JWT_REFRESH_EXPIRES_IN: str({ default: '30d' }),
   JWT_REFRESH_PATH: str({ default: '/api/v1/auth/refresh-token' }),
+  MAX_AGE_ACCESS_TOKEN: num({ default: 3600000 }), // 1 hour in ms
+  MAX_AGE_REFRESH_TOKEN: num({ default: 2592000000 }), // 30 days in ms
+
+  GOOGLE_CLIENT_ID: str(),
+  GOOGLE_CLIENT_SECRET: str(),
+  GOOGLE_CALLBACK_URL: str(),
+
+  FORTYTWO_CLIENT_ID: str(),
+  FORTYTWO_CLIENT_SECRET: str(),
+  FORTYTWO_CALLBACK_URL: str(),
 });

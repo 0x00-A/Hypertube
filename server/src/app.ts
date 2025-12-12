@@ -15,6 +15,8 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
 import { dbHealth } from './config/database';
 import { createControllers } from './bootstrap/controllers';
+import { createOAuthRoutes } from './routes/v1/oauth.routes';
+import { passport } from './config/passport';
 
 export const createApp = () => {
   const app = express();
@@ -39,6 +41,7 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
+  app.use(passport.initialize());
 
   app.use(
     rateLimit({
@@ -62,8 +65,9 @@ export const createApp = () => {
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // Initialize controllers
-  const { movieController, authController } = createControllers();
+  const { movieController, authController, oauthController } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
+  app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
 
   // Test endpoint for auth middleware (protected)

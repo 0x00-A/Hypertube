@@ -36,6 +36,11 @@ export class JWTService {
     };
   }
 
+  async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
+    const verifyResult = await this.verifyToken(refreshToken, false, true);
+    return { access_token: verifyResult.newAccessToken! };
+  }
+
   async verifyToken(token: string, access: boolean, refresh: boolean): Promise<JWTVerifyResult> {
     const secretKey = access ? this.accessSecretKey : refresh ? this.refreshSecretKey : '';
 
