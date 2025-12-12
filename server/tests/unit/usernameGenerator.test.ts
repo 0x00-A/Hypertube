@@ -2,16 +2,21 @@ import { generateUniqueUsername } from '../../src/utils/usernameGenerator';
 import { UserRepository } from '../../src/repositories/user.repository';
 import { connectDatabase, disconnectDatabase } from '../../src/config/database';
 import { UserModel } from '../../src/models/User';
+import { PasswordService } from '../../src/services/password.service';
 import mongoose from 'mongoose';
 
 describe('Username Generator Utils', () => {
   let userRepo: UserRepository;
+  let passwordService: PasswordService;
+  let hashedPassword: string;
 
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
       await connectDatabase();
     }
     userRepo = new UserRepository();
+    passwordService = new PasswordService();
+    hashedPassword = await passwordService.hashPassword('password123');
   });
 
   afterAll(async () => {
@@ -36,7 +41,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'testuser',
         email: 'test@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'Test',
         lastName: 'User',
       });
@@ -50,7 +55,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'testuser',
         email: 'test1@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'Test',
         lastName: 'User1',
       });
@@ -58,7 +63,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'testuser2',
         email: 'test2@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'Test',
         lastName: 'User2',
       });
@@ -66,7 +71,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'testuser3',
         email: 'test3@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'Test',
         lastName: 'User3',
       });
@@ -98,7 +103,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'verylongusernametwentych',
         email: 'test@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'Test',
         lastName: 'User',
       });
@@ -109,19 +114,20 @@ describe('Username Generator Utils', () => {
     });
 
     it('should throw error after max attempts', async () => {
-      // Create 100 users to exceed default maxAttempts
-      for (let i = 1; i <= 5; i++) {
+      // Create users to exceed maxAttempts: limituser, limituser2-6
+      for (let i = 1; i <= 6; i++) {
         const suffix = i === 1 ? '' : i.toString();
         await userRepo.create({
           username: `limituser${suffix}`,
           email: `limit${i}@example.com`,
-          password: 'password123',
+          password: hashedPassword,
           firstName: 'Test',
           lastName: 'User',
         });
       }
 
       // Should throw after 5 attempts with maxAttempts=5
+      // Will try: limituser2, limituser3, limituser4, limituser5, limituser6 (all taken)
       await expect(generateUniqueUsername('limituser', userRepo, 5)).rejects.toThrow(
         'Unable to generate unique username'
       );
@@ -203,7 +209,7 @@ describe('Username Generator Utils', () => {
       await userRepo.create({
         username: 'john',
         email: 'john.regular@example.com',
-        password: 'password123',
+        password: hashedPassword,
         firstName: 'John',
         lastName: 'Regular',
       });

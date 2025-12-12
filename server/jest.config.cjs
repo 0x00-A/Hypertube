@@ -5,4 +5,8 @@ module.exports = {
   setupFiles: ['<rootDir>/tests/setup-env.ts'],
   verbose: false,
   collectCoverage: false,
+  // Run tests sequentially to avoid database race conditions
+  maxWorkers: 1,
+  // Increase timeout for integration tests
+  testTimeout: 10000,
 };

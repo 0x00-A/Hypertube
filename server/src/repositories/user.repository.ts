@@ -48,7 +48,7 @@ export class UserRepository {
     const doc = await UserModel.findOne({
       'oauth.provider': oauth.provider,
       'oauth.id': oauth.id
-    }).select('+oauth').exec();
+    }).select('+oauth +password').exec();
     if (!doc) return null;
     return this.toIUser(doc);
   }

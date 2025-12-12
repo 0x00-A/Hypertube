@@ -24,7 +24,7 @@ export async function generateUniqueUsername(
   }
 
   // If base exists, try appending numbers
-  for (let i = 2; i <= maxAttempts; i++) {
+  for (let i = 2; i <= maxAttempts + 1; i++) {
     const suffix = String(i);
     const candidate = `${sanitized}${suffix}`;
 
