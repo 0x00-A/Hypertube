@@ -5,6 +5,13 @@ import { MovieModel } from '../../src/models/Movie';
 import mongoose from 'mongoose';
 import { IMovie } from '../../src/interfaces/movie.interface';
 
+afterEach(async () => {
+  // Ensure no leftover movies between tests
+  if (mongoose.connection.readyState === 1) {
+    await MovieModel.deleteMany({});
+  }
+});
+
 describe('Movies API Integration Tests', () => {
   const app = createApp();
 

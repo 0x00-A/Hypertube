@@ -82,7 +82,7 @@ export const MovieSearchQuerySchema = z.object({
   }),
 });
 
-export const MovieTrendingQuerySchema = z.object({
+export const MoviePageQuerySchema = z.object({
   query: z.object({
     page: z
       .string()

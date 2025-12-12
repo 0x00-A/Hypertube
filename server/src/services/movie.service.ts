@@ -51,24 +51,7 @@ export class MovieService {
         },
       });
 
-      const tmdbIds = results.data.results.map((m: ITmdbTrendingMovie) => m.id);
-      const localMovies = await this._movieRepository.findByTmdbIds(tmdbIds);
-      const localTmdbIds = new Set(localMovies.map((m) => m.tmdbId));
-
-      // Normalize trending movies
-      const normalized = results.data.results.map((m: ITmdbTrendingMovie) => ({
-        tmdbId: m.id,
-        title: m.title,
-        year: m.release_date ? parseInt(m.release_date.split('-')[0]) : 0,
-        rating: m.vote_average.toFixed(1),
-        originalLanguage: m.original_language,
-        images: {
-          thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
-          // poster: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w500${m.poster_path}` : '',
-          // backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
-        },
-        isLocal: localTmdbIds.has(m.id),
-      }));
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
 
       logger.info(`[MovieService] Fetched and normalized trending movies from TMDB API.`);
       logger.debug(`[MovieService] Trending movies data: ${JSON.stringify(normalized)}`);
@@ -87,6 +70,89 @@ export class MovieService {
     } catch (error: unknown) {
       logger.error(
         `[MovieService] Error fetching trending movies: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new BadGatewayError();
+    }
+  }
+
+  async getRecommended(paginationOptions: Partial<IPaginationOptions>, _userId: string) {
+    try {
+      // Temporary hardcoded recommended movies until user preferences are implemented
+      const hardcodedTmdbIds = [
+        550, // Fight Club
+        680, // Pulp Fiction
+        278, // The Shawshank Redemption
+        238, // The Godfather
+      ];
+
+      const recommendedUrl = `${env.TMDB_BASE_API_URL}/movie/${
+        hardcodedTmdbIds[Math.floor(Math.random() * hardcodedTmdbIds.length)]
+      }/recommendations`;
+
+      const results = await axios.get<ITmdbTrendingResponse>(recommendedUrl, {
+        headers: {
+          Authorization: `Bearer ${env.TMDB_API_ACCESS_TOKEN}`,
+        },
+        params: {
+          page: paginationOptions.page,
+          language: 'en-US',
+        },
+      });
+
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
+
+      logger.info(`[MovieService] Fetched and normalized recommended movies from TMDB API.`);
+      logger.debug(`[MovieService] Recommended movies data: ${JSON.stringify(normalized)}`);
+
+      return {
+        data: normalized,
+        pagination: {
+          page: results.data.page,
+          total: results.data.total_results,
+          totalPages: results.data.total_pages,
+          limit: 20,
+          hasNextPage: results.data.page < results.data.total_pages,
+          hasPrevPage: results.data.page > 1,
+        },
+      };
+    } catch (error: unknown) {
+      logger.error(
+        `[MovieService] Error fetching recommended movies: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new BadGatewayError();
+    }
+  }
+
+  async getPopular(paginationOptions: Partial<IPaginationOptions>) {
+    try {
+      const popularUrl = `${env.TMDB_BASE_API_URL}/movie/popular`;
+      const results = await axios.get<ITmdbTrendingResponse>(popularUrl, {
+        headers: {
+          Authorization: `Bearer ${env.TMDB_API_ACCESS_TOKEN}`,
+        },
+        params: {
+          page: paginationOptions.page,
+          language: 'en-US',
+        },
+      });
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
+
+      logger.info(`[MovieService] Fetched and normalized popular movies from TMDB API.`);
+      logger.debug(`[MovieService] Popular movies data: ${JSON.stringify(normalized)}`);
+      return {
+        data: normalized,
+        pagination: {
+          page: results.data.page,
+          total: results.data.total_results,
+          totalPages: results.data.total_pages,
+          limit: 20,
+          hasNextPage: results.data.page < results.data.total_pages,
+          hasPrevPage: results.data.page > 1,
+        },
+      };
+    } catch (error: unknown) {
+      logger.error(
+        `[MovieService] Error fetching popular movies: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new BadGatewayError();
     }
@@ -206,5 +272,23 @@ export class MovieService {
     }
 
     return results;
+  }
+
+  private async normalizeTmdbMoviesWithLocalData(tmdbMovies: ITmdbTrendingMovie[]) {
+    const tmdbIds = tmdbMovies.map((m) => m.id);
+    const localMovies = await this._movieRepository.findByTmdbIds(tmdbIds);
+    const localTmdbIds = new Set(localMovies.map((m) => m.tmdbId));
+
+    return tmdbMovies.map((m: ITmdbTrendingMovie) => ({
+      tmdbId: m.id,
+      title: m.title,
+      year: m.release_date ? parseInt(m.release_date.split('-')[0]) : 0,
+      rating: m.vote_average.toFixed(1),
+      originalLanguage: m.original_language,
+      images: {
+        thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
+      },
+      isLocal: localTmdbIds.has(m.id),
+    }));
   }
 }

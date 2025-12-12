@@ -875,6 +875,156 @@ paths:
                 message: Failed to fetch movie details from TMDB.
                 path: /api/v1/movies/tmdb/12345
 
+  /api/v1/movies/recommended:
+    get:
+      summary: Get recommended movies for the user (TMDB-based, placeholder logic)
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Paginated list of recommended movies (external)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrendingMovieItem'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 1000
+                      totalPages:
+                        type: integer
+                        example: 50
+                      limit:
+                        type: integer
+                        example: 20
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+              example:
+                data:
+                  - tmdbId: 238
+                    title: The Godfather
+                    year: 1972
+                    rating: '9.2'
+                    originalLanguage: en
+                    images:
+                      thumbnail: https://image.tmdb.org/t/p/w200/3bhkrj58Vtu7enYsRolD1fZdja1.jpg
+                    isLocal: false
+                pagination:
+                  page: 1
+                  total: 1000
+                  totalPages: 50
+                  limit: 20
+                  hasNextPage: true
+                  hasPrevPage: false
+        '502':
+          description: Failed to fetch recommended movies from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: Failed to fetch recommended movies from TMDB.
+                path: /api/v1/movies/recommended
+
+  /api/v1/movies/popular:
+    get:
+      summary: Get popular movies from TMDB (external)
+      tags:
+        - Movies
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Paginated list of popular movies (external)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrendingMovieItem'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 1000
+                      totalPages:
+                        type: integer
+                        example: 50
+                      limit:
+                        type: integer
+                        example: 20
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+              example:
+                data:
+                  - tmdbId: 603692
+                    title: John Wick Chapter 4
+                    year: 2023
+                    rating: '7.8'
+                    originalLanguage: en
+                    images:
+                      thumbnail: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
+                    isLocal: false
+                pagination:
+                  page: 1
+                  total: 1000
+                  totalPages: 50
+                  limit: 20
+                  hasNextPage: true
+                  hasPrevPage: false
+        '502':
+          description: Failed to fetch popular movies from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: Failed to fetch popular movies from TMDB.
+                path: /api/v1/movies/popular
+
 components:
   schemas:
     Movie:

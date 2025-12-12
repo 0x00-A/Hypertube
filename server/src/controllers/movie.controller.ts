@@ -64,6 +64,33 @@ export class MovieController {
     res.json(result);
   });
 
+  getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
+    // const userId = req.user?._id;
+    const userId = 'placeholder-user-id';
+    const { page } = req.validated?.query as { page?: number };
+
+    // if (!userId) {
+    //   throw new NotFoundError('User not found');
+    // }
+
+    const paginationOptions: Partial<IPaginationOptions> = {
+      page: page || 1,
+    };
+
+    const result = await this._movieService.getRecommended(paginationOptions, userId);
+
+    res.json(result);
+  });
+
+  getPopularMovies = asyncHandler(async (req: Request, res: Response) => {
+    const query = req.validated?.query as Partial<IPaginationOptions>;
+    const paginationOptions: Partial<IPaginationOptions> = {
+      page: query.page || 1,
+    };
+    const result = await this._movieService.getPopular(paginationOptions);
+    res.json(result);
+  });
+
   searchExternalMovies = asyncHandler(async (req: Request, res: Response) => {
     const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
 
