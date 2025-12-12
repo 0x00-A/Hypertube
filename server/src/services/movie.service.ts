@@ -115,7 +115,7 @@ export class MovieService {
           hasPrevPage: results.data.page > 1,
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(
         `[MovieService] Error fetching recommended movies: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -150,7 +150,7 @@ export class MovieService {
           hasPrevPage: results.data.page > 1,
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error(
         `[MovieService] Error fetching popular movies: ${error instanceof Error ? error.message : String(error)}`,
       );
