@@ -1,3 +1,9 @@
+afterEach(async () => {
+  // Ensure no leftover movies between tests
+  if (mongoose.connection.readyState === 1) {
+    await MovieModel.deleteMany({});
+  }
+});
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { connectDatabase, disconnectDatabase } from '../../src/config/database';
