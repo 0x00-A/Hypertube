@@ -5,6 +5,8 @@ import {
   MovieListQuerySchema,
   MovieIdParamSchema,
   MovieSearchQuerySchema,
+  tmdbIdParamSchema,
+  MovieTrendingQuerySchema,
 } from '../../validators/movie.schema';
 
 export const createMovieRouter = (movieController: MovieController): Router => {
@@ -20,8 +22,28 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.searchExternalMovies.bind(movieController),
   );
 
+  // /v1/movies/trending
+  router.get(
+    '/trending',
+    validate(MovieTrendingQuerySchema),
+    movieController.getTrendingMovies.bind(movieController),
+  );
+
+  // /v1/movies/recommended GET to be implemented
+  // router.get(
+  //   '/recommended/tmdb/:tmdbId',
+  //   validate(tmdbIdParamSchema),
+  //   movieController.getRecommendedMovies.bind(movieController),
+  // );
+
   // /v1/movies/{id} GET
   router.get('/:id', validate(MovieIdParamSchema), movieController.getMovie.bind(movieController));
 
+  // /v1/movies/tmdb/:tmdbId GET
+  router.get(
+    '/tmdb/:tmdbId',
+    validate(tmdbIdParamSchema),
+    movieController.getMovieByTmdbId.bind(movieController),
+  );
   return router;
 };

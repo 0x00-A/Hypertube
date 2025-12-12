@@ -615,6 +615,182 @@ paths:
                 message: Internal server error
                 path: /api/v1/movies/search
 
+  /api/v1/movies/trending:
+    get:
+      summary: Get trending movies from TMDB (external)
+      tags:
+        - Movies
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Paginated list of trending movies (external)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrendingMovieItem'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 1000
+                      totalPages:
+                        type: integer
+                        example: 50
+                      limit:
+                        type: integer
+                        example: 20
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+              example:
+                data:
+                  - tmdbId: 603692
+                    title: John Wick Chapter 4
+                    year: 2023
+                    rating: '7.8'
+                    originalLanguage: en
+                    images:
+                      thumbnail: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
+                    isLocal: false
+                pagination:
+                  page: 1
+                  total: 1000
+                  totalPages: 50
+                  limit: 20
+                  hasNextPage: true
+                  hasPrevPage: false
+        '502':
+          description: Failed to fetch trending movies from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: Failed to fetch trending movies from TMDB.
+                path: /api/v1/movies/trending
+
+  /api/v1/movies/tmdb/{tmdbId}:
+    get:
+      summary: Get movie details by TMDB ID (fetches and stores if not local)
+      tags:
+        - Movies
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+          description: TMDB movie ID
+      responses:
+        '200':
+          description: Movie details found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Movie'
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: fail
+                message: Movie not found
+                path: /api/v1/movies/tmdb/12345
+        '502':
+          description: Failed to fetch movie details from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: Failed to fetch movie details from TMDB.
+                path: /api/v1/movies/tmdb/12345
+  TrendingMovieItem:
+    type: object
+    required:
+      - tmdbId
+      - title
+      - year
+      - rating
+      - originalLanguage
+      - images
+      - isLocal
+    properties:
+      tmdbId:
+        type: integer
+        description: TMDB movie ID
+        example: 603692
+      title:
+        type: string
+        description: Movie title
+        example: John Wick Chapter 4
+      year:
+        type: integer
+        description: Release year
+        example: 2023
+      rating:
+        type: string
+        description: TMDB rating (stringified)
+        example: '7.8'
+      originalLanguage:
+        type: string
+        description: Original language
+        example: en
+      images:
+        type: object
+        properties:
+          thumbnail:
+            type: string
+            description: Thumbnail image URL
+            example: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
+      isLocal:
+        type: boolean
+        description: Whether the movie is present in the local database
+        example: false
+
+  ErrorResponse:
+    type: object
+    required:
+      - status
+      - message
+      - path
+    properties:
+      status:
+        type: string
+        example: error
+      message:
+        type: string
+        example: Failed to fetch trending movies from TMDB.
+      path:
+        type: string
+        example: /api/v1/movies/trending
+
 components:
   schemas:
     Movie:

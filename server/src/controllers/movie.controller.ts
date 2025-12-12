@@ -43,6 +43,27 @@ export class MovieController {
     res.json({ data: movie });
   });
 
+  getMovieByTmdbId = asyncHandler(async (req: Request, res: Response) => {
+    const { tmdbId } = req.validated?.params as { tmdbId: number };
+    const movie = await this._movieService.getByTmdbId(tmdbId);
+
+    if (!movie) {
+      throw new NotFoundError('Movie not found');
+    }
+
+    res.json({ data: movie });
+  });
+
+  getTrendingMovies = asyncHandler(async (req: Request, res: Response) => {
+    const query = req.validated?.query as Partial<IPaginationOptions>;
+    const paginationOptions: Partial<IPaginationOptions> = {
+      page: query.page || 1,
+    };
+    const result = await this._movieService.getTrending(paginationOptions);
+
+    res.json(result);
+  });
+
   searchExternalMovies = asyncHandler(async (req: Request, res: Response) => {
     const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
 

@@ -6,12 +6,15 @@ jest.mock('../../../src/services/metadata/tmdb', () => ({
 }));
 
 import { getMetadata } from '../../../src/services/metadata/tmdb';
+import { YtsProvider } from '../../../src/services/scraper/providers/YtsProvider';
 
 describe('ScraperEngine (unit)', () => {
   let engine: ScraperEngine;
+  let ytsProvider: YtsProvider;
 
   beforeEach(() => {
-    engine = new ScraperEngine();
+    ytsProvider = new YtsProvider();
+    engine = new ScraperEngine([ytsProvider]);
   });
 
   afterEach(() => {
@@ -103,6 +106,7 @@ describe('ScraperEngine (unit)', () => {
 
     const existingMovie: IMovie & { save: jest.Mock } = {
       imdbId: 'tt2222222',
+      tmdbId: 2222222,
       title: 'Existing Movie',
       year: 2020,
       rating: undefined,

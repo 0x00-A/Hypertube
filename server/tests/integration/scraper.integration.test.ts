@@ -4,6 +4,7 @@ import { ScraperEngine } from '../../src/services/scraper/ScraperEngine';
 import { MovieRepository } from '../../src/repositories/movie.repository';
 import { IScrapedMovie, IMovie } from '../../src/interfaces/movie.interface';
 import { BaseProvider } from '../../src/services/scraper/providers/BaseProvider';
+import { YtsProvider } from '../../src/services/scraper/providers/YtsProvider';
 
 // Mock providers for testing
 class MockYtsProvider extends BaseProvider {
@@ -145,6 +146,7 @@ describe('ScraperEngine Integration Test', () => {
   let mongoServer: MongoMemoryServer;
   let engine: ScraperEngine;
   let movieRepository: MovieRepository;
+  let providers: BaseProvider[];
 
   const useRealProviders = process.env.RUN_SCRAPER_INTEGRATION === 'true';
 
@@ -166,13 +168,16 @@ describe('ScraperEngine Integration Test', () => {
     await mongoose.connection.dropDatabase();
 
     // Initialize engine and repository
-    engine = new ScraperEngine();
+    if (!useRealProviders) {
+      providers = [new MockYtsProvider()];
+    } else {
+      providers = [new YtsProvider()];
+    }
+
+    engine = new ScraperEngine(providers);
     movieRepository = new MovieRepository();
 
     // Replace providers with mock if not using real providers
-    if (!useRealProviders) {
-      (engine as any)._providers = [new MockYtsProvider()];
-    }
   });
 
   describe('searchQuery - End-to-End', () => {

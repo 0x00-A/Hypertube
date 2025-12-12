@@ -84,6 +84,7 @@ export async function getOmdbMetadata(imdbId: string) {
     // same structure as TMDB for consistency
     return {
       title: isValidValue(data.Title) ? data.Title : '',
+      tmdbId: null,
       year: parseYear(data.Year),
       synopsis: isValidValue(data.Plot) ? data.Plot : '',
       duration: parseDuration(data.Runtime),
@@ -96,6 +97,7 @@ export async function getOmdbMetadata(imdbId: string) {
         thumbnail: isValidValue(data.Poster) ? data.Poster : '',
       },
       trailer: '', // OMDb does not provide trailer links
+      metadataSource: 'omdb',
     };
   } catch (error) {
     logger.warn({ imdbId, error }, 'OMDb metadata fetch failed');

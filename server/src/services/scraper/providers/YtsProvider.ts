@@ -4,40 +4,7 @@ import { env } from '../../../config/env';
 import { logger } from '../../../utils/logger';
 import { IPaginationOptions, MovieFilterOptions } from '../../../core/interfaces/IPagination';
 
-type YtsMovie = {
-  id: number;
-  imdb_code: string;
-  title: string;
-  year: number;
-  rating: number;
-  runtime: number;
-  genres?: string[];
-  summary?: string;
-  synopsis?: string;
-  slug: string;
-  language?: string;
-  background_image?: string;
-  background_image_original?: string;
-  small_cover_image?: string;
-  medium_cover_image?: string;
-  large_cover_image?: string;
-  torrents?: Array<{
-    url: string;
-    hash: string;
-    quality: string;
-    type: string;
-    is_repack: string;
-    video_codec: string;
-    bit_depth: string;
-    audio_channels: string;
-    seeds: number;
-    peers: number;
-    size: string;
-    size_bytes: number;
-    date_uploaded: string;
-    date_uploaded_unix: number;
-  }>;
-};
+import { YtsMovie } from '../../metadata/yts';
 
 type YtsListResponse = {
   status: string;
@@ -135,3 +102,5 @@ export class YtsProvider extends BaseProvider {
     };
   }
 }
+
+export const ytsProvider = new YtsProvider();
