@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Manual test file to verify username generation logic
  * This file demonstrates the username generation patterns
