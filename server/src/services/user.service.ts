@@ -1,15 +1,15 @@
 import { UserRepository } from '../repositories/user.repository';
 
-const repo = new UserRepository();
 
 export class UserService {
-  // async list(page = 1, limit = 10) {
-  //   return repo.findAll({ page, limit });
-  // }
-  async get(id: string) {
-    return repo.findById(id);
+
+  constructor(private _repo: UserRepository) {}
+
+  async getUser(username: string) {
+    const user = await this._repo.findByUsername(username);
+    if (!user) return null;
+
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
-  // async patch(id: string, patch: any) {
-  //   return repo.updatePartial(id, patch);
-  // }
 }

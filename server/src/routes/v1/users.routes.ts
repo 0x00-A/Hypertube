@@ -1,10 +1,16 @@
-import { Router } from 'express';
-// import { listUsers, getUser, patchUser } from '../../controllers/user.controller';
-// import { validate } from '../../middleware/validate';
-// import { IdParamSchema } from '../../validators/common.schema';
+import { Router, Request, Response } from 'express';
+import { UserController } from '../../controllers/user.controller';
 
-export const router = Router();
 
-// router.get('/', listUsers);
-// router.get('/:id', validate(IdParamSchema), getUser);
-// router.patch('/:id', validate(IdParamSchema), patchUser);
+export const createUserRoutes = (controller: UserController) => {
+    const router = Router();
+
+    router.get('/', (_req: Request, res: Response) => {
+        res.json({ message: 'User route is working' });
+    });
+
+    router.get('/me', (req, res, next) => controller.getUser(req, res, next));
+    router.get('/:username', (req, res, next) => controller.getUser(req, res, next));
+
+    return router;
+}

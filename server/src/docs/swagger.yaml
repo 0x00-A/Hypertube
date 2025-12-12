@@ -359,6 +359,117 @@ paths:
                 type: string
                 example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
 
+  /api/v1/users:
+    get:
+      summary: Health check for user routes
+      tags:
+        - Users
+      responses:
+        '200':
+          description: User routes are working
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User route is working
+
+  /api/v1/users/me:
+    get:
+      summary: Get current authenticated user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Not authenticated
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+
+  /api/v1/users/{username}:
+    get:
+      summary: Get user by username
+      tags:
+        - Users
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 3
+          description: Username of the user to retrieve
+          example: johndoe
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+
   /api/v1/movies:
     get:
       summary: List movies with pagination and filters
@@ -1244,3 +1355,37 @@ components:
         path:
           type: string
           example: /api/v1/movies/trending
+
+    User:
+      type: object
+      required:
+        - _id
+        - username
+        - firstName
+        - lastName
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 507f1f77bcf86cd799439011
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          description: Unique username
+          example: johndoe
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from login or OAuth callback
