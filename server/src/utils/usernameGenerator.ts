@@ -6,35 +6,42 @@ export async function generateUniqueUsername(
   userRepo: UserRepository,
   maxAttempts = 100
 ): Promise<string> {
+  // Sanitize: lowercase, keep only alphanumeric and underscore, max 30 chars
   let sanitized = baseUsername
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '')
-    .substring(0, 20);
+    .substring(0, 30);
 
+  // Ensure minimum length of 3 characters
   if (sanitized.length < 3) {
     sanitized = sanitized.padEnd(3, '0');
   }
 
+  // Try base username first
   const existingUser = await userRepo.findByUsername(sanitized);
   if (!existingUser) {
     return sanitized;
   }
 
+  // If base exists, try appending numbers
   for (let i = 2; i <= maxAttempts; i++) {
-    const candidate = `${sanitized}${i}`;
+    const suffix = String(i);
+    const candidate = `${sanitized}${suffix}`;
 
+    // If candidate exceeds max length, trim base to make room for suffix
     if (candidate.length > 30) {
-      const trimLength = 30 - String(i).length;
+      const trimLength = 30 - suffix.length;
       const trimmedBase = sanitized.substring(0, trimLength);
-      const newCandidate = `${trimmedBase}${i}`;
+      const trimmedCandidate = `${trimmedBase}${suffix}`;
 
-      const user = await userRepo.findByUsername(newCandidate);
+      const user = await userRepo.findByUsername(trimmedCandidate);
       if (!user) {
-        return newCandidate;
+        return trimmedCandidate;
       }
       continue;
     }
 
+    // Candidate fits within limit, check if available
     const user = await userRepo.findByUsername(candidate);
     if (!user) {
       return candidate;

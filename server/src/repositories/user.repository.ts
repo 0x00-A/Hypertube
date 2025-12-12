@@ -89,5 +89,4 @@ export class UserRepository {
     }
     return this.toIUser(doc)!;
   }
-
 }
