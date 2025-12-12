@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IMovieDocument, IMovieModel } from './movie.model.types';
+import { IMovieDocument, IMovieModel, MagnetLinkResult } from './movie.model.types';
 import { ITorrent } from '../interfaces/movie.interface';
 
 const torrentSchema = new Schema(
@@ -55,7 +55,7 @@ const movieSchema = new Schema(
   { versionKey: false },
 );
 
-movieSchema.methods.getMagnetLinks = function (): string[] {
+movieSchema.methods.getMagnetLinks = function (): MagnetLinkResult[] {
   // Recommended trackers from YTS docs
   const trackers = [
     'udp://open.demonii.com:1337/announce',
@@ -72,14 +72,17 @@ movieSchema.methods.getMagnetLinks = function (): string[] {
   const encodeTitle = (title: string) => encodeURIComponent(title);
 
   return this.torrents.map((torrent: ITorrent) => {
-    // If url is already a magnet link, use it
-    if (torrent.url && torrent.url.startsWith('magnet:?')) return torrent.url;
-    // Otherwise, construct magnet link from hash and title
-    const hash = torrent.hash;
-    const title = encodeTitle(this.title);
-    const trackerParams = trackers.map((tr) => `&tr=${encodeURIComponent(tr)}`).join('');
+    let magnet: string;
+    if (torrent.url && torrent.url.startsWith('magnet:?')) {
+      magnet = torrent.url;
+    } else {
+      const hash = torrent.hash;
+      const title = encodeTitle(this.title);
+      const trackerParams = trackers.map((tr) => `&tr=${encodeURIComponent(tr)}`).join('');
+      magnet = `magnet:?xt=urn:btih:${hash}&dn=${title}${trackerParams}`;
+    }
     return {
-      magnet: `magnet:?xt=urn:btih:${hash}&dn=${title}${trackerParams}`,
+      magnet,
       quality: torrent.quality,
       type: torrent.type,
       size: torrent.size,
