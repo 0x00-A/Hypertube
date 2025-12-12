@@ -9,7 +9,7 @@ export class UserService {
     const user = await this._repo.findByUsername(username);
     if (!user) return null;
 
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 }
