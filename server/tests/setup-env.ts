@@ -17,6 +17,14 @@ if (!process.env.YTS_BASE_API_URL) {
   process.env.YTS_BASE_API_URL = 'https://yts.lt/api/v2';
 }
 
+if (!process.env.TMDB_BASE_API_URL) {
+  process.env.TMDB_BASE_API_URL = 'https://api.themoviedb.org/3';
+}
+
+if (!process.env.TMDB_IMAGE_BASE_URL) {
+  process.env.TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
+}
+
 // TMDB token should come from .env.test, but provide fallback for mock mode
 // if (!process.env.TMDB_API_ACCESS_TOKEN) {
 //   process.env.TMDB_API_ACCESS_TOKEN = 'test-tmdb-token-for-mocking';
