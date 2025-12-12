@@ -5,7 +5,7 @@ import {
   MovieListQuerySchema,
   MovieIdParamSchema,
   MovieSearchQuerySchema,
-  tmdbIdParamSchema,
+  TmdbIdParamSchema,
   MovieTrendingQuerySchema,
 } from '../../validators/movie.schema';
 
@@ -42,7 +42,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
   // /v1/movies/tmdb/:tmdbId GET
   router.get(
     '/tmdb/:tmdbId',
-    validate(tmdbIdParamSchema),
+    validate(TmdbIdParamSchema),
     movieController.getMovieByTmdbId.bind(movieController),
   );
   return router;

@@ -38,7 +38,7 @@ export const MovieIdParamSchema = z.object({
   params: z.object({ id: z.string().regex(/^[a-fA-F0-9]{24}$/i, 'Invalid ObjectId format') }),
 });
 
-export const tmdbIdParamSchema = z.object({
+export const TmdbIdParamSchema = z.object({
   params: z.object({
     tmdbId: z
       .string()
