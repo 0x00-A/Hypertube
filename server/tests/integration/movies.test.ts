@@ -1,15 +1,16 @@
-afterEach(async () => {
-  // Ensure no leftover movies between tests
-  if (mongoose.connection.readyState === 1) {
-    await MovieModel.deleteMany({});
-  }
-});
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { connectDatabase, disconnectDatabase } from '../../src/config/database';
 import { MovieModel } from '../../src/models/Movie';
 import mongoose from 'mongoose';
 import { IMovie } from '../../src/interfaces/movie.interface';
+
+afterEach(async () => {
+  // Ensure no leftover movies between tests
+  if (mongoose.connection.readyState === 1) {
+    await MovieModel.deleteMany({});
+  }
+});
 
 describe('Movies API Integration Tests', () => {
   const app = createApp();
