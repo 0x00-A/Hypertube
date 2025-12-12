@@ -38,6 +38,16 @@ export const MovieIdParamSchema = z.object({
   params: z.object({ id: z.string().regex(/^[a-fA-F0-9]{24}$/i, 'Invalid ObjectId format') }),
 });
 
+export const TmdbIdParamSchema = z.object({
+  params: z.object({
+    tmdbId: z
+      .string()
+      .regex(/^\d+$/, 'Invalid TMDB ID format')
+      .transform(Number)
+      .pipe(z.number().int().min(1)),
+  }),
+});
+
 export const MovieSearchQuerySchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1)).default(1),
@@ -69,5 +79,17 @@ export const MovieSearchQuerySchema = z.object({
       )
       .optional(),
     sortBy: z.enum(['title', 'year', 'rating']).optional(),
+  }),
+});
+
+export const MovieTrendingQuerySchema = z.object({
+  query: z.object({
+    page: z
+      .string()
+      .trim()
+      .regex(/^\d+$/)
+      .transform(Number)
+      .pipe(z.number().int().min(1))
+      .default(1),
   }),
 });

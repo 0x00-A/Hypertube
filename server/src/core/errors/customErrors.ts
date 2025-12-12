@@ -1,3 +1,4 @@
+// 502 Bad Gateway (Trending fetch failure)
 import { AppError } from './AppError';
 import { ValidationError } from './AppError';
 
@@ -37,5 +38,12 @@ export class ForbiddenError extends AppError {
 export class ConflictError extends AppError {
   constructor(message: string) {
     super(message, 409);
+  }
+}
+
+// 502 Bad Gateway
+export class BadGatewayError extends AppError {
+  constructor(message: string = 'Failed to fetch trending movies from TMDB.') {
+    super(message, 502);
   }
 }

@@ -82,8 +82,8 @@ export class MovieRepository {
     };
   }
 
-  async findById(id: string): Promise<IMovie | null> {
-    return MovieModel.findById(id).lean<IMovie>();
+  async findById(id: string): Promise<IMovieDocument | null> {
+    return MovieModel.findById(id);
   }
 
   async upsert(movieData: Partial<IMovie>) {
@@ -101,9 +101,24 @@ export class MovieRepository {
     return MovieModel.findOne({ imdbId: imdbId }).exec();
   }
 
+  async findByTmdbId(tmdbId: number): Promise<IMovieDocument | null> {
+    return MovieModel.findOne({ tmdbId: tmdbId }).exec();
+  }
+
+  async findByTmdbIds(tmdbIds: number[]): Promise<IMovieDocument[]> {
+    return MovieModel.find({ tmdbId: { $in: tmdbIds } }).exec();
+  }
+
   async searchByTitle(title: string, limit: number = 10): Promise<IMovie[]> {
     return MovieModel.find({ title: { $regex: title, $options: 'i' } })
       .limit(limit)
       .lean<IMovie[]>();
+  }
+
+  async updateByTmdbId(
+    tmdbId: number,
+    updateData: Partial<IMovie>,
+  ): Promise<IMovieDocument | null> {
+    return MovieModel.findOneAndUpdate({ tmdbId }, updateData, { new: true });
   }
 }

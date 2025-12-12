@@ -29,8 +29,8 @@ export interface TmdbFindApiResponse {
 }
 
 const TMDB_KEY = env.TMDB_API_ACCESS_TOKEN;
-const TMDB_BASE = 'https://api.themoviedb.org/3';
-const IMAGE_BASE = 'https://image.tmdb.org/t/p';
+const TMDB_BASE = env.TMDB_BASE_API_URL;
+const IMAGE_BASE = env.TMDB_IMAGE_BASE_URL;
 
 /**
  * Fetches movie metadata from TMDB API using an IMDb ID
@@ -66,7 +66,7 @@ export async function getMetadata(imdbId: string) {
   });
   const details = detailRes.data;
 
-  // Robust helpers for null/invalid fields
+  // helpers for null/invalid fields
   const parseDuration = (runtime: unknown): number | null => {
     if (typeof runtime !== 'number' || isNaN(runtime) || runtime <= 0) return null;
     return runtime;
@@ -115,6 +115,7 @@ export async function getMetadata(imdbId: string) {
 
   return {
     title: parseString(details.title),
+    tmdbId: details.id,
     year: parseYear(details.release_date),
     synopsis: parseString(details.overview),
     duration: parseDuration(details.runtime),
@@ -124,4 +125,21 @@ export async function getMetadata(imdbId: string) {
     images: parseImages(details.poster_path, details.backdrop_path),
     trailer: trailerUrl,
   };
+}
+
+/**
+ * Given a TMDB movie ID, fetches the corresponding IMDb ID using TMDB API.
+ * @param tmdbId - The TMDB movie ID (number or string)
+ * @returns The IMDb ID as a string, or null if not found
+ */
+export async function getImdbIdFromTmdbId(tmdbId: string | number): Promise<string | null> {
+  try {
+    const { data } = await axios.get(`${TMDB_BASE}/movie/${tmdbId}/external_ids`, {
+      headers: { Authorization: `Bearer ${TMDB_KEY}` },
+    });
+    return data.imdb_id || null;
+  } catch (error) {
+    logger.warn({ tmdbId, error }, 'Failed to fetch IMDb ID from TMDB');
+    return null;
+  }
 }

@@ -1,5 +1,5 @@
 import { IScrapedMovie } from '../../interfaces/movie.interface';
-import { YtsProvider } from './providers/YtsProvider';
+import { ytsProvider } from './providers/YtsProvider';
 import { MovieRepository } from '../../repositories/movie.repository';
 import { getMetadata } from '../metadata/tmdb';
 import { logger } from '../../utils/logger';
@@ -8,8 +8,12 @@ import { IPaginationOptions, MovieFilterOptions } from '../../core/interfaces/IP
 import { getOmdbMetadata } from '../metadata/omdb';
 
 export class ScraperEngine {
-  private _providers: BaseProvider[] = [new YtsProvider()];
+  private _providers: BaseProvider[];
   private _movieRepository = new MovieRepository();
+
+  constructor(providers: BaseProvider[]) {
+    this._providers = providers;
+  }
 
   async scrapePage(page: number) {
     logger.info(`\n--- Scraping Page ${page} ---`);
@@ -81,10 +85,7 @@ export class ScraperEngine {
         const completeMovie = {
           ...metadata,
           ...partial,
-          // torrents: partial.torrents,
-          // year: partial.year || metadata.year,
           title: metadata.title,
-          // slug: partial.slug,
         };
 
         try {
@@ -105,4 +106,4 @@ export class ScraperEngine {
   }
 }
 
-export const scraperEngine = new ScraperEngine();
+export const scraperEngine = new ScraperEngine([ytsProvider]);
