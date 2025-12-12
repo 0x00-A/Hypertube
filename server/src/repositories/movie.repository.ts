@@ -116,7 +116,7 @@ export class MovieRepository {
   }
 
   async updateByTmdbId(
-    tmdbId: string,
+    tmdbId: number,
     updateData: Partial<IMovie>,
   ): Promise<IMovieDocument | null> {
     return MovieModel.findOneAndUpdate({ tmdbId }, updateData, { new: true });
