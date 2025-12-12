@@ -731,65 +731,6 @@ paths:
                 status: error
                 message: Failed to fetch movie details from TMDB.
                 path: /api/v1/movies/tmdb/12345
-  TrendingMovieItem:
-    type: object
-    required:
-      - tmdbId
-      - title
-      - year
-      - rating
-      - originalLanguage
-      - images
-      - isLocal
-    properties:
-      tmdbId:
-        type: integer
-        description: TMDB movie ID
-        example: 603692
-      title:
-        type: string
-        description: Movie title
-        example: John Wick Chapter 4
-      year:
-        type: integer
-        description: Release year
-        example: 2023
-      rating:
-        type: string
-        description: TMDB rating (stringified)
-        example: '7.8'
-      originalLanguage:
-        type: string
-        description: Original language
-        example: en
-      images:
-        type: object
-        properties:
-          thumbnail:
-            type: string
-            description: Thumbnail image URL
-            example: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
-      isLocal:
-        type: boolean
-        description: Whether the movie is present in the local database
-        example: false
-
-  ErrorResponse:
-    type: object
-    required:
-      - status
-      - message
-      - path
-    properties:
-      status:
-        type: string
-        example: error
-      message:
-        type: string
-        example: Failed to fetch trending movies from TMDB.
-      path:
-        type: string
-        example: /api/v1/movies/trending
 
 components:
   schemas:
@@ -951,3 +892,62 @@ components:
           type: string
           description: Torrent source provider
           example: YTS
+    TrendingMovieItem:
+      type: object
+      required:
+        - tmdbId
+        - title
+        - year
+        - rating
+        - originalLanguage
+        - images
+        - isLocal
+      properties:
+        tmdbId:
+          type: integer
+          description: TMDB movie ID
+          example: 603692
+        title:
+          type: string
+          description: Movie title
+          example: John Wick Chapter 4
+        year:
+          type: integer
+          description: Release year
+          example: 2023
+        rating:
+          type: string
+          description: TMDB rating (stringified)
+          example: '7.8'
+        originalLanguage:
+          type: string
+          description: Original language
+          example: en
+        images:
+          type: object
+          properties:
+            thumbnail:
+              type: string
+              description: Thumbnail image URL
+              example: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
+        isLocal:
+          type: boolean
+          description: Whether the movie is present in the local database
+          example: false
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+        - path
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Failed to fetch trending movies from TMDB.
+        path:
+          type: string
+          example: /api/v1/movies/trending
