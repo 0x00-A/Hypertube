@@ -29,9 +29,6 @@ export class AuthController {
     }
     const payload: IJWTPayload = { userId: user._id! };
     const tokens = this._jwtService.generateTokens(payload);
-    if (!tokens) {
-      throw new UnauthorizedError('Failed to generate tokens');
-    }
 
     res.cookie('accessToken', tokens.access_token, {
       httpOnly: true,

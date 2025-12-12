@@ -12,6 +12,7 @@ export interface IUserRepository {
   findByOAuthProvider(oauth: IOAuth): Promise<Partial<IUser> | null>;
   createOauthUser(oauthData: Partial<IUser>): Promise<Partial<IUser>>;
   linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null>;
+  findUsernamesByPattern(pattern: string): Promise<string[]>;
 }
 
 export class UserRepository {
@@ -88,5 +89,13 @@ export class UserRepository {
       throw new Error('Failed to create OAuth user');
     }
     return this.toIUser(doc)!;
+  }
+
+  async findUsernamesByPattern(pattern: string): Promise<string[]> {
+    const docs = await UserModel.find(
+      { username: { $regex: `^${pattern}`, $options: 'i' } },
+      { username: 1, _id: 0 }
+    ).exec();
+    return docs.map(doc => doc.username);
   }
 }

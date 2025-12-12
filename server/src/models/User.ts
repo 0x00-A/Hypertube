@@ -8,9 +8,12 @@ const userSchema = new Schema({
   lastName: { type: String, required: true },
   password: { type: String, select: false, required: true },
   oauth: {
-    provider: { type: String, enum: ['google', 'fortytwo'] },
-    id: { type: String },
+    type: {
+      provider: { type: String, enum: ['google', 'fortytwo'] },
+      id: { type: String },
+    },
     _id: false,
+    select: false,
   },
 
   // Track watched movies for the thumbnail UI [cite: 66]

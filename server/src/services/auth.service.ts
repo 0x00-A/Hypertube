@@ -2,15 +2,14 @@ import { ISignupDTO, ILoginDTO } from '../interfaces/auth.interface';
 import { IUser } from '../interfaces/user.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from './password.service';
-import { JWTService } from './jwt.service';
 import { ConflictError } from '../core/errors/customErrors';
 
 export class AuthService {
 
   constructor(
     private _userRepo: UserRepository,
-    private _passwordService: PasswordService,
-    private _jwtService: JWTService) {}
+    private _passwordService: PasswordService
+  ) {}
 
   async signUp(userData: ISignupDTO) {
     const exist_username = await this._userRepo.findByUsername(userData.username);
@@ -50,7 +49,7 @@ export class AuthService {
       return null;
     }
     // Remove password before returning user
-    const { ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 

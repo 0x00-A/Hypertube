@@ -1,6 +1,6 @@
 import { UserRepository } from "../repositories/user.repository";
 import { Profile as GoogleProfile } from "passport-google-oauth20";
-import { BadRequestError, ConflictError } from '../core/errors/customErrors';
+import { BadRequestError } from '../core/errors/customErrors';
 import { FortyTwoProfile } from "../types/oauth.type";
 import { PasswordService } from "./password.service";
 import { IUser } from "../interfaces/user.interface";
@@ -62,7 +62,7 @@ export class OAuthService {
 
             const existingUser = await this._userRepo.findByEmail(email);
             if (existingUser) {
-                if (!existingUser._id) throw new ConflictError('Existing user has no ID');
+                if (!existingUser._id) throw new BadRequestError('Existing user has no ID');
 
                 const linkedUser = await this._userRepo.linkOAuthAccount(existingUser._id!, {provider: 'fortytwo', id: fortyTwoId});
                 if (!linkedUser) throw new BadRequestError('Failed to link 42 account');

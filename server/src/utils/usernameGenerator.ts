@@ -17,9 +17,12 @@ export async function generateUniqueUsername(
     sanitized = sanitized.padEnd(3, '0');
   }
 
+  // Fetch all existing usernames matching the pattern in a single query
+  const existingUsernames = await userRepo.findUsernamesByPattern(sanitized);
+  const existingSet = new Set(existingUsernames.map(u => u.toLowerCase()));
+
   // Try base username first
-  const existingUser = await userRepo.findByUsername(sanitized);
-  if (!existingUser) {
+  if (!existingSet.has(sanitized)) {
     return sanitized;
   }
 
@@ -34,16 +37,14 @@ export async function generateUniqueUsername(
       const trimmedBase = sanitized.substring(0, trimLength);
       const trimmedCandidate = `${trimmedBase}${suffix}`;
 
-      const user = await userRepo.findByUsername(trimmedCandidate);
-      if (!user) {
+      if (!existingSet.has(trimmedCandidate)) {
         return trimmedCandidate;
       }
       continue;
     }
 
     // Candidate fits within limit, check if available
-    const user = await userRepo.findByUsername(candidate);
-    if (!user) {
+    if (!existingSet.has(candidate)) {
       return candidate;
     }
   }

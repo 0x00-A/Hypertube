@@ -7,23 +7,8 @@ import { UserModel } from '../../src/models/User';
 import mongoose from 'mongoose';
 import { Profile as GoogleProfile } from 'passport-google-oauth20';
 import { PasswordService } from '../../src/services/password.service';
+import { FortyTwoProfile } from '../../src/types/oauth.type';
 
-type FortyTwoProfile = {
-  id: string;
-  username: string;
-  displayName: string;
-  name: {
-    familyName: string;
-    givenName: string;
-  };
-  _json: {
-    id: number;
-    email: string;
-    login: string;
-    first_name: string;
-    last_name: string;
-  };
-};
 
 // Helper function to create Google profile mock
 const createGoogleProfile = (overrides: { id: string; email?: string; given_name?: string; family_name?: string; picture?: string }): GoogleProfile => ({

@@ -8,22 +8,30 @@ import { PasswordService } from '../services/password.service';
 import { JWTService } from '../services/jwt.service';
 import { scraperEngine } from '../services/scraper/ScraperEngine';
 import { OAuthController } from '../controllers/oauth.controller';
+import { OAuthService } from '../services/oauth.service';
+import { configurePassport } from '../config/passport';
 
 export const createControllers = () => {
+  // Shared repositories
+  const userRepository = new UserRepository();
+  const passwordService = new PasswordService();
+
   // Movie dependencies
   const movieRepository = new MovieRepository();
   const movieService = new MovieService(movieRepository, scraperEngine);
   const movieController = new MovieController(movieService);
 
   // Auth dependencies
-  const userRepository = new UserRepository();
-  const passwordService = new PasswordService();
   const jwtService = new JWTService(userRepository);
-  const authService = new AuthService(userRepository, passwordService, jwtService);
+  const authService = new AuthService(userRepository, passwordService);
   const authController = new AuthController(authService, jwtService);
 
   // OAuth dependencies
+  const oauthService = new OAuthService(userRepository, passwordService);
   const oauthController = new OAuthController(jwtService);
+
+  // Configure Passport with injected dependencies
+  configurePassport(oauthService);
 
   return { movieController, authController, oauthController };
 };

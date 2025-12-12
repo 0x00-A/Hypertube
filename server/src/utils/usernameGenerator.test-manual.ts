@@ -9,7 +9,7 @@ function sanitizeUsername(baseUsername: string): string {
   let sanitized = baseUsername
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '')
-    .substring(0, 20);
+    .substring(0, 30);
 
   if (sanitized.length < 3) {
     sanitized = sanitized.padEnd(3, '0');
@@ -31,7 +31,7 @@ const testCases = [
 
   // Edge cases
   { input: 'AB', base: 'AB', expected: 'ab0' }, // Too short
-  { input: 'VeryLongUsernameExceedingThirtyCharacters', base: 'VeryLongUsernameExceedingThirtyCharacters', expected: 'verylongusernameexce' }, // Too long
+  { input: 'VeryLongUsernameExceedingThirtyCharacters', base: 'VeryLongUsernameExceedingThirtyCharacters', expected: 'verylongusernameexceedingthirt' }, // Too long (30 chars)
   { input: 'User_123', base: 'User_123', expected: 'user_123' }, // Underscores preserved
 ];
 

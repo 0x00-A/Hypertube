@@ -8,6 +8,27 @@ import { logger } from '../utils/logger';
 export class OAuthController {
   constructor(private _jwtService: JWTService) {}
 
+  private setResCookies(res: Response, user: IUser,
+    tokens: { access_token: string; refresh_token: string }) {
+
+    res.cookie('accessToken', tokens.access_token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: env.MAX_AGE_ACCESS_TOKEN
+    });
+
+    res.cookie('refreshToken', tokens.refresh_token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh-token',
+      maxAge: env.MAX_AGE_REFRESH_TOKEN
+    });
+  }
+
+
   googleAuth = (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('google', {
       scope: ['profile', 'email'],
@@ -23,21 +44,7 @@ export class OAuthController {
       }
       const tokens = this._jwtService.generateTokens({ userId: user._id! });
 
-      res.cookie('accessToken', tokens.access_token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/',
-        maxAge: env.MAX_AGE_ACCESS_TOKEN
-      });
-
-      res.cookie('refreshToken', tokens.refresh_token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/api/v1/auth/refresh-token',
-        maxAge: env.MAX_AGE_REFRESH_TOKEN
-      });
+      this.setResCookies(res, user, tokens);
 
       return res.redirect(`${env.CLIENT_URL}?status=oauth_success`);
     })(req, res, next);
@@ -58,21 +65,7 @@ export class OAuthController {
 
       const tokens = this._jwtService.generateTokens({ userId: user._id! });
 
-      res.cookie('accessToken', tokens.access_token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/',
-        maxAge: env.MAX_AGE_ACCESS_TOKEN,
-      });
-
-      res.cookie('refreshToken', tokens.refresh_token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/api/v1/auth/refresh-token',
-        maxAge: env.MAX_AGE_REFRESH_TOKEN,
-      });
+      this.setResCookies(res, user, tokens);
 
       return res.redirect(`${env.CLIENT_URL}?status=oauth_success`);
     })(req, res, next);
