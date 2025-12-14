@@ -8,7 +8,6 @@ export const SliderMovies = ({
   className,
 }: HeroSliderProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  // const [isAutoPlaying, setIsAutoPlaying] = useState(true); // Always autoplay now
 
   const currentMovie = movies[currentIndex];
 
@@ -22,6 +21,18 @@ export const SliderMovies = ({
 
   const formatRating = (rating?: number) => {
     return rating ? rating.toFixed(1) : 'N/A';
+  };
+
+  const handleWatchClick = () => {
+    // Navigate to movie details page
+    window.location.href = `/movie/${currentMovie.imdbId}`;
+  };
+
+  const handleTrailerClick = () => {
+    // Open trailer in new tab if available
+    if (currentMovie.trailer) {
+      window.open(currentMovie.trailer, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
