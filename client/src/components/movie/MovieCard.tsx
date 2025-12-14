@@ -81,35 +81,37 @@ export const MovieCard = ({
           )}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 pt-10 bg-linear-to-t from-black via-black/80 to-transparent z-10">
-          <h3 className={clsx(
-            "text-white font-bold text-base leading-tight mb-1 drop-shadow-sm transition-colors line-clamp-2",
-            isHovered && "text-primary-400"
-          )}>
-            {movie.title}
-          </h3>
-
-          <div className="h-5 relative overflow-hidden">
-            <div className={clsx(
-              "absolute inset-0 transition-all duration-500 ease-out flex items-center",
-              isHovered ? "transform translate-y-8 opacity-0" : "transform translate-y-0 opacity-100"
+        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-black/30 z-10">
+          <div className="p-3">
+            <h3 className={clsx(
+              "text-white font-bold text-base leading-tight mb-1 drop-shadow-sm transition-colors line-clamp-2",
+              isHovered && "text-primary-400"
             )}>
-              <p className="text-text-muted text-xs font-medium truncate">
-                {movie.genres?.slice(0, 3).join(', ') || 'Unknown Genre'}
-              </p>
-            </div>
+              {movie.title}
+            </h3>
 
-            <div className={clsx(
-              "absolute inset-0 transition-all duration-500 ease-out flex items-center gap-2",
-              isHovered ? "transform translate-y-0 opacity-100 delay-100" : "transform -translate-y-8 opacity-0"
-            )}>
-              <span className="text-white/90 text-xs font-semibold">{movie.year}</span>
-              {movie.duration && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-text-muted" />
-                  <span className="text-text-secondary text-xs">{movie.duration} min</span>
-                </>
-              )}
+            <div className="h-5 relative overflow-hidden">
+              <div className={clsx(
+                "absolute inset-0 transition-all duration-500 ease-out flex items-center",
+                isHovered ? "transform translate-y-8 opacity-0" : "transform translate-y-0 opacity-100"
+              )}>
+                <p className="text-text-muted text-xs font-medium truncate">
+                  {movie.genres?.slice(0, 3).join(', ') || 'Unknown Genre'}
+                </p>
+              </div>
+
+              <div className={clsx(
+                "absolute inset-0 transition-all duration-500 ease-out flex items-center gap-2",
+                isHovered ? "transform translate-y-0 opacity-100 delay-100" : "transform -translate-y-8 opacity-0"
+              )}>
+                <span className="text-white/90 text-xs font-semibold">{movie.year}</span>
+                {movie.duration && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-text-muted" />
+                    <span className="text-text-secondary text-xs">{movie.duration} min</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
