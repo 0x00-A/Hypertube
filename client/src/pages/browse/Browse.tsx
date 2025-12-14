@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { HeroSection, MovieCarousel } from '../../components/movie';
+import { HeroSection, MovieCarousel, LastWatchingCarousel } from '../../components/movie';
 import { heroMovies, lastWatchingMovies, recommendedMovies, trendingMovies } from '../../data/mockMovies';
 import type { IMovie } from '../../types/movie.types';
 
@@ -39,6 +39,15 @@ export default function Browse() {
           onPlayClick={handlePlayClick}
           onViewAllLastWatching={handleViewAllLastWatching}
         />
+
+        <div className="mt-8 lg:mt-12 lg:hidden">
+          <LastWatchingCarousel
+            title="Continue Watching"
+            progressList={lastWatchingMovies}
+            onPlayClick={handlePlayClick}
+            onViewAll={handleViewAllLastWatching}
+          />
+        </div>
 
         <div className="mt-8 lg:mt-12">
           <MovieCarousel
