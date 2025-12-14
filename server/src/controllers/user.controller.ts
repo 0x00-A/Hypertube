@@ -8,8 +8,25 @@ export class UserController {
 
   constructor(private _service: UserService) {}
 
+  getMe = asyncHandler(async (req: Request, res: Response) => {
+    const username = req.user?.username;
+
+    if (!username) throw new NotFoundError('User not found');
+
+    const user = await this._service.getUser(username, true);
+    if (!user) throw new NotFoundError('User not found');
+
+    res.json({
+      status: 'success',
+      data: {
+        user,
+      },
+    });
+  });
+
+
   getUser = asyncHandler(async (req: Request, res: Response) => {
-    const username = req.params.username || req.user?.username;
+    const username = req.params.username;
 
     if (!username) throw new NotFoundError('User not found');
 

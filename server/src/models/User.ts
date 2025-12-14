@@ -6,6 +6,8 @@ const userSchema = new Schema({
   email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
+  avatarUrl: { type: String },
+  createdAt: { type: Date, default: Date.now },
   password: { type: String, select: false, required: true },
   oauth: {
     type: {
@@ -15,14 +17,6 @@ const userSchema = new Schema({
     _id: false,
     select: false,
   },
-
-  // Track watched movies for the thumbnail UI [cite: 66]
-  // watchedMovies: [
-  //   {
-  //     movieId: { type: Schema.Types.ObjectId, ref: 'Movie' },
-  //     date: Date,
-  //   },
-  // ],
 });
 
 export const UserModel = model<IUserDocument, IUserModel>('User', userSchema);

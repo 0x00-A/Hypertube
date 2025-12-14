@@ -9,7 +9,7 @@ export const createUserRoutes = (controller: UserController) => {
         res.json({ message: 'User route is working' });
     });
 
-    router.get('/me', (req, res, next) => controller.getUser(req, res, next));
+    router.get('/me', (req, res, next) => controller.getMe(req, res, next));
     router.get('/:username', (req, res, next) => controller.getUser(req, res, next));
 
     return router;

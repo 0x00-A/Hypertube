@@ -24,19 +24,28 @@ export class UserRepository {
       email: doc.email,
       firstName: doc.firstName,
       lastName: doc.lastName,
+      avatarUrl: doc.avatarUrl,
       createdAt: doc.createdAt,
       password: doc.password,
       oauth: doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined
     };
   }
 
-  async findByUsername(username: string): Promise<Partial<IUser> | null> {
-    const doc = await UserModel.findOne({ username }).select('+password').exec();
+  async findByUsername(username: string, includePassword = false): Promise<Partial<IUser> | null> {
+    const query = UserModel.findOne({ username });
+    if (includePassword) {
+      query.select('+password');
+    }
+    const doc = await query.exec();
     return this.toIUser(doc);
   }
 
-  async findByEmail(email: string): Promise<Partial<IUser>  | null> {
-    const doc = await UserModel.findOne({ email }).select('+password').exec();
+  async findByEmail(email: string, includePassword = false): Promise<Partial<IUser>  | null> {
+    const query = UserModel.findOne({ email });
+    if (includePassword) {
+      query.select('+password');
+    }
+    const doc = await query.exec();
     return this.toIUser(doc);
   }
 
