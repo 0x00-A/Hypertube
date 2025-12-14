@@ -60,7 +60,7 @@ export default function Register() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-black">
+    <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
       {/* Left Side - Movie Slideshow */}
       <div className="hidden lg:block lg:w-[60%]">
         <MovieSlideshow />
@@ -72,12 +72,12 @@ export default function Register() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md rounded-xl border border-gray-800 p-8"
+          className="w-full max-w-md rounded-xl border border-border p-8"
         >
           {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-white">create account</h1>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-text-secondary">
               Join Hypertube and start streaming today
             </p>
           </div>
@@ -137,13 +137,13 @@ export default function Register() {
             />
 
             {/* Terms and Conditions */}
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-text-secondary">
               By creating an account, you agree to our{' '}
-              <Link to="/terms" className="text-yellow-500 hover:text-yellow-400">
+              <Link to="/terms" className="text-primary hover:text-primary-light">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link to="/privacy" className="text-yellow-500 hover:text-yellow-400">
+              <Link to="/privacy" className="text-primary hover:text-primary-light">
                 Privacy Policy
               </Link>
             </div>
@@ -152,7 +152,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={registerMutation.isPending}
-              className="w-full rounded-lg bg-gray-300 py-3 font-semibold text-black transition-colors duration-200 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-primary py-3 font-semibold text-black transition-colors duration-200 hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {registerMutation.isPending ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -167,10 +167,10 @@ export default function Register() {
             {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-black px-4 text-gray-400">Or continue with</span>
+                <span className="bg-bg-primary px-4 text-text-secondary">Or continue with</span>
               </div>
             </div>
 

@@ -24,12 +24,12 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             placeholder={placeholder || label}
             className={clsx(
               'w-full border-b bg-transparent px-0 py-3 text-white transition-colors duration-200',
-              'placeholder:text-gray-500 focus:outline-none',
+              'placeholder:text-text-muted focus:outline-none',
               type === 'password' && 'pr-10',
               IconComponent && 'pr-10',
               error
                 ? 'border-red-500 focus:border-red-500'
-                : 'border-gray-700 focus:border-white',
+                : 'border-border focus:border-white',
               className
             )}
             {...props}
@@ -38,7 +38,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           {/* Right Icon */}
           {IconComponent && type !== 'password' && (
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-              <IconComponent className="h-5 w-5 text-gray-400" />
+              <IconComponent className="h-5 w-5 text-text-muted" />
             </div>
           )}
 
@@ -47,7 +47,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center text-gray-400 transition-colors hover:text-gray-300"
+              className="absolute inset-y-0 right-0 flex items-center text-text-muted transition-colors hover:text-text-secondary"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (

@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="bg-bg-secondary border-t border-border mt-auto">
+    <footer className="bg-bg-primary border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <p className="text-center text-sm text-text-secondary">
           © {new Date().getFullYear()} Hypertube. All rights reserved.

@@ -84,7 +84,7 @@ export default function MovieSlideshow() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
-          className="mt-2 text-lg text-gray-200 drop-shadow-md"
+          className="mt-2 text-lg text-text-secondary drop-shadow-md"
         >
           Stream unlimited movies and TV shows
         </motion.p>

@@ -11,7 +11,7 @@
   --color-primary-dark: #D4A017;
 
   /* Background Colors */
-  --color-bg-primary: #0F0F0F;
+  --color-bg-primary: #1A1A1A;
   --color-bg-secondary: #1A1A1A;
   --color-bg-tertiary: #242424;
   --color-bg-card: #1C1C1C;
@@ -63,10 +63,41 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0F0F0F;
+  background-color: #1A1A1A;
   color: #FFFFFF;
 }
 
 #root {
   min-height: 100vh;
+  background-color: #1A1A1A;
 }
+
+/* ============================================================================
+   CUSTOM SCROLLBAR STYLES
+   ============================================================================ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(245, 197, 24, 0.4);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 197, 24, 0.6);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 197, 24, 0.4) rgba(255, 255, 255, 0.05);
+}
+

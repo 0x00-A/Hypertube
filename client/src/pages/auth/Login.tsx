@@ -55,7 +55,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-black">
+    <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
       {/* Left Side - Movie Slideshow */}
       <div className="hidden lg:block lg:w-[60%]">
         <MovieSlideshow />
@@ -67,7 +67,7 @@ export default function Login() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md rounded-xl border border-gray-800 p-8"
+          className="w-full max-w-md rounded-xl border border-border p-8"
         >
           {/* Header */}
           <div className="mb-8 text-center">
@@ -117,7 +117,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full rounded-lg bg-gray-300 py-3 font-semibold text-black transition-colors duration-200 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-primary py-3 font-semibold text-black transition-colors duration-200 hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loginMutation.isPending ? 'Logging in...' : 'Login'}
             </button>
@@ -132,10 +132,10 @@ export default function Login() {
             {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-black px-4 text-gray-400">Continue With</span>
+                <span className="bg-bg-primary px-4 text-text-secondary">Continue With</span>
               </div>
             </div>
 
