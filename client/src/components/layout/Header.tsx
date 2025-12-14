@@ -66,10 +66,10 @@ export default function Header() {
           {/* Mobile Menu Toggle */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+            className="md:hidden w-10 h-10 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
           </button>
 
           {/* Logo */}
@@ -121,7 +121,7 @@ export default function Header() {
               placeholder="Search the movies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-full text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             <button
@@ -140,10 +140,10 @@ export default function Header() {
           {/* Mobile Search Toggle */}
           <button
             onClick={toggleSearch}
-            className="md:hidden w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+            className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary bg-bg-tertiary border border-border rounded-lg hover:border-primary transition-all"
             aria-label={isSearchExpanded ? 'Close search' : 'Open search'}
           >
-            {isSearchExpanded ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            {isSearchExpanded ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
           </button>
 
           {/* Notification Bell - Only show when authenticated */}
@@ -179,13 +179,13 @@ export default function Header() {
               {/* Mobile + Desktop Login/SignUp Buttons */}
               <Link
                 to="/auth/login"
-                className="px-2.5 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-text-primary border border-border rounded-lg hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
+                className="px-4 py-2 text-sm font-medium text-text-primary border border-border rounded-lg hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
               >
                 Login
               </Link>
               <Link
                 to="/auth/register"
-                className="px-3 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary-light transition-colors whitespace-nowrap"
+                className="px-5 py-2 text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary-light transition-colors whitespace-nowrap"
               >
                 Sign Up
               </Link>
@@ -217,7 +217,7 @@ export default function Header() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   autoFocus
-                  className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-full text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                 <button

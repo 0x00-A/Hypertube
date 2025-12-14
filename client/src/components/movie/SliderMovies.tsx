@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { HeroSliderProps } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
@@ -8,6 +9,7 @@ export const SliderMovies = ({
   className,
 }: HeroSliderProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const navigate = useNavigate();
 
   const currentMovie = movies[currentIndex];
 
@@ -24,12 +26,10 @@ export const SliderMovies = ({
   };
 
   const handleWatchClick = () => {
-    // Navigate to movie details page
-    window.location.href = `/movie/${currentMovie.imdbId}`;
+    navigate(`/movie/${currentMovie.imdbId}`);
   };
 
   const handleTrailerClick = () => {
-    // Open trailer in new tab if available
     if (currentMovie.trailer) {
       window.open(currentMovie.trailer, '_blank', 'noopener,noreferrer');
     }

@@ -1,5 +1,5 @@
 import { Play, ArrowRight } from 'lucide-react';
-import type { LastWatchingCardProps } from '../../types/movie.types';
+import type { IMovie, IWatchProgress, LastWatchingCardProps } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
 export const LastWatchingCard = ({
@@ -42,7 +42,7 @@ export const LastWatchingCard = ({
         />
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90" />
+        <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-90" />
 
         {/* Play Button with Circular Progress */}
         <div className="absolute inset-0 flex items-center justify-center pb-4">
@@ -110,30 +110,8 @@ export const LastWatchingCard = ({
 };
 
 interface LastWatchingSectionProps {
-  progressList: Array<{
-    movie: {
-      _id?: string;
-      imdbId: string;
-      title: string;
-      year: number;
-      rating?: number;
-      duration?: number;
-      synopsis?: string;
-      genres?: string[];
-      language?: string;
-      trailer?: string;
-      images: {
-        thumbnail?: string;
-        poster?: string;
-        backdrop?: string;
-      };
-    };
-    watchedDuration: number;
-    totalDuration: number;
-    percentage: number;
-    lastWatchedAt: Date | string;
-  }>;
-  onPlayClick?: (movie: LastWatchingSectionProps['progressList'][0]['movie']) => void;
+  progressList: IWatchProgress[];
+  onPlayClick?: (movie: IMovie) => void;
   onViewAll?: () => void;
   className?: string;
 }
@@ -155,9 +133,7 @@ export const LastWatchingSection = ({
         <h2 className="text-white text-2xl font-bold">Last Watching</h2>
       </div>
 
-      {/* Movie Cards - Flex grow to fill space, justify-start or between depending on preference. 
-          Using space-y-3 is good, but let's ensure they stack nicely.
-      */}
+      {/* Movie Cards */}
       <div className="flex-1 space-y-3 min-h-0">
         {displayList.map((progress) => (
           <LastWatchingCard
