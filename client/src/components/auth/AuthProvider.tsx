@@ -42,10 +42,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Show loading screen while initializing auth
   if (!isInitialized && isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-bg-primary">
         <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto" />
-          <p className="text-gray-600">Loading...</p>
+          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-border border-t-primary mx-auto" />
+          <p className="text-text-secondary">Loading...</p>
         </div>
       </div>
     );

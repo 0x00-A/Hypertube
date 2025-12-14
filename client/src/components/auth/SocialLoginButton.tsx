@@ -17,7 +17,7 @@ const providerConfig = {
         className="h-6 w-6"
       />
     ),
-    bgColor: 'bg-gray-800 hover:bg-gray-700',
+    bgColor: 'bg-bg-card hover:bg-bg-tertiary',
     textColor: 'text-white',
   },
   intra42: {
@@ -29,7 +29,7 @@ const providerConfig = {
         className="h-6 w-6 invert"
       />
     ),
-    bgColor: 'bg-gray-800 hover:bg-gray-700',
+    bgColor: 'bg-bg-card hover:bg-bg-tertiary',
     textColor: 'text-white',
   },
 };
@@ -46,10 +46,10 @@ export default function SocialLoginButton({
       type="button"
       className={clsx(
         'flex items-center justify-center gap-3 rounded-lg px-4 py-3 font-medium transition-colors duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-primary',
         config.bgColor,
         config.textColor,
-        'focus:ring-gray-400',
+        'focus:ring-primary',
         className
       )}
       {...props}
