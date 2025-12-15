@@ -26,7 +26,7 @@ export class UserController {
 
 
   getUser = asyncHandler(async (req: Request, res: Response) => {
-    const username = req.params.username;
+    const username = (req.validated?.params as { username: string })?.username;
 
     if (!username) throw new NotFoundError('User not found');
 

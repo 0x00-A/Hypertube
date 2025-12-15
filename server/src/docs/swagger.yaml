@@ -359,33 +359,17 @@ paths:
                 type: string
                 example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
 
-  /api/v1/users:
+  /api/v1/profile/me:
     get:
-      summary: Health check for user routes
+      summary: Get current authenticated user's profile
       tags:
-        - Users
-      responses:
-        '200':
-          description: User routes are working
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: User route is working
-
-  /api/v1/users/me:
-    get:
-      summary: Get current authenticated user
-      tags:
-        - Users
+        - User Profile
       security:
         - bearerAuth: []
+      description: Returns the authenticated user's profile information including email. Requires valid JWT token in cookie.
       responses:
         '200':
-          description: Current user information
+          description: Current user profile information
           content:
             application/json:
               schema:
@@ -400,7 +384,7 @@ paths:
                       user:
                         $ref: '#/components/schemas/User'
         '401':
-          description: Not authenticated
+          description: Not authenticated or invalid token
           content:
             application/json:
               schema:
@@ -411,7 +395,7 @@ paths:
                     example: fail
                   message:
                     type: string
-                    example: Not authenticated
+                    example: Unauthorized, No access token provided
         '404':
           description: User not found
           content:
@@ -426,11 +410,12 @@ paths:
                     type: string
                     example: User not found
 
-  /api/v1/users/{username}:
+  /api/v1/profile/{username}:
     get:
-      summary: Get user by username
+      summary: Get public user profile by username
       tags:
-        - Users
+        - User Profile
+      description: Returns public profile information for any user. Email is only exposed when viewing your own profile. No authentication required.
       parameters:
         - name: username
           in: path
@@ -438,11 +423,11 @@ paths:
           schema:
             type: string
             minLength: 3
-          description: Username of the user to retrieve
+          description: Username of the user to retrieve (case-insensitive)
           example: johndoe
       responses:
         '200':
-          description: User information
+          description: User profile information (email excluded unless viewing own profile)
           content:
             application/json:
               schema:
@@ -465,10 +450,52 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        allOf:
+                          - $ref: '#/components/schemas/User'
+                          - type: object
+                            description: Email field excluded for other users' profiles
+        '400':
+          description: Validation error (username too short or invalid format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
                     example: fail
                   message:
                     type: string
-                    example: User not found
+                    example: Validation failed
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                          example: username
+                        message:
+                          type: string
+                          example: String must contain at least 3 character(s)
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User with username "nonexistent" not found
 
   /api/v1/movies:
     get:
