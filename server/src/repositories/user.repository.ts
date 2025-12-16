@@ -18,7 +18,7 @@ export interface IUserRepository {
 export class UserRepository {
   private toIUser(doc: IUserDocument | null): Partial<IUser> | null {
     if (!doc) return null;
-    return {
+    const user: Partial<IUser> = {
       _id: doc._id.toString(),
       username: doc.username,
       email: doc.email,
@@ -27,8 +27,15 @@ export class UserRepository {
       avatarUrl: doc.avatarUrl,
       createdAt: doc.createdAt,
       password: doc.password,
-      oauth: doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined
     };
+    
+    // Only include oauth if it was explicitly selected (has select: false in schema)
+    const oauthValue = doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined;
+    if (oauthValue !== undefined) {
+      user.oauth = oauthValue;
+    }
+    
+    return user;
   }
 
   async findByUsername(username: string, includePassword = false): Promise<Partial<IUser> | null> {
