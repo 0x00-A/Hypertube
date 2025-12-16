@@ -19,6 +19,7 @@ describe('Movies API Integration Tests', () => {
   const unique = Math.random().toString(36).substring(2, 8) + Date.now();
   const sampleMovie1: Partial<IMovie> = {
     imdbId: `tt1234567_${unique}`,
+    tmdbId: 1001,
     title: `Test Movie 1 ${unique}`,
     year: 2023,
     rating: 8.5,
@@ -52,6 +53,7 @@ describe('Movies API Integration Tests', () => {
 
   const sampleMovie2: Partial<IMovie> = {
     imdbId: `tt7654321_${unique}`,
+    tmdbId: 1002,
     title: `Test Movie 2 ${unique}`,
     year: 2022,
     rating: 7.2,
@@ -85,6 +87,7 @@ describe('Movies API Integration Tests', () => {
 
   const sampleMovie3: Partial<IMovie> = {
     imdbId: `tt9999944_${unique}`,
+    tmdbId: 1003,
     title: `Searchable Movie Title ${unique}`,
     year: 2021,
     rating: 6.8,
