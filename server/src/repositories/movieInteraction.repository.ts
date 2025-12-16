@@ -122,13 +122,9 @@ export class MovieInteractionRepository {
       .populate('movieId')
       .exec();
 
-    return interactions.map((interaction) => {
-      const movieData =
-        interaction.movieId instanceof Types.ObjectId
-          ? interaction.movieId
-          : (interaction.movieId as IMovieDocument).toObject();
-      return movieData;
-    });
+    return interactions
+      .filter((interaction) => interaction.movieId && !(interaction.movieId instanceof Types.ObjectId))
+      .map((interaction) => (interaction.movieId as IMovieDocument).toObject());
   }
 
   async getUserWatchlist(
