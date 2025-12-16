@@ -11,8 +11,11 @@ export class UserService {
     if (!user) return null;
 
     if (!me) {
-      delete user.email;
-      delete user.oauth;
+      // Exclude sensitive fields for other users
+      // Never return email, oauth, or password for other users
+      // (oauth and password are not selected by default)
+      const { email, oauth, password, ...publicUser } = user;
+      return publicUser;
     }
 
     return user;
