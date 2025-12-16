@@ -4,6 +4,9 @@ info:
   version: 0.1.0
   description: API for Hypertube streaming platform
 
+# Movie Interaction endpoints are defined in swagger.interactions.yaml
+# To view them, check the swagger.interactions.yaml file in the same directory
+
 paths:
   /api/v1/auth/signup:
     post:

@@ -22,6 +22,7 @@ const options: swaggerJsdoc.Options = {
   },
   apis: [
     path.join(__dirname, 'swagger.yaml'),
+    path.join(__dirname, 'swagger.interactions.yaml'),
     'src/routes/v1/*.routes.ts',
     'src/controllers/*.controller.ts',
   ],
