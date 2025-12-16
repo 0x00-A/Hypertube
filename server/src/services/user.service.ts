@@ -6,7 +6,7 @@ export class UserService {
 
   constructor(private _repo: UserRepository) {}
 
-  async getUser(username: string, me=false): Promise<Partial<IUser> | null> {
+  async getUser(username: string, me = false): Promise<Partial<IUser> | null> {
     const user = await this._repo.findByUsername(username);
     if (!user) return null;
 
