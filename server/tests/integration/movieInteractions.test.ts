@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
+// ...existing code...
 import { MovieInteractionModel } from '../../src/models/MovieInteraction';
 import { MovieModel } from '../../src/models/Movie';
 import { UserModel } from '../../src/models/User';
@@ -77,9 +77,6 @@ describe('MovieInteraction API Integration Tests', () => {
   };
 
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await connectDatabase();
-    }
     await UserModel.deleteMany({});
     await MovieModel.deleteMany({});
     await MovieInteractionModel.deleteMany({});
@@ -99,7 +96,6 @@ describe('MovieInteraction API Integration Tests', () => {
     await UserModel.deleteMany({});
     await MovieModel.deleteMany({});
     await MovieInteractionModel.deleteMany({});
-    await disconnectDatabase();
   });
 
   describe('POST /api/v1/interactions/movies/:movieId/progress', () => {
