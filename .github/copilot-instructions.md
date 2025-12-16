@@ -57,6 +57,7 @@ When working on the library:
 
 ## 🧪 Testing
 
+- **In-Memory Database:** All backend tests **must** use an in-memory MongoDB (e.g., `mongodb-memory-server`). Never connect to a real MongoDB instance for tests. The test setup should spin up and tear down the in-memory server automatically.
 - When writing tests, ensure `npm run test` passes without warnings.
 - Mock external APIs (YTS, OpenSubtitles) during testing.
 - Test error scenarios using the expected error response format:
@@ -71,4 +72,4 @@ For detailed implementation patterns, refer to:
 
 - `server/guides/GLOBAL_ERROR_HANDLING.md` - Custom error classes and global error handler usage
 - `server/guides/ASYNC_HANDLER_PATTERN.md` - AsyncHandler wrapper implementation and best practices
-when you create .md guides explaining something place in the guides folder server/guides.
+  when you create .md guides explaining something place in the guides folder server/guides.

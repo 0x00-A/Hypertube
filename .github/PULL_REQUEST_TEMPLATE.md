@@ -17,6 +17,7 @@
 - [ ] **Custom Errors:** Thrown `AppError` subclasses (NotFoundError, UnauthorizedError, etc.) instead of generic Error.
 - [ ] **Dependency Injection:** Services/repositories injected via constructor, not instantiated in handlers.
 - [ ] **Logging:** Used Pino logger (`utils/logger`) instead of `console.log/error/warn`.
+- [ ] **In-Memory DB for Tests:** All backend tests use an in-memory MongoDB (e.g., `mongodb-memory-server`). No real database is used for tests.
 - [ ] **Tests Pass:** All integration tests pass (`npm test`).
 - [ ] **Swagger Updated:** Updated API documentation if routes/schemas changed.
 
