@@ -96,7 +96,6 @@ describe('MovieInteraction API Integration Tests', () => {
     await UserModel.deleteMany({});
     await MovieModel.deleteMany({});
     await MovieInteractionModel.deleteMany({});
-    await disconnectDatabase();
   });
 
   describe('POST /api/v1/interactions/movies/:movieId/progress', () => {
