@@ -299,18 +299,18 @@ export class MovieInteractionRepository {
       .populate('movieId')
       .exec();
 
-    return interactions.map((interaction) => {
-      const movieData =
-        interaction.movieId instanceof Types.ObjectId
-          ? interaction.movieId
-          : (interaction.movieId as IMovieDocument).toObject();
-      const interactionData = interaction.toObject();
+    // Only include interactions where movieId is populated (i.e., is an object, not ObjectId)
+    return interactions
+      .filter((interaction) => typeof interaction.movieId === 'object' && interaction.movieId !== null && !(interaction.movieId instanceof Types.ObjectId))
+      .map((interaction) => {
+        const movieData = (interaction.movieId as IMovieDocument).toObject();
+        const interactionData = interaction.toObject();
 
-      return {
-        ...movieData,
-        watchProgress: interactionData.watchProgress,
-      };
-    });
+        return {
+          ...movieData,
+          watchProgress: interactionData.watchProgress,
+        };
+      });
   }
 
   async delete(userId: Types.ObjectId, movieId: Types.ObjectId, interactionType: string) {
