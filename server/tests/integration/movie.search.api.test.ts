@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// Removed per-file MongoMemoryServer usage
 import { scraperEngine } from '../../src/services/scraper/ScraperEngine';
 import { MovieRepository } from '../../src/repositories/movie.repository';
 import { BaseProvider } from '../../src/services/scraper/providers/BaseProvider';
@@ -29,18 +29,7 @@ class MockYtsProvider extends BaseProvider {
 }
 
 describe('Movie Search API', () => {
-  let mongoServer: MongoMemoryServer;
   let app: ReturnType<typeof createApp>;
-
-  beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    await mongoose.connect(mongoServer.getUri());
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   beforeEach(async () => {
     await mongoose.connection.dropDatabase();

@@ -1,17 +1,8 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
 
 describe('Movies API - Recommended Endpoint', () => {
   const app = createApp();
-
-  beforeAll(async () => {
-    await connectDatabase();
-  });
-
-  afterAll(async () => {
-    await disconnectDatabase();
-  });
 
   describe('GET /api/v1/movies/recommended', () => {
     it('should return 200 and a list of recommended movies (requires auth cookie)', async () => {

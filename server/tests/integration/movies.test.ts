@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
+
 import { MovieModel } from '../../src/models/Movie';
 import mongoose from 'mongoose';
 import { IMovie } from '../../src/interfaces/movie.interface';
@@ -15,10 +15,11 @@ afterEach(async () => {
 describe('Movies API Integration Tests', () => {
   const app = createApp();
 
-  // Sample movie data for tests
+  // Use a unique suffix for all sample movies in this test run
+  const unique = Math.random().toString(36).substring(2, 8) + Date.now();
   const sampleMovie1: Partial<IMovie> = {
-    imdbId: 'tt1234567',
-    title: 'Test Movie 1',
+    imdbId: `tt1234567_${unique}`,
+    title: `Test Movie 1 ${unique}`,
     year: 2023,
     rating: 8.5,
     duration: 120,
@@ -50,8 +51,8 @@ describe('Movies API Integration Tests', () => {
   };
 
   const sampleMovie2: Partial<IMovie> = {
-    imdbId: 'tt7654321',
-    title: 'Test Movie 2',
+    imdbId: `tt7654321_${unique}`,
+    title: `Test Movie 2 ${unique}`,
     year: 2022,
     rating: 7.2,
     duration: 95,
@@ -83,8 +84,8 @@ describe('Movies API Integration Tests', () => {
   };
 
   const sampleMovie3: Partial<IMovie> = {
-    imdbId: 'tt9999999',
-    title: 'Searchable Movie Title',
+    imdbId: `tt9999944_${unique}`,
+    title: `Searchable Movie Title ${unique}`,
     year: 2021,
     rating: 6.8,
     duration: 110,
@@ -114,18 +115,6 @@ describe('Movies API Integration Tests', () => {
     lastUpdated: new Date(),
   };
 
-  beforeAll(async () => {
-    // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await connectDatabase();
-    }
-  });
-
-  afterAll(async () => {
-    // Clean up and disconnect
-    await disconnectDatabase();
-  });
-
   beforeEach(async () => {
     // Clear movies collection before each test
     if (mongoose.connection.readyState === 1) {
@@ -135,7 +124,7 @@ describe('Movies API Integration Tests', () => {
 
   describe('GET /api/v1/movies', () => {
     beforeEach(async () => {
-      // Insert sample movies for list tests
+      // Insert sample movies for list tests (already unique)
       await MovieModel.create([sampleMovie1, sampleMovie2, sampleMovie3]);
     });
 
@@ -359,7 +348,7 @@ describe('Movies API Integration Tests', () => {
     let movieId: string;
 
     beforeEach(async () => {
-      // Insert a sample movie and get its ID
+      // Insert a sample movie and get its ID (already unique)
       const movie = await MovieModel.create(sampleMovie1);
       movieId = movie._id.toString();
     });
@@ -479,11 +468,13 @@ describe('Movies API Integration Tests', () => {
 
   describe('Movie Data Integrity', () => {
     it('should not allow duplicate imdbId', async () => {
-      await MovieModel.create(sampleMovie1);
-
+      // Use a unique imdbId for this test
+      const imdbId = `ttdup_${unique}`;
+      const movie = { ...sampleMovie1, imdbId };
+      await MovieModel.create(movie);
       // Try to create another movie with the same imdbId
       try {
-        await MovieModel.create(sampleMovie1);
+        await MovieModel.create(movie);
         fail('Should have thrown duplicate key error');
       } catch (error: any) {
         expect(error.code).toBe(11000); // MongoDB duplicate key error

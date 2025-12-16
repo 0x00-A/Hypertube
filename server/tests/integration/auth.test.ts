@@ -1,23 +1,23 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
+
 import { UserModel } from '../../src/models/User';
 import mongoose from 'mongoose';
 
 describe('Auth Signup Integration Tests', () => {
   const app = createApp();
 
-  beforeAll(async () => {
-    // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await connectDatabase();
-    }
-  });
-
-  afterAll(async () => {
-    // Clean up and disconnect
-    await disconnectDatabase();
-  });
+  // Helper to generate unique user data per test
+  function generateUniqueUserData(suffix?: string) {
+    const unique = suffix || `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    return {
+      username: `testuser_${unique}`,
+      email: `test_${unique}@example.com`,
+      password: 'SecurePass123!',
+      firstName: 'Test',
+      lastName: 'User',
+    };
+  }
 
   beforeEach(async () => {
     // Clear users collection before each test
@@ -27,13 +27,11 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /v1/auth/signup', () => {
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
+    let validUserData: ReturnType<typeof generateUniqueUserData>;
+
+    beforeEach(() => {
+      validUserData = generateUniqueUserData();
+    });
 
     it('should successfully register a new user with valid data', async () => {
       const res = await request(app).post('/api/v1/auth/signup').send(validUserData);
@@ -63,8 +61,8 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should return 400 when required fields are missing', async () => {
       const incompleteData = {
-        username: 'testuser',
-        email: 'test@example.com',
+        username: validUserData.username,
+        email: validUserData.email,
         // Missing password, firstName, lastName
       };
 
@@ -139,7 +137,7 @@ describe('Auth Signup Integration Tests', () => {
       // Try to register again with same username
       const duplicateData = {
         ...validUserData,
-        email: 'different@example.com', // Different email
+        email: `different_${validUserData.email}`,
       };
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
@@ -156,7 +154,7 @@ describe('Auth Signup Integration Tests', () => {
       // Try to register again with same email
       const duplicateData = {
         ...validUserData,
-        username: 'differentuser', // Different username
+        username: `different_${validUserData.username}`,
       };
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
@@ -169,8 +167,8 @@ describe('Auth Signup Integration Tests', () => {
     it('should trim whitespace from email and username', async () => {
       const dataWithSpaces = {
         ...validUserData,
-        username: '  testuser  ',
-        email: '  test@example.com  ',
+        username: `  ${validUserData.username}  `,
+        email: `  ${validUserData.email}  `,
       };
 
       const res = await request(app).post('/api/v1/auth/signup').send(dataWithSpaces);
@@ -178,10 +176,10 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.status).toBe(201);
 
       // Verify trimmed values in database
-      const user = await UserModel.findOne({ email: 'test@example.com' });
+      const user = await UserModel.findOne({ email: validUserData.email });
       expect(user).toBeTruthy();
-      expect(user?.username).toBe('testuser');
-      expect(user?.email).toBe('test@example.com');
+      expect(user?.username).toBe(validUserData.username);
+      expect(user?.email).toBe(validUserData.email);
     });
 
     it('should not expose sensitive data in response', async () => {
@@ -203,20 +201,11 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /v1/auth/login', () => {
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Create a user before each login test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-    });
+    // Each test creates its own user and logs in as needed
 
     it('should successfully login with username and set cookies', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -249,6 +238,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should successfully login with email and set cookies', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.email,
         password: validUserData.password,
@@ -267,6 +258,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return success message without exposing user data', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -282,6 +275,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 401 with invalid password', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: 'WrongPassword123!',
@@ -299,6 +294,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 401 with non-existent username', async () => {
+      const validUserData = generateUniqueUserData();
+      // Don't sign up this user
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: 'nonexistentuser',
         password: validUserData.password,
@@ -312,6 +309,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 401 with non-existent email', async () => {
+      const validUserData = generateUniqueUserData();
+      // Don't sign up this user
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: 'nonexistent@example.com',
         password: validUserData.password,
@@ -325,6 +324,7 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 400 when identifier is missing', async () => {
+      const validUserData = generateUniqueUserData();
       const res = await request(app).post('/api/v1/auth/login').send({
         password: validUserData.password,
       });
@@ -334,6 +334,7 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 400 when password is missing', async () => {
+      const validUserData = generateUniqueUserData();
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
       });
@@ -343,6 +344,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should not expose password or user data in response', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -355,6 +358,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should set cookies with correct expiration times', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -376,6 +381,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should allow login multiple times with same credentials', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       // First login
       const res1 = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -406,20 +413,11 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /api/v1/auth/refresh-token', () => {
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Register and login user before each test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-    });
+    // Each test creates its own user and logs in as needed
 
     it('should successfully refresh access token with valid refresh token', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -490,6 +488,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should generate a new access token different from the old one', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       // Login to get initial tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -526,20 +526,11 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('Auth Middleware Tests', () => {
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Register and login user before each test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-    });
+    // Each test creates its own user and logs in as needed
 
     it('should allow access to protected route with valid access token', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -598,6 +589,8 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should attach user data to request object on successful authentication', async () => {
+      const validUserData = generateUniqueUserData();
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -636,13 +629,16 @@ describe('Auth Signup Integration Tests', () => {
       expect(healthRes.status).toBe(200);
 
       // Test auth endpoints (public)
-      const signupRes = await request(app).post('/api/v1/auth/signup').send({
-        username: 'newuser',
-        email: 'new@example.com',
-        password: 'Password123!',
-        firstName: 'New',
-        lastName: 'User',
-      });
+      const unique = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+      const signupRes = await request(app)
+        .post('/api/v1/auth/signup')
+        .send({
+          username: `newuser_${unique}`,
+          email: `new_${unique}@example.com`,
+          password: 'Password123!',
+          firstName: 'New',
+          lastName: 'User',
+        });
       expect(signupRes.status).not.toBe(401);
     });
   });

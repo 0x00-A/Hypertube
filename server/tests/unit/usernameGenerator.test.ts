@@ -37,47 +37,48 @@ describe('Username Generator Utils', () => {
     });
 
     it('should append number if base username exists', async () => {
-      // Create a user with 'testuser'
+      // Use a short unique base for parallel safety and max length
+      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const base = `tst_${unique}`; // keep base short
       await userRepo.create({
-        username: 'testuser',
-        email: 'test@example.com',
+        username: base,
+        email: `test_${unique}@example.com`,
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'User',
       });
 
-      const username = await generateUniqueUsername('testuser', userRepo);
-      expect(username).toBe('testuser2');
+      const username = await generateUniqueUsername(base, userRepo);
+      expect(username).toBe(base + '2');
     });
 
     it('should increment number until unique username is found', async () => {
-      // Create users with testuser, testuser2, testuser3
+      // Use a short unique base for parallel safety and max length
+      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const base = `tst_${unique}`;
       await userRepo.create({
-        username: 'testuser',
-        email: 'test1@example.com',
+        username: base,
+        email: `test1_${unique}@example.com`,
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'User1',
       });
-
       await userRepo.create({
-        username: 'testuser2',
-        email: 'test2@example.com',
+        username: base + '2',
+        email: `test2_${unique}@example.com`,
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'User2',
       });
-
       await userRepo.create({
-        username: 'testuser3',
-        email: 'test3@example.com',
+        username: base + '3',
+        email: `test3_${unique}@example.com`,
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'User3',
       });
-
-      const username = await generateUniqueUsername('testuser', userRepo);
-      expect(username).toBe('testuser4');
+      const username = await generateUniqueUsername(base, userRepo);
+      expect(username).toBe(base + '4');
     });
 
     it('should sanitize username to lowercase and remove special chars', async () => {
@@ -114,22 +115,22 @@ describe('Username Generator Utils', () => {
     });
 
     it('should throw error after max attempts', async () => {
-      // Create users to exceed maxAttempts: limituser, limituser2-6
+      // Use a short unique base for parallel safety and max length
+      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const base = `lim_${unique}`;
       for (let i = 1; i <= 6; i++) {
         const suffix = i === 1 ? '' : i.toString();
         await userRepo.create({
-          username: `limituser${suffix}`,
-          email: `limit${i}@example.com`,
+          username: `${base}${suffix}`,
+          email: `limit${i}_${unique}@example.com`,
           password: hashedPassword,
           firstName: 'Test',
           lastName: 'User',
         });
       }
-
       // Should throw after 5 attempts with maxAttempts=5
-      // Will try: limituser2, limituser3, limituser4, limituser5, limituser6 (all taken)
-      await expect(generateUniqueUsername('limituser', userRepo, 5)).rejects.toThrow(
-        'Unable to generate unique username'
+      await expect(generateUniqueUsername(base, userRepo, 5)).rejects.toThrow(
+        'Unable to generate unique username',
       );
     });
 
@@ -146,15 +147,14 @@ describe('Username Generator Utils', () => {
 
   describe('Integration with OAuth flow', () => {
     it('should generate unique usernames for multiple Google users with same email prefix', async () => {
-      // Simulate 3 Google users with emails: john@gmail.com, john@yahoo.com, john@outlook.com
+      // Use a unique base for parallel safety
+      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
       const users = [];
-
       for (let i = 0; i < 3; i++) {
         // Extract email prefix as base username (mimicking OAuth service logic)
-        const email = `john@provider${i}.com`;
+        const email = `john_${unique}@provider${i}.com`;
         const baseUsername = email.split('@')[0];
         const uniqueUsername = await generateUniqueUsername(baseUsername, userRepo);
-
         const user = await userRepo.createOauthUser({
           username: uniqueUsername,
           email: email,
@@ -163,64 +163,58 @@ describe('Username Generator Utils', () => {
           lastName: 'Doe',
           oauth: {
             provider: 'google',
-            id: `google${i}`,
+            id: `google${i}_${unique}`,
           },
         });
-
         users.push(user);
       }
-
       // All users should have different usernames
-      expect(users[0].username).toBe('john');
-      expect(users[1].username).toBe('john2');
-      expect(users[2].username).toBe('john3');
+      expect(users[0].username).toBe(`john_${unique}`);
+      expect(users[1].username).toBe(`john_${unique}2`);
+      expect(users[2].username).toBe(`john_${unique}3`);
     });
 
     it('should generate unique usernames for 42 users with same login', async () => {
-      // Simulate 2 users with same 42 login (edge case)
+      // Use a unique base for parallel safety
+      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
       const users = [];
-
       for (let i = 0; i < 2; i++) {
         // Use login as base username (mimicking OAuth service logic)
-        const baseUsername = 'jdoe';
+        const baseUsername = `jdoe_${unique}`;
         const uniqueUsername = await generateUniqueUsername(baseUsername, userRepo);
-
         const user = await userRepo.createOauthUser({
           username: uniqueUsername,
-          email: `jdoe${i}@student.42.fr`,
+          email: `jdoe${i}_${unique}@student.42.fr`,
           password: 'hashedpassword',
           firstName: 'John',
           lastName: 'Doe',
           oauth: {
             provider: 'fortytwo',
-            id: `${12345 + i}`,
+            id: `${12345 + i}_${unique}`,
           },
         });
-
         users.push(user);
       }
-
-      expect(users[0].username).toBe('jdoe');
-      expect(users[1].username).toBe('jdoe2');
+      expect(users[0].username).toBe(`jdoe_${unique}`);
+      expect(users[1].username).toBe(`jdoe_${unique}2`);
     });
 
     it('should handle username collision between regular user and OAuth user', async () => {
-      // Create a regular user with username 'john'
+      // Use a unique base for parallel safety
+      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
+      const baseUsername = `john_${unique}`;
+      // Create a regular user with username baseUsername
       await userRepo.create({
-        username: 'john',
-        email: 'john.regular@example.com',
+        username: baseUsername,
+        email: `john_regular_${unique}@example.com`,
         password: hashedPassword,
         firstName: 'John',
         lastName: 'Regular',
       });
-
       // Try to create OAuth user with same base username
-      const email = 'john@gmail.com';
-      const baseUsername = email.split('@')[0];
+      const email = `john_${unique}@gmail.com`;
       const uniqueUsername = await generateUniqueUsername(baseUsername, userRepo);
-
-      expect(uniqueUsername).toBe('john2');
-
+      expect(uniqueUsername).toBe(baseUsername + '2');
       const oauthUser = await userRepo.createOauthUser({
         username: uniqueUsername,
         email: email,
@@ -229,11 +223,10 @@ describe('Username Generator Utils', () => {
         lastName: 'OAuth',
         oauth: {
           provider: 'google',
-          id: 'google123',
+          id: `google123_${unique}`,
         },
       });
-
-      expect(oauthUser.username).toBe('john2');
+      expect(oauthUser.username).toBe(baseUsername + '2');
     });
   });
 });

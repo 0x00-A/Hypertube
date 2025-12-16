@@ -1,20 +1,8 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
-import mongoose from 'mongoose';
 
 describe('Movies API - New Endpoints (Integration)', () => {
   const app = createApp();
-
-  beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await connectDatabase();
-    }
-  });
-
-  afterAll(async () => {
-    await disconnectDatabase();
-  });
 
   describe('GET /api/v1/movies/trending', () => {
     it('should return a paginated list of trending movies', async () => {
