@@ -21,3 +21,15 @@ export interface ILoginDTO {
   identifier: string;
   password: string;
 }
+
+export interface IVerificationEmail {
+  userId: string;
+  token: string;
+  // createdAt: Date;
+}
+
+// export interface IVerificationEmailDTO {
+//   userId: string;
+//   token: string;
+//   email: string;
+// }

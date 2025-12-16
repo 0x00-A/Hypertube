@@ -3,12 +3,15 @@ import { IUser } from '../interfaces/user.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from './password.service';
 import { ConflictError } from '../core/errors/customErrors';
+import { EmailService } from './email.service';
+
 
 export class AuthService {
 
   constructor(
     private _userRepo: UserRepository,
-    private _passwordService: PasswordService
+    private _passwordService: PasswordService,
+    private _emailService: EmailService,
   ) {}
 
   async signUp(userData: ISignupDTO) {
@@ -21,14 +24,29 @@ export class AuthService {
       throw new ConflictError('Email already exists');
     }
     const hashedPassword = await this._passwordService.hashPassword(userData.password);
-    await this._userRepo.create({
+    const user =await this._userRepo.create({
       username: userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
       password: hashedPassword,
     });
-    // then you should send verification email
+    await this._emailService.createVerificationEmail(user);
+    return true;
+  }
+
+  async verifyEmail(token: string): Promise<boolean> {
+
+    const verification = await this._emailService.verifyEmailToken(token);
+    if (!verification) {
+      throw new ConflictError('Invalid or expired verification token');
+    }
+    const user = await this._userRepo.findById(verification.userId);
+    if (!user) {
+      throw new ConflictError('User not found');
+    }
+    await this._userRepo.update(user._id!, { isActive: true });
+    await this._emailService.deleteVerificationToken(verification.token);
     return true;
   }
 

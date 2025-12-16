@@ -114,4 +114,13 @@ export class UserRepository {
     ).exec();
     return docs.map(doc => doc.username);
   }
+
+  async update(userId: string, updateData: Partial<IUser>): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).exec();
+    return this.toIUser(doc);
+  }
 }

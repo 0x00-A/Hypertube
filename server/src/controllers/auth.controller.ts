@@ -20,6 +20,22 @@ export class AuthController {
     });
   });
 
+  verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    const { token } = req.validated!.params as { token: string };
+    if (!token) {
+      throw new UnauthorizedError('No token provided');
+    }
+
+    const isVerified = await this._authService.verifyEmail(token);
+    if (!isVerified) {
+      throw new UnauthorizedError('Invalid or expired verification token');
+    }
+    return res.status(200).json({
+      status: 'success',
+      message: 'Email verified successfully',
+    });
+  });
+
   logIn = asyncHandler(async (req: Request, res: Response) => {
     const body = req.validated!.body as ILoginDTO;
 
@@ -68,6 +84,27 @@ export class AuthController {
     return res.status(200).json({
       status: 'success',
       message: 'Token refreshed successfully',
+    });
+  });
+
+  logout = asyncHandler(async (req: Request, res: Response) => {
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: env.MAX_AGE_ACCESS_TOKEN
+    });
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh-token',
+      maxAge: env.MAX_AGE_REFRESH_TOKEN
+    });
+    return res.status(200).json({
+      status: 'success',
+      message: 'Logout successful',
     });
   });
 }

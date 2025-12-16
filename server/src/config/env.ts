@@ -31,4 +31,9 @@ export const env = cleanEnv(process.env, {
   FORTYTWO_CLIENT_ID: str(),
   FORTYTWO_CLIENT_SECRET: str(),
   FORTYTWO_CALLBACK_URL: str(),
+
+  EMAIL_HOST: str(),
+  EMAIL_PORT: num(),
+  EMAIL_USER: str(),
+  EMAIL_PASS: str(),
 });
