@@ -3,7 +3,6 @@ import { IResponse } from '../core/interfaces/IResponse';
 import { MovieInteractionService } from '../services/movieInteraction.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { Types } from 'mongoose';
-import { NotFoundError } from '../core/errors/customErrors';
 import {
   IPaginatedResponse,
   IPaginationOptions,
