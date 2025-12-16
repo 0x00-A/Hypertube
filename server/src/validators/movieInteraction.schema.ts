@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 export const MovieIdParamSchema = z.object({
   params: z.object({
-    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/i, 'Invalid ObjectId format'),
+    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid ObjectId format'),
   }),
 });
 
 export const UpdateWatchProgressSchema = z.object({
   params: z.object({
-    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/i, 'Invalid ObjectId format'),
+    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid ObjectId format'),
   }),
   body: z.object({
     lastWatchedPosition: z.number().min(0, 'Position must be non-negative'),
@@ -18,7 +18,7 @@ export const UpdateWatchProgressSchema = z.object({
 
 export const RateMovieSchema = z.object({
   params: z.object({
-    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/i, 'Invalid ObjectId format'),
+    movieId: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid ObjectId format'),
   }),
   body: z.object({
     rating: z.number().min(1, 'Rating must be at least 1').max(10, 'Rating must be at most 10'),
