@@ -3,10 +3,9 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/tests/**/*.test.ts'],
   setupFiles: ['<rootDir>/tests/setup-env.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup-inmemory-db.ts'],
   verbose: false,
   collectCoverage: false,
-  // Run tests sequentially to avoid database race conditions
-  maxWorkers: 1,
-  // Increase timeout for integration tests
+  // maxWorkers: 2,
   testTimeout: 10000,
 };

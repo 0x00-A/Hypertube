@@ -5,7 +5,6 @@ import { getMetadata } from '../metadata/tmdb';
 import { logger } from '../../utils/logger';
 import { BaseProvider } from './providers/BaseProvider';
 import { IPaginationOptions, MovieFilterOptions } from '../../core/interfaces/IPagination';
-import { getOmdbMetadata } from '../metadata/omdb';
 
 export class ScraperEngine {
   private _providers: BaseProvider[];
@@ -77,9 +76,9 @@ export class ScraperEngine {
       logger.info(`New Movie Found: ${partial.title}. Fetching metadata...`);
       let metadata = await getMetadata(partial.imdbId);
 
-      if (!metadata) {
-        metadata = await getOmdbMetadata(partial.imdbId);
-      }
+      // if (!metadata) {
+      //   metadata = await getOmdbMetadata(partial.imdbId);
+      // }
 
       if (metadata) {
         const completeMovie = {

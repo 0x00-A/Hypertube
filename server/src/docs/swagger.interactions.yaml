@@ -1,0 +1,794 @@
+paths:
+  /api/v1/interactions/user/stats:
+    get:
+      summary: Get statistics for the current user
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totalWatches:
+                        type: integer
+                        minimum: 0
+                        description: Total number of movies the user has watched
+                        example: 42
+                      watchlistCount:
+                        type: integer
+                        minimum: 0
+                        description: Number of movies in the user's watchlist
+                        example: 10
+                      averageRating:
+                        type: number
+                        minimum: 0
+                        maximum: 10
+                        nullable: true
+                        description: Average rating given by the user
+                        example: 8.2
+                      totalRatings:
+                        type: integer
+                        minimum: 0
+                        description: Number of movies the user has rated
+                        example: 15
+                  message:
+                    type: string
+                    example: User statistics fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/interactions/movies/{movieId}/progress:
+    post:
+      summary: Update watch progress for a movie
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lastWatchedPosition
+                - duration
+              properties:
+                lastWatchedPosition:
+                  type: number
+                  minimum: 0
+                  description: Current playback position in seconds
+                  example: 1800
+                duration:
+                  type: number
+                  minimum: 1
+                  description: Total movie duration in seconds
+                  example: 7200
+      responses:
+        '200':
+          description: Watch progress updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Watch progress updated successfully.
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Get watch progress for a movie
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '200':
+          description: Watch progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/MovieInteraction'
+                      - type: 'null'
+                  message:
+                    type: string
+                    example: Watch progress fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/interactions/movies/{movieId}/rating:
+    post:
+      summary: Rate a movie
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  description: Rating from 1 to 10
+                  example: 8
+      responses:
+        '200':
+          description: Movie rated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Movie rated successfully.
+        '400':
+          description: Invalid rating value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Get user's rating for a movie
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '200':
+          description: Rating retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      rating:
+                        type: integer
+                        nullable: true
+                        minimum: 1
+                        maximum: 10
+                        example: 8
+                  message:
+                    type: string
+                    example: User rating fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/interactions/movies/{movieId}/watchlist:
+    post:
+      summary: Add movie to watchlist
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '201':
+          description: Movie added to watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Movie added to watchlist.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Remove movie from watchlist
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '200':
+          description: Movie removed from watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Movie removed from watchlist.
+        '404':
+          description: Movie not found in watchlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/interactions/movies/{movieId}/stats:
+    get:
+      summary: Get movie interaction statistics
+      tags:
+        - Movie Interactions
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+          description: MongoDB ObjectId of the movie
+      responses:
+        '200':
+          description: Movie statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totalWatches:
+                        type: integer
+                        minimum: 0
+                        description: Total number of times the movie was watched
+                        example: 150
+                      watchlistCount:
+                        type: integer
+                        minimum: 0
+                        description: Number of users who added the movie to their watchlist
+                        example: 25
+                      averageRating:
+                        type: number
+                        minimum: 0
+                        maximum: 10
+                        nullable: true
+                        description: Average rating across all users
+                        example: 8.5
+                      totalRatings:
+                        type: integer
+                        minimum: 0
+                        description: Total number of users who rated the movie
+                        example: 45
+                  message:
+                    type: string
+                    example: Movie statistics fetched successfully.
+
+  /api/v1/interactions/history:
+    get:
+      summary: Get user's watch history
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of items to return
+      responses:
+        '200':
+          description: Watch history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+                  message:
+                    type: string
+                    example: User watch history fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/interactions/watchlist:
+    get:
+      summary: Get user's watchlist with pagination and filters
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [title, year, rating, lastUpdated]
+            default: lastUpdated
+          description: Field to sort by. 'lastUpdated' sorts by when added to watchlist
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order (ascending or descending)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search movie titles
+        - in: query
+          name: genre
+          schema:
+            type: string
+          description: Filter by genre
+        - in: query
+          name: minRating
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          description: Minimum rating filter
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: Filter by release year
+      responses:
+        '200':
+          description: Watchlist retrieved successfully with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      total:
+                        type: integer
+                        example: 42
+                      totalPages:
+                        type: integer
+                        example: 5
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+                  message:
+                    type: string
+                    example: User watchlist fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/interactions/continue-watching:
+    get:
+      summary: Get movies to continue watching
+      tags:
+        - Movie Interactions
+      security:
+        - cookieAuth: []
+      description: Returns movies that have been started but not completed (watchProgress < 95%). Each movie includes its watch progress.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of items to return
+      responses:
+        '200':
+          description: Continue watching list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Movie'
+                        - type: object
+                          properties:
+                            watchProgress:
+                              type: number
+                              minimum: 0
+                              maximum: 100
+                              description: Watch progress percentage
+                              example: 45.5
+                  message:
+                    type: string
+                    example: Continue watching list fetched successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    MovieInteraction:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 507f1f77bcf86cd799439011
+        userId:
+          type: string
+          description: User's MongoDB ObjectId
+          example: 507f1f77bcf86cd799439012
+        movieId:
+          type: string
+          description: Movie's MongoDB ObjectId
+          example: 507f1f77bcf86cd799439013
+        interactionType:
+          type: string
+          enum: [watched, rated, watchlist, downloaded]
+          description: Type of interaction
+          example: watched
+        lastWatchedPosition:
+          type: number
+          minimum: 0
+          description: Last playback position in seconds
+          example: 1800
+        duration:
+          type: number
+          minimum: 0
+          description: Total movie duration in seconds
+          example: 7200
+        watchProgress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Watch progress percentage (auto-calculated)
+          example: 25
+        isCompleted:
+          type: boolean
+          description: Whether the movie is completed (watchProgress >= 95%)
+          example: false
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+          description: User's rating for the movie
+          example: 8
+        watchedAt:
+          type: string
+          format: date-time
+          description: Last watched timestamp
+          example: 2025-12-12T10:30:00Z
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when movie was completed
+          example: 2025-12-12T12:00:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: 2025-12-12T10:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: 2025-12-12T10:30:00Z
+
+    MovieStats:
+      type: object
+      properties:
+        totalWatches:
+          type: integer
+          minimum: 0
+          description: Total number of times the movie was watched
+          example: 150
+        averageRating:
+          type: number
+          minimum: 0
+          maximum: 10
+          nullable: true
+          description: Average rating across all users
+          example: 8.5
+        totalRatings:
+          type: integer
+          minimum: 0
+          description: Total number of ratings
+          example: 45
+
+    Movie:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 507f1f77bcf86cd799439020
+        imdbId:
+          type: string
+          description: IMDb ID
+          example: tt1375666
+        tmdbId:
+          type: integer
+          nullable: true
+          description: TMDB ID
+          example: 27205
+        title:
+          type: string
+          description: Movie title
+          example: Inception
+        year:
+          type: integer
+          description: Release year
+          example: 2010
+        rating:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 10
+          description: Movie rating
+          example: 8.8
+        duration:
+          type: integer
+          nullable: true
+          description: Movie duration in minutes
+          example: 148
+        synopsis:
+          type: string
+          description: Movie synopsis
+          example: A thief who steals corporate secrets through the use of dream-sharing technology...
+        genres:
+          type: array
+          items:
+            type: string
+          description: Movie genres
+          example: [Action, Sci-Fi, Thriller]
+        originalLanguage:
+          type: string
+          description: Original language code
+          example: en
+        trailer:
+          type: string
+          description: YouTube trailer URL
+          example: https://www.youtube.com/watch?v=YoHD9XEInc0
+        images:
+          type: object
+          properties:
+            thumbnail:
+              type: string
+              example: https://image.tmdb.org/t/p/w300/inception_thumb.jpg
+            poster:
+              type: string
+              example: https://image.tmdb.org/t/p/w500/inception_poster.jpg
+            backdrop:
+              type: string
+              example: https://image.tmdb.org/t/p/original/inception_backdrop.jpg
+        torrents:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              hash:
+                type: string
+              quality:
+                type: string
+                example: 1080p
+              type:
+                type: string
+                example: mp4
+              videoCodec:
+                type: string
+                example: h264
+              seeds:
+                type: integer
+                example: 150
+              peers:
+                type: integer
+                example: 45
+              size:
+                type: string
+                example: 2.1 GB
+              sizeBytes:
+                type: integer
+                example: 2252341248
+              provider:
+                type: string
+                example: YTS
+        downloadStatus:
+          type: string
+          enum: [not_downloaded, downloading, downloaded]
+          description: Download status
+          example: not_downloaded
+        lastWatched:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last watched timestamp
+        localPath:
+          type: string
+          nullable: true
+          description: Local file path if downloaded
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+        - path
+      properties:
+        status:
+          type: string
+          enum: [fail, error]
+          description: Status type - 'fail' for 4xx errors, 'error' for 5xx errors
+          example: fail
+        message:
+          type: string
+          description: Error message
+          example: Invalid movie ID format
+        path:
+          type: string
+          description: Request path that caused the error
+          example: /api/v1/interactions/movies/invalid-id/progress
+        validationErrors:
+          type: array
+          description: Validation error details (only for 4xx errors)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: rating
+              message:
+                type: string
+                example: Rating must be between 1 and 10

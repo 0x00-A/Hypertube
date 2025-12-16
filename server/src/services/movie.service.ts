@@ -8,7 +8,6 @@ import { getYtsMovieDetailsByImdbId } from './metadata/yts';
 import axios from 'axios';
 import { env } from '../config/env';
 import { BadGatewayError } from '../core/errors/customErrors';
-import { getOmdbMetadata } from './metadata/omdb';
 
 export class MovieService {
   private _movieRepository: MovieRepository;
@@ -172,7 +171,6 @@ export class MovieService {
         logger.info(
           `[MovieService] Movie with IMDb ID "${imdbId}" already exists in database. Skipping completion.`,
         );
-        movieExists.tmdbId = tmdbId;
         await movieExists.save();
         return movieExists.toObject();
       }
@@ -180,12 +178,7 @@ export class MovieService {
       let metadata = await getMetadata(imdbId);
       if (!metadata) {
         logger.error(`[MovieService] TMDB metadata not found for IMDb ID "${imdbId}".`);
-        metadata = await getOmdbMetadata(imdbId);
-        if (!metadata) {
-          logger.error(`[MovieService] OMDB metadata not found for IMDb ID "${imdbId}".`);
-          return null;
-        }
-        metadata = { ...metadata, tmdbId };
+        return null;
       }
 
       // add YTS torrents using IMDb ID

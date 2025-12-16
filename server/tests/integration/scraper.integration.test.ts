@@ -1,4 +1,3 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { ScraperEngine } from '../../src/services/scraper/ScraperEngine';
 import { MovieRepository } from '../../src/repositories/movie.repository';
@@ -143,25 +142,11 @@ jest.mock('../../src/utils/logger', () => ({
 }));
 
 describe('ScraperEngine Integration Test', () => {
-  let mongoServer: MongoMemoryServer;
   let engine: ScraperEngine;
   let movieRepository: MovieRepository;
   let providers: BaseProvider[];
 
   const useRealProviders = process.env.RUN_SCRAPER_INTEGRATION === 'true';
-
-  beforeAll(async () => {
-    // Start in-memory MongoDB
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-
-    await mongoose.connect(mongoUri);
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   beforeEach(async () => {
     // Clear the database before each test
@@ -176,8 +161,6 @@ describe('ScraperEngine Integration Test', () => {
 
     engine = new ScraperEngine(providers);
     movieRepository = new MovieRepository();
-
-    // Replace providers with mock if not using real providers
   });
 
   describe('searchQuery - End-to-End', () => {

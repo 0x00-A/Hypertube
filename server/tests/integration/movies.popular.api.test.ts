@@ -1,17 +1,8 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { connectDatabase, disconnectDatabase } from '../../src/config/database';
 
 describe('Movies API - Popular Endpoint', () => {
   const app = createApp();
-
-  beforeAll(async () => {
-    await connectDatabase();
-  });
-
-  afterAll(async () => {
-    await disconnectDatabase();
-  });
 
   describe('GET /api/v1/movies/popular', () => {
     it('should return 200 and a list of popular movies', async () => {

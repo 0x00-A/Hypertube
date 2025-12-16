@@ -12,6 +12,9 @@ import { OAuthService } from '../services/oauth.service';
 import { configurePassport } from '../config/passport';
 import { UserController } from '../controllers/user.controller';
 import { UserService } from '../services/user.service';
+import { MovieInteractionController } from '../controllers/movieInteraction.controller';
+import { MovieInteractionService } from '../services/movieInteraction.service';
+import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
 
 export const createControllers = () => {
   // Shared repositories
@@ -32,6 +35,11 @@ export const createControllers = () => {
   const oauthService = new OAuthService(userRepository, passwordService);
   const oauthController = new OAuthController(jwtService);
 
+  // MovieInteraction dependencies
+  const movieInteractionRepository = new MovieInteractionRepository();
+  const movieInteractionService = new MovieInteractionService(movieInteractionRepository);
+  const movieInteractionController = new MovieInteractionController(movieInteractionService);
+
   // Configure Passport with injected dependencies
   configurePassport(oauthService);
 
@@ -39,5 +47,11 @@ export const createControllers = () => {
   const userService = new UserService(userRepository);
   const userController = new UserController(userService);
 
-  return { movieController, authController, userController, oauthController };
+  return {
+    movieController,
+    authController,
+    oauthController,
+    userController,
+    movieInteractionController,
+  };
 };

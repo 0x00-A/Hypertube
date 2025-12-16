@@ -9,9 +9,14 @@ import { Profile as GoogleProfile } from 'passport-google-oauth20';
 import { PasswordService } from '../../src/services/password.service';
 import { FortyTwoProfile } from '../../src/types/oauth.type';
 
-
 // Helper function to create Google profile mock
-const createGoogleProfile = (overrides: { id: string; email?: string; given_name?: string; family_name?: string; picture?: string }): GoogleProfile => ({
+const createGoogleProfile = (overrides: {
+  id: string;
+  email?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+}): GoogleProfile => ({
   id: overrides.id,
   displayName: `${overrides.given_name || ''} ${overrides.family_name || ''}`.trim(),
   emails: overrides.email ? [{ value: overrides.email, verified: true }] : [],
@@ -36,7 +41,13 @@ const createGoogleProfile = (overrides: { id: string; email?: string; given_name
 });
 
 // Helper function to create 42 profile mock
-const createFortyTwoProfile = (id: number, email: string, login: string, firstName: string, lastName: string): FortyTwoProfile => ({
+const createFortyTwoProfile = (
+  id: number,
+  email: string,
+  login: string,
+  firstName: string,
+  lastName: string,
+): FortyTwoProfile => ({
   id: String(id),
   username: login,
   displayName: `${firstName} ${lastName}`.trim(),
@@ -106,75 +117,71 @@ describe('OAuth Integration Tests', () => {
 
   describe('OAuthService - handleGoogleOAuth', () => {
     it('should create a new user with Google OAuth', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const email = `john_${unique}@example.com`;
       const mockGoogleProfile = createGoogleProfile({
-        id: 'google123',
-        email: 'john@example.com',
+        id: `google123_${unique}`,
+        email,
         given_name: 'John',
         family_name: 'Doe',
         picture: 'https://example.com/photo.jpg',
       });
-
       const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
-
       expect(user).toBeDefined();
       expect(user._id).toBeDefined();
-      expect(user.email).toBe('john@example.com');
-      expect(user.username).toBe('john');
+      expect(user.email).toBe(email);
+      expect(user.username).toBe(`john_${unique}`);
       expect(user.firstName).toBe('John');
       expect(user.lastName).toBe('Doe');
-
       // Verify oauth was stored by querying directly
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('google');
-      expect(dbUser?.oauth?.id).toBe('google123');
+      expect(dbUser?.oauth?.id).toBe(`google123_${unique}`);
     });
 
     it('should return existing user if Google account already exists', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const email = `john_${unique}@example.com`;
       const mockGoogleProfile = createGoogleProfile({
-        id: 'google123',
-        email: 'john@example.com',
+        id: `google123_${unique}`,
+        email,
         given_name: 'John',
         family_name: 'Doe',
         picture: 'https://example.com/photo.jpg',
       });
-
       // Create user first time
       const firstUser = await oauthService.handleGoogleOAuth(mockGoogleProfile);
-
       // Try to create again with same profile
       const secondUser = await oauthService.handleGoogleOAuth(mockGoogleProfile);
-
       expect(firstUser._id).toEqual(secondUser._id);
-      expect(secondUser.email).toBe('john@example.com');
+      expect(secondUser.email).toBe(email);
     });
 
     it('should link Google account to existing user with same email', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const email = `john_${unique}@example.com`;
       // Create a regular user first
       await userRepo.create({
-        email: 'john@example.com',
-        username: 'johndoe',
+        email,
+        username: `johndoe_${unique}`,
         password: 'hashedpassword123',
         firstName: 'John',
         lastName: 'Doe',
       });
-
       const mockGoogleProfile = createGoogleProfile({
-        id: 'google123',
-        email: 'john@example.com',
+        id: `google123_${unique}`,
+        email,
         given_name: 'John',
         family_name: 'Doe',
         picture: 'https://example.com/photo.jpg',
       });
-
       const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
-
-      expect(user.email).toBe('john@example.com');
-      expect(user.username).toBe('johndoe');
-
+      expect(user.email).toBe(email);
+      expect(user.username).toBe(`johndoe_${unique}`);
       // Verify oauth was linked by querying database
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('google');
-      expect(dbUser?.oauth?.id).toBe('google123');
+      expect(dbUser?.oauth?.id).toBe(`google123_${unique}`);
     });
 
     it('should generate username from email if email exists', async () => {
@@ -198,70 +205,69 @@ describe('OAuth Integration Tests', () => {
         family_name: 'User',
       });
 
-      await expect(oauthService.handleGoogleOAuth(mockGoogleProfile)).rejects.toThrow('Google account must have an email address');
+      await expect(oauthService.handleGoogleOAuth(mockGoogleProfile)).rejects.toThrow(
+        'Google account must have an email address',
+      );
     });
 
     it('should generate unique username when preferred username is taken', async () => {
-      // Create a regular user with username 'john'
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      // Create a regular user with username 'john_<unique>'
       await userRepo.create({
-        email: 'john.regular@example.com',
-        username: 'john',
+        email: `john_regular_${unique}@example.com`,
+        username: `john_${unique}`,
         password: 'hashedpassword123',
         firstName: 'John',
         lastName: 'Regular',
       });
-
       // Try to create OAuth user with same email prefix
       const mockGoogleProfile = createGoogleProfile({
-        id: 'google456',
-        email: 'john@gmail.com',
+        id: `google456_${unique}`,
+        email: `john_${unique}@gmail.com`,
         given_name: 'John',
         family_name: 'OAuth',
       });
-
       const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
-
-      expect(user.username).toBe('john2'); // Should append number to avoid collision
-      expect(user.email).toBe('john@gmail.com');
+      expect(user.username).toBe(`john_${unique}2`); // Should append number to avoid collision
+      expect(user.email).toBe(`john_${unique}@gmail.com`);
     });
 
     it('should handle multiple OAuth users with same email prefix', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       // Create first OAuth user
       const mockProfile1 = createGoogleProfile({
-        id: 'google111',
-        email: 'jane@provider1.com',
+        id: `google111_${unique}`,
+        email: `jane_${unique}@provider1.com`,
         given_name: 'Jane',
         family_name: 'Doe',
       });
       const user1 = await oauthService.handleGoogleOAuth(mockProfile1);
-
       // Create second OAuth user with same email prefix
       const mockProfile2 = createGoogleProfile({
-        id: 'google222',
-        email: 'jane@provider2.com',
+        id: `google222_${unique}`,
+        email: `jane_${unique}@provider2.com`,
         given_name: 'Jane',
         family_name: 'Smith',
       });
       const user2 = await oauthService.handleGoogleOAuth(mockProfile2);
-
-      expect(user1.username).toBe('jane');
-      expect(user2.username).toBe('jane2');
+      expect(user1.username).toBe(`jane_${unique}`);
+      expect(user2.username).toBe(`jane_${unique}2`);
     });
   });
 
   describe('OAuthService - handleFortyTwoOAuth', () => {
     it('should create a new user with 42 OAuth', async () => {
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, 'jdoe@student.42.fr', 'jdoe', 'John', 'Doe');
-
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const login = `jdoe_${unique}`;
+      const email = `${login}@student.42.fr`;
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
-
       expect(user).toBeDefined();
       expect(user._id).toBeDefined();
-      expect(user.email).toBe('jdoe@student.42.fr');
-      expect(user.username).toBe('jdoe');
+      expect(user.email).toBe(email);
+      expect(user.username).toBe(login);
       expect(user.firstName).toBe('John');
       expect(user.lastName).toBe('Doe');
-
       // Verify oauth was stored in database
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('fortytwo');
@@ -269,35 +275,34 @@ describe('OAuth Integration Tests', () => {
     });
 
     it('should return existing user if 42 account already exists', async () => {
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, 'jdoe@student.42.fr', 'jdoe', 'John', 'Doe');
-
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const login = `jdoe_${unique}`;
+      const email = `${login}@student.42.fr`;
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
       // Create user first time
       const firstUser = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
-
       // Try to create again with same profile
       const secondUser = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
-
       expect(firstUser._id).toEqual(secondUser._id);
-      expect(secondUser.email).toBe('jdoe@student.42.fr');
+      expect(secondUser.email).toBe(email);
     });
 
     it('should link 42 account to existing user with same email', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const login = `jdoe_${unique}`;
+      const email = `${login}@student.42.fr`;
       // Create a regular user first
       await userRepo.create({
-        email: 'jdoe@student.42.fr',
-        username: 'johndoe',
+        email,
+        username: `johndoe_${unique}`,
         password: 'hashedpassword123',
         firstName: 'John',
         lastName: 'Doe',
       });
-
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, 'jdoe@student.42.fr', 'jdoe', 'John', 'Doe');
-
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
-
-      expect(user.email).toBe('jdoe@student.42.fr');
-      expect(user.username).toBe('johndoe');
-
+      expect(user.email).toBe(email);
+      expect(user.username).toBe(`johndoe_${unique}`);
       // Verify oauth was linked in database
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('fortytwo');
@@ -305,7 +310,13 @@ describe('OAuth Integration Tests', () => {
     });
 
     it('should use 42 login as username', async () => {
-      const mockFortyTwoProfile = createFortyTwoProfile(67890, 'jsmith@student.42.fr', 'jsmith', 'Jane', 'Smith');
+      const mockFortyTwoProfile = createFortyTwoProfile(
+        67890,
+        'jsmith@student.42.fr',
+        'jsmith',
+        'Jane',
+        'Smith',
+      );
 
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
 
@@ -313,7 +324,13 @@ describe('OAuth Integration Tests', () => {
     });
 
     it('should handle missing names with fallback values', async () => {
-      const mockFortyTwoProfile = createFortyTwoProfile(99999, 'noname@student.42.fr', 'noname', '', '');
+      const mockFortyTwoProfile = createFortyTwoProfile(
+        99999,
+        'noname@student.42.fr',
+        'noname',
+        '',
+        '',
+      );
 
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
 
@@ -322,22 +339,22 @@ describe('OAuth Integration Tests', () => {
     });
 
     it('should generate unique username when 42 login is taken', async () => {
-      // Create a regular user with username 'jsmith'
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      // Create a regular user with username 'jsmith_<unique>'
       await userRepo.create({
-        email: 'jsmith.regular@example.com',
-        username: 'jsmith',
+        email: `jsmith_regular_${unique}@example.com`,
+        username: `jsmith_${unique}`,
         password: 'hashedpassword123',
         firstName: 'John',
         lastName: 'Smith',
       });
-
       // Try to create 42 OAuth user with same login
-      const mockFortyTwoProfile = createFortyTwoProfile(67890, 'jsmith@student.42.fr', 'jsmith', 'Jane', 'Smith');
-
+      const login = `jsmith_${unique}`;
+      const email = `${login}@student.42.fr`;
+      const mockFortyTwoProfile = createFortyTwoProfile(67890, email, login, 'Jane', 'Smith');
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
-
-      expect(user.username).toBe('jsmith2'); // Should append number to avoid collision
-      expect(user.email).toBe('jsmith@student.42.fr');
+      expect(user.username).toBe(`${login}2`); // Should append number to avoid collision
+      expect(user.email).toBe(email);
     });
   });
 
@@ -363,38 +380,36 @@ describe('OAuth Integration Tests', () => {
       const nonExistentId = new mongoose.Types.ObjectId().toString();
       const result = await userRepo.linkOAuthAccount(nonExistentId, {
         provider: 'google',
-        id: 'google123'
+        id: 'google123',
       });
 
       expect(result).toBeNull();
     });
 
     it('should properly update OAuth fields without data loss', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       // Create a user with initial data
       const user = await userRepo.create({
-        email: 'test@example.com',
-        username: 'testuser',
+        email: `test_${unique}@example.com`,
+        username: `testuser_${unique}`,
         password: 'hashedpassword123',
         firstName: 'Test',
         lastName: 'User',
       });
-
       // Link OAuth account
       const linkedUser = await userRepo.linkOAuthAccount(user._id!, {
         provider: 'google',
-        id: 'google123'
+        id: `google123_${unique}`,
       });
-
       expect(linkedUser).not.toBeNull();
-      expect(linkedUser?.email).toBe('test@example.com');
-      expect(linkedUser?.username).toBe('testuser');
+      expect(linkedUser?.email).toBe(`test_${unique}@example.com`);
+      expect(linkedUser?.username).toBe(`testuser_${unique}`);
       expect(linkedUser?.firstName).toBe('Test');
       expect(linkedUser?.lastName).toBe('User');
-
       // Verify oauth was set correctly in database
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('google');
-      expect(dbUser?.oauth?.id).toBe('google123');
+      expect(dbUser?.oauth?.id).toBe(`google123_${unique}`);
     });
   });
 });
