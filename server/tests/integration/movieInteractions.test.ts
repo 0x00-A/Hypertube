@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
-// ...existing code...
 import { MovieInteractionModel } from '../../src/models/MovieInteraction';
 import { MovieModel } from '../../src/models/Movie';
 import { UserModel } from '../../src/models/User';
