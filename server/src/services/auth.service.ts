@@ -36,8 +36,8 @@ export class AuthService {
     body: ILoginDTO,
   ): Promise<Partial<IUser> | null> {
     const user = body.identifier.includes('@')
-      ? await this._userRepo.findByEmail(body.identifier)
-      : await this._userRepo.findByUsername(body.identifier);
+      ? await this._userRepo.findByEmail(body.identifier, true)
+      : await this._userRepo.findByUsername(body.identifier, true);
     if (!user || !user.password) {
       return null;
     }
@@ -48,7 +48,6 @@ export class AuthService {
     if (!isPasswordValid || !user._id) {
       return null;
     }
-    // Remove password before returning user
     const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }

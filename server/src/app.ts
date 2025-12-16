@@ -17,6 +17,7 @@ import { dbHealth } from './config/database';
 import { createControllers } from './bootstrap/controllers';
 import { createOAuthRoutes } from './routes/v1/oauth.routes';
 import { passport } from './config/passport';
+import { createUserRoutes } from './routes/v1/users.routes';
 
 export const createApp = () => {
   const app = express();
@@ -65,10 +66,11 @@ export const createApp = () => {
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // Initialize controllers
-  const { movieController, authController, oauthController } = createControllers();
+  const { movieController, authController, oauthController, userController } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
   app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
+  app.use('/api/v1/profile', createUserRoutes(userController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {

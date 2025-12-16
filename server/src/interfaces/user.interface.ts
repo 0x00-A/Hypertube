@@ -1,8 +1,3 @@
-export interface IWatchedMovie {
-  movieId: string;
-  date: Date;
-}
-
 export interface IOAuth {
   provider: 'google' | 'fortytwo';
   id: string;
@@ -15,6 +10,7 @@ export interface IUser {
   password?: string;
   firstName?: string;
   lastName?: string;
+  avatarUrl?: string;
   createdAt?: Date;
   oauth?: IOAuth;
 }

@@ -47,7 +47,7 @@ async linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | 
         'oauth.id': oauth.id
       }
     },
-    { 
+    {
       new: true,           // Return updated document
       runValidators: true  // Run schema validators
     }
@@ -113,7 +113,7 @@ it('should properly update OAuth fields without data loss', async () => {
   expect(linkedUser?.username).toBe('testuser');
   expect(linkedUser?.firstName).toBe('Test');
   expect(linkedUser?.lastName).toBe('User');
-  
+
   // ✅ OAuth fields correctly set
   const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
   expect(dbUser?.oauth?.provider).toBe('google');

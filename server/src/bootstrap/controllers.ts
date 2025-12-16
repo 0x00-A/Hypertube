@@ -10,6 +10,8 @@ import { scraperEngine } from '../services/scraper/ScraperEngine';
 import { OAuthController } from '../controllers/oauth.controller';
 import { OAuthService } from '../services/oauth.service';
 import { configurePassport } from '../config/passport';
+import { UserController } from '../controllers/user.controller';
+import { UserService } from '../services/user.service';
 
 export const createControllers = () => {
   // Shared repositories
@@ -33,5 +35,9 @@ export const createControllers = () => {
   // Configure Passport with injected dependencies
   configurePassport(oauthService);
 
-  return { movieController, authController, oauthController };
+  // accounts dependencies
+  const userService = new UserService(userRepository);
+  const userController = new UserController(userService);
+
+  return { movieController, authController, userController, oauthController };
 };

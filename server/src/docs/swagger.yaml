@@ -359,6 +359,126 @@ paths:
                 type: string
                 example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
 
+  /api/v1/profile/me:
+    get:
+      summary: Get current authenticated user's profile
+      tags:
+        - User Profile
+      security:
+        - bearerAuth: []
+      description: Returns the authenticated user's profile information including email. Requires valid JWT token in cookie.
+      responses:
+        '200':
+          description: Current user profile information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated or invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized, No access token provided
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+
+  /api/v1/profile/{username}:
+    get:
+      summary: Get public user profile by username
+      tags:
+        - User Profile
+      description: Returns public profile information for any user. Email is only exposed when viewing your own profile. No authentication required.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 3
+          description: Username of the user to retrieve (case-insensitive)
+          example: johndoe
+      responses:
+        '200':
+          description: User profile information (email excluded unless viewing own profile)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error (username too short or invalid format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation failed
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                          example: username
+                        message:
+                          type: string
+                          example: String must contain at least 3 character(s)
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User with username "nonexistent" not found
+
   /api/v1/movies:
     get:
       summary: List movies with pagination and filters
@@ -1244,3 +1364,55 @@ components:
         path:
           type: string
           example: /api/v1/movies/trending
+
+    User:
+      type: object
+      required:
+        - _id
+        - username
+        - firstName
+        - lastName
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 507f1f77bcf86cd799439011
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          description: Unique username
+          example: johndoe
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        email:
+          type: string
+          format: email
+          description: |
+            User's email address. Only present when fetching your own profile (e.g., /api/v1/users/me).
+          example: johndoe@example.com
+        avatarUrl:
+          type: string
+          format: uri
+          description: |
+            URL to the user's avatar image. May be null or omitted if the user has not set an avatar.
+          example: https://cdn.example.com/avatars/507f1f77bcf86cd799439011.png
+        createdAt:
+          type: string
+          format: date-time
+          description: |
+            ISO 8601 timestamp of when the user account was created.
+          example: 2024-05-01T12:34:56.789Z
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from login or OAuth callback

@@ -1,15 +1,23 @@
+import { IUser } from '../interfaces/user.interface';
 import { UserRepository } from '../repositories/user.repository';
 
-const repo = new UserRepository();
 
 export class UserService {
-  // async list(page = 1, limit = 10) {
-  //   return repo.findAll({ page, limit });
-  // }
-  async get(id: string) {
-    return repo.findById(id);
+
+  constructor(private _repo: UserRepository) {}
+
+  async getUser(username: string, me = false): Promise<Partial<IUser> | null> {
+    const user = await this._repo.findByUsername(username);
+    if (!user) return null;
+
+    if (!me) {
+      // Exclude sensitive fields for other users
+      // Never return email, oauth, or password for other users
+      // (oauth and password are not selected by default)
+      const { email, oauth, password, ...publicUser } = user;
+      return publicUser;
+    }
+
+    return user;
   }
-  // async patch(id: string, patch: any) {
-  //   return repo.updatePartial(id, patch);
-  // }
 }

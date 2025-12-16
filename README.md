@@ -135,6 +135,11 @@ cd server && npm test -- --testPathPattern=auth.test.ts
   - Google and 42 OAuth flows
   - Account creation and linking
   - Error handling and edge cases
+- **User Profile Tests:** 25 integration tests
+  - Authenticated and public profile access
+  - Privacy controls for email, password, and OAuth fields
+  - Username validation and error handling
+  - Edge cases and special characters
 
 ## 📚 API Documentation
 
@@ -174,6 +179,21 @@ http://localhost:3001/api-docs
 **GET** `/v1/oauth/42/callback`
 - Handles 42 OAuth callback
 - Sets JWT cookies and redirects to client with status
+
+### User Profile Endpoints
+
+**GET** `/v1/profile/me`
+- Get authenticated user's profile (requires JWT token)
+- Returns user information including email
+- Returns 401 if not authenticated
+
+**GET** `/v1/profile/:username`
+- Get public user profile by username
+- No authentication required
+- Email field excluded unless viewing own profile
+- Password and OAuth fields never exposed
+- Returns 404 if user not found
+- Returns 400 for invalid username format
 
 ## 👥 Authors
 

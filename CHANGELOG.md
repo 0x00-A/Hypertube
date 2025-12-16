@@ -40,6 +40,19 @@
   - Fallback values for missing profile fields
   - Error handling for missing email or profile data
 - OpenAPI/Swagger documentation for authentication and OAuth endpoints
+- User profile endpoints with privacy controls
+  - GET /api/v1/profile/me - Get authenticated user's own profile (includes email)
+  - GET /api/v1/profile/:username - Get public user profile by username
+  - Username validation (minimum 3 characters, case-insensitive)
+  - Email privacy: only exposed when viewing own profile
+  - Password and OAuth fields never exposed in any endpoint
+  - No authentication required for public profile viewing
+- Comprehensive user profile integration tests (25 tests)
+  - Authenticated profile access with JWT cookies
+  - Public profile viewing without authentication
+  - Privacy enforcement (email, password, oauth fields)
+  - Username validation and error handling
+  - Edge cases (special characters, whitespace, case sensitivity)
 - MongoDB integration with Mongoose ODM
 - Repository-Service-Controller architecture pattern
 - Input validation using Zod schemas
