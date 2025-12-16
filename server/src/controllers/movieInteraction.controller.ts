@@ -94,8 +94,6 @@ export class MovieInteractionController {
   getWatchlist = asyncHandler(async (req: Request, res: Response) => {
     const userId = new Types.ObjectId(req.user?._id);
 
-    if (!userId) throw new NotFoundError('User not found');
-
     const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
 
     const paginationOptions: IPaginationOptions = {
