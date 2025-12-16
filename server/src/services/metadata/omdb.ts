@@ -54,7 +54,7 @@ export async function getOmdbMetadata(imdbId: string) {
     const { data } = await axios.get<OmdbApiResponse>(url);
     if (data.Response !== 'True') {
       logger.warn(`OMDb metadata not found for ${imdbId}.`);
-      logger.warn({ data }, 'OMDb response');
+      logger.debug({ data }, 'OMDb response');
       return null;
     }
 
@@ -84,7 +84,7 @@ export async function getOmdbMetadata(imdbId: string) {
     // same structure as TMDB for consistency
     return {
       title: isValidValue(data.Title) ? data.Title : '',
-      tmdbId: null,
+      tmdbId: undefined,
       year: parseYear(data.Year),
       synopsis: isValidValue(data.Plot) ? data.Plot : '',
       duration: parseDuration(data.Runtime),

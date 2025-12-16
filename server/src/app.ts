@@ -6,6 +6,7 @@ import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
 // import { router as commentsRouter } from './routes/v1/comments.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
+import { createMovieInteractionRouter } from './routes/v1/movieInteractions.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import { requestLogger } from './middleware/requestLogger';
@@ -66,11 +67,18 @@ export const createApp = () => {
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // Initialize controllers
-  const { movieController, authController, oauthController, userController } = createControllers();
+  const {
+    movieController,
+    authController,
+    oauthController,
+    userController,
+    movieInteractionController,
+  } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
   app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
   app.use('/api/v1/profile', createUserRoutes(userController));
+  app.use('/api/v1/interactions', createMovieInteractionRouter(movieInteractionController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {
