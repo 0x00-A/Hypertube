@@ -1391,6 +1391,24 @@ components:
           type: string
           description: User's last name
           example: Doe
+        email:
+          type: string
+          format: email
+          description: |
+            User's email address. Only present when fetching your own profile (e.g., /api/v1/users/me).
+          example: johndoe@example.com
+        avatarUrl:
+          type: string
+          format: uri
+          description: |
+            URL to the user's avatar image. May be null or omitted if the user has not set an avatar.
+          example: https://cdn.example.com/avatars/507f1f77bcf86cd799439011.png
+        createdAt:
+          type: string
+          format: date-time
+          description: |
+            ISO 8601 timestamp of when the user account was created.
+          example: 2024-05-01T12:34:56.789Z
 
   securitySchemes:
     bearerAuth:
