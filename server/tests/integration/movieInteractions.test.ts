@@ -77,9 +77,6 @@ describe('MovieInteraction API Integration Tests', () => {
   };
 
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await connectDatabase();
-    }
     await UserModel.deleteMany({});
     await MovieModel.deleteMany({});
     await MovieInteractionModel.deleteMany({});
