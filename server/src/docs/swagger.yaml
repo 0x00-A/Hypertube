@@ -441,24 +441,6 @@ paths:
                     properties:
                       user:
                         $ref: '#/components/schemas/User'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        allOf:
-                          - $ref: '#/components/schemas/User'
-                          - type: object
-                            description: Email field excluded for other users' profiles
         '400':
           description: Validation error (username too short or invalid format)
           content:
