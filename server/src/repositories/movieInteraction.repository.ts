@@ -123,8 +123,10 @@ export class MovieInteractionRepository {
       .exec();
 
     return interactions
-      .filter((interaction) => interaction.movieId && !(interaction.movieId instanceof Types.ObjectId))
-      .map((interaction) => (interaction.movieId as IMovieDocument).toObject());
+      .filter(
+        (interaction) => interaction.movieId && !(interaction.movieId instanceof Types.ObjectId),
+      )
+      .map((interaction) => (interaction.movieId as unknown as IMovieDocument).toObject());
   }
 
   async getUserWatchlist(
@@ -297,9 +299,14 @@ export class MovieInteractionRepository {
 
     // Only include interactions where movieId is populated (i.e., is an object, not ObjectId)
     return interactions
-      .filter((interaction) => typeof interaction.movieId === 'object' && interaction.movieId !== null && !(interaction.movieId instanceof Types.ObjectId))
+      .filter(
+        (interaction) =>
+          typeof interaction.movieId === 'object' &&
+          interaction.movieId !== null &&
+          !(interaction.movieId instanceof Types.ObjectId),
+      )
       .map((interaction) => {
-        const movieData = (interaction.movieId as IMovieDocument).toObject();
+        const movieData = (interaction.movieId as unknown as IMovieDocument).toObject();
         const interactionData = interaction.toObject();
 
         return {
