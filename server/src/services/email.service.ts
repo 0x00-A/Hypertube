@@ -48,7 +48,12 @@ export class EmailService {
   async verifyEmailToken(token: string): Promise<IVerificationEmail | null> {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const verification = await this._verificationEmailRepo.findByToken(hashedToken);
-    return verification;
+    if (!verification) return null;
+    
+    return {
+      userId: verification.userId.toString(),
+      token: verification.token,
+    };
   }
 
   /**

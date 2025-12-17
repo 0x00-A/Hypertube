@@ -40,6 +40,7 @@ export class OAuthService {
                     firstName: profile._json.given_name || 'User',
                     lastName: profile._json.family_name || 'Google',
                     password: await this._passwordService.generateOAuthPassword(),
+                    isActive: true,
                     oauth: {
                         provider: 'google',
                         id: googleId
@@ -77,6 +78,7 @@ export class OAuthService {
                     firstName: profile.name.givenName || profile._json.first_name || 'User',
                     lastName: profile.name.familyName || profile._json.last_name || 'FortyTwo',
                     password: await this._passwordService.generateOAuthPassword(),
+                    isActive: true,
                     oauth: {
                         provider: 'fortytwo',
                         id: fortyTwoId

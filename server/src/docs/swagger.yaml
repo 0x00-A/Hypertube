@@ -47,7 +47,7 @@ paths:
                   example: Doe
       responses:
         '201':
-          description: User successfully registered
+          description: User successfully registered - verification email sent. User must verify email before logging in.
           content:
             application/json:
               schema:
@@ -190,8 +190,92 @@ paths:
                   path:
                     type: string
                     example: /api/v1/auth/login
+        '409':
+          description: Email not verified - user must verify email before logging in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Please verify your email before logging in
         '500':
           description: Internal server error
+
+  /api/v1/auth/verify-email:
+    post:
+      summary: Verify email address with token
+      tags:
+        - Authentication
+      description: Verifies user email using the token sent via email. After successful verification, user account becomes active and a welcome email is sent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Email verification token received via email
+                  example: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
+      responses:
+        '200':
+          description: Email verified successfully - user account is now active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Email verified successfully
+        '400':
+          description: Validation error - token missing or empty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation Error
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                          example: token
+                        message:
+                          type: string
+                          example: Token is required
+        '409':
+          description: Invalid token, expired token, or email already verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Invalid or expired verification token
 
   /api/v1/auth:
     get:

@@ -11,7 +11,7 @@ export const SignUpSchema = z.object({
 });
 
 export const VerifyEmailSchema = z.object({
-  params: z.object({
+  body: z.object({
     token: z.string().trim().min(1, 'Token is required'),
   }),
 });

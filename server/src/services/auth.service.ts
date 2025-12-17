@@ -45,8 +45,12 @@ export class AuthService {
     if (!user) {
       throw new ConflictError('User not found');
     }
+    if (user.isActive) {
+      throw new ConflictError('Email already verified');
+    }
     await this._userRepo.update(user._id!, { isActive: true });
     await this._emailService.deleteVerificationToken(verification.token);
+    await this._emailService.sendWelcomeEmail(user);
     return true;
   }
 
@@ -58,6 +62,9 @@ export class AuthService {
       : await this._userRepo.findByUsername(body.identifier, true);
     if (!user || !user.password) {
       return null;
+    }
+    if (!user.isActive) {
+      throw new ConflictError('Please verify your email before logging in');
     }
     const isPasswordValid = await this._passwordService.verifyPassword(
       user.password!,

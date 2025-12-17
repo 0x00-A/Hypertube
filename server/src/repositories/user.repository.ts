@@ -3,7 +3,6 @@ import { IUser, IOAuth } from '../interfaces/user.interface';
 import { ISignupDTO } from '../interfaces/auth.interface';
 import { IUserDocument } from '../models/user.model.types';
 
-// Interface for the Repository (Good for testing/mocking)
 export interface IUserRepository {
   create(user: ISignupDTO): Promise<Partial<IUser>>;
   findByEmail(email: string): Promise<Partial<IUser> | null>;
@@ -27,14 +26,14 @@ export class UserRepository {
       avatarUrl: doc.avatarUrl,
       createdAt: doc.createdAt,
       password: doc.password,
+      isActive: doc.isActive,
     };
-    
-    // Only include oauth if it was explicitly selected (has select: false in schema)
+
     const oauthValue = doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined;
     if (oauthValue !== undefined) {
       user.oauth = oauthValue;
     }
-    
+
     return user;
   }
 
@@ -81,7 +80,8 @@ export class UserRepository {
       {
         $set: {
           'oauth.provider': oauth.provider,
-          'oauth.id': oauth.id
+          'oauth.id': oauth.id,
+          'isActive': true
         }
       },
       { new: true, runValidators: true }

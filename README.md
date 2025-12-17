@@ -9,7 +9,8 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 
 ### 🔐 Authentication & Security
 * **Multiple Strategies:** Secure login via username/password and OAuth 2.0 (42 School, Google).
-* **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management.
+* **Email Verification:** New users must verify their email address before logging in. Automated verification emails with secure tokens.
+* **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management. OAuth users are automatically verified.
 * **Security First:** Passwords are hashed with Argon2 (never plain text), JWT tokens in httpOnly cookies, and all forms are protected against SQL injections and XSS attacks.
 * **Profile Management:** Users can edit profiles, upload avatars, and view other user profiles while maintaining email privacy.
 
@@ -71,6 +72,12 @@ FORTYTWO_CLIENT_ID=your-42-client-id
 FORTYTWO_CLIENT_SECRET=your-42-client-secret
 FORTYTWO_CALLBACK_URL=http://localhost:3001/api/v1/oauth/42/callback
 CLIENT_URL=http://localhost:3000
+
+# Email Configuration (for email verification)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
 ```
 
 ### 3. Run with Docker
@@ -127,9 +134,10 @@ cd server && npm test -- --testPathPattern=auth.test.ts
 ```
 
 ### Test Coverage
-- **Authentication Tests:** 35 integration tests
+- **Authentication Tests:** 40 integration tests
   - Signup validation, security, and error handling
   - Login authentication, JWT cookies, and session management
+  - Email verification with token validation and edge cases
   - Token refresh and protected route middleware
 - **OAuth Tests:** 14 integration tests
   - Google and 42 OAuth flows
@@ -153,11 +161,19 @@ http://localhost:3001/api-docs
 
 **POST** `/v1/auth/signup`
 - Register a new user
-- Returns success message and sets JWT cookies
+- Sends verification email with token
+- User must verify email before logging in
+
+**POST** `/v1/auth/verify-email`
+- Verify email address with token from email
+- Activates user account (sets isActive to true)
+- Sends welcome email after successful verification
+- Returns 409 if token is invalid or email already verified
 
 **POST** `/v1/auth/login`
 - Authenticate user with username or email
-- Returns success message and sets JWT cookies (HttpOnly, SameSite=Strict)
+- Returns 409 if email not verified
+- Sets JWT cookies (HttpOnly, SameSite=Strict) on success
 
 **POST** `/v1/auth/refresh-token`
 - Refresh access token using refresh token cookie

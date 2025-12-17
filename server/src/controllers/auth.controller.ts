@@ -21,7 +21,7 @@ export class AuthController {
   });
 
   verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-    const { token } = req.validated!.params as { token: string };
+    const { token } = req.validated!.body as { token: string };
     if (!token) {
       throw new UnauthorizedError('No token provided');
     }
