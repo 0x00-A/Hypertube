@@ -19,6 +19,29 @@ describe('Auth Signup Integration Tests', () => {
     };
   }
 
+  // Helper to create and activate a user using the verify-email endpoint
+  async function createActiveUser(userData: ReturnType<typeof generateUniqueUserData>) {
+    const crypto = await import('crypto');
+    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+
+    // Signup user
+    await request(app).post('/api/v1/auth/signup').send(userData);
+
+    // Get user and verification record
+    const user = await UserModel.findOne({ email: userData.email });
+
+    // Create a test token and update verification record
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await VerificationEmailModel.findOneAndUpdate(
+      { userId: user?._id },
+      { token: hashedToken }
+    );
+
+    // Verify email through the endpoint
+    await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
+  }
+
   beforeEach(async () => {
     // Clear users collection before each test
     if (mongoose.connection.readyState === 1) {
@@ -318,27 +341,9 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /v1/auth/login', () => {
-    // Each test creates its own user and logs in as needed
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Create and verify a user before each login test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-
-      // Activate user (simulate email verification)
-      const user = await UserModel.findOne({ email: validUserData.email });
-      await UserModel.findByIdAndUpdate(user?._id, { isActive: true });
-    });
-
     it('should successfully login with username and set cookies', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -372,7 +377,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should successfully login with email and set cookies', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.email,
         password: validUserData.password,
@@ -392,7 +397,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should return success message without exposing user data', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -436,7 +441,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should return 401 with invalid password', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: 'WrongPassword123!',
@@ -503,9 +508,9 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body).toHaveProperty('validationErrors');
     });
 
-    it('should not expose password or user data in response', async () => {
+    it('should not expose sensitive data in response', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -519,7 +524,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should set cookies with correct expiration times', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -542,7 +547,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should allow login multiple times with same credentials', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // First login
       const res1 = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -573,27 +578,9 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /api/v1/auth/refresh-token', () => {
-    // Each test creates its own user and logs in as needed
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Register and verify user before each test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-
-      // Activate user (simulate email verification)
-      const user = await UserModel.findOne({ email: validUserData.email });
-      await UserModel.findByIdAndUpdate(user?._id, { isActive: true });
-    });
-
     it('should successfully refresh access token with valid refresh token', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -665,7 +652,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should generate a new access token different from the old one', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get initial tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -702,27 +689,9 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('Auth Middleware Tests', () => {
-    // Each test creates its own user and logs in as needed
-    const validUserData = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'SecurePass123!',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
-    beforeEach(async () => {
-      // Register and verify user before each test
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
-
-      // Activate user (simulate email verification)
-      const user = await UserModel.findOne({ email: validUserData.email });
-      await UserModel.findByIdAndUpdate(user?._id, { isActive: true });
-    });
-
     it('should allow access to protected route with valid access token', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -782,7 +751,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should attach user data to request object on successful authentication', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,

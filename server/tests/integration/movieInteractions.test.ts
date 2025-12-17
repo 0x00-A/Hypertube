@@ -15,18 +15,40 @@ describe('MovieInteraction API Integration Tests', () => {
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
+    const crypto = await import('crypto');
+    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
+
     // Sign up
-    await request(app).post('/api/v1/auth/signup').send({
+    const signupRes = await request(app).post('/api/v1/auth/signup').send({
       email: testEmail,
       username: testUsername,
       password,
       firstName: 'Test',
       lastName: 'User',
     });
+
+    if (signupRes.status !== 201) {
+      throw new Error(`Signup failed with status ${signupRes.status}: ${JSON.stringify(signupRes.body)}`);
+    }
+
+    // Get user and verify email using the endpoint
+    const user = await UserModel.findOne({ username: testUsername });
+    if (!user) throw new Error('User not found after signup');
+
+    // Create a test token and verify email through the endpoint
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await VerificationEmailModel.findOneAndUpdate(
+      { userId: user._id },
+      { token: hashedToken }
+    );
+    await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
+
     // Login
     const loginRes = await request(app).post('/api/v1/auth/login').send({
       identifier: testUsername,
@@ -38,8 +60,6 @@ describe('MovieInteraction API Integration Tests', () => {
       ?.split(';')[0]
       .split('=')[1];
     if (!accessToken) throw new Error('No accessToken found in login response');
-    const user = await UserModel.findOne({ username: testUsername });
-    if (!user) throw new Error('User not found after signup');
     return { accessToken, userId: user._id };
   }
 

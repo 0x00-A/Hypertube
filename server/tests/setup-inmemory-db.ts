@@ -2,6 +2,9 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
+// Mock nodemailer globally to prevent real SMTP connections during tests
+jest.mock('nodemailer');
+
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
