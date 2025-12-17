@@ -77,4 +77,24 @@ export class AuthService {
     return userWithoutPassword;
   }
 
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this._userRepo.findByEmail(email);
+    if (user) {
+      await this._emailService.createPasswordResetEmail(user);
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const verification = await this._emailService.verifyEmailToken(token);
+    if (!verification) {
+      throw new ConflictError('Invalid or expired password reset token');
+    }
+    const user = await this._userRepo.findById(verification.userId, true);
+    if (!user || !user.password) {
+      throw new ConflictError('User not found');
+    }
+    const hashedPassword = await this._passwordService.hashPassword(newPassword);
+    await this._userRepo.update(user._id!, { password: hashedPassword });
+    await this._emailService.deleteVerificationToken(verification.token);
+  }
 }

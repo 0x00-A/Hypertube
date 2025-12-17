@@ -55,8 +55,12 @@ export class UserRepository {
     return this.toIUser(doc);
   }
 
-  async findById(id: string): Promise<Partial<IUser> | null> {
-    const doc = await UserModel.findById(id).exec();
+  async findById(id: string, includePassword = false): Promise<Partial<IUser> | null> {
+    const query = UserModel.findById(id);
+    if (includePassword) {
+      query.select('+password');
+    }
+    const doc = await query.exec();
     return this.toIUser(doc);
   }
 

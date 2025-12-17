@@ -41,6 +41,21 @@ export class EmailService {
     await this.sendEmail(user.email!, 'Verify your email', html);
   }
 
+  async createPasswordResetEmail(user: Partial<IUser>): Promise<void> {
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Delete any existing reset tokens for this user
+    await this._verificationEmailRepo.deleteByUserId(user._id!);
+
+    await this._verificationEmailRepo.create({
+      userId: user._id!,
+      token: hashedToken,
+    });
+
+    await this.sendPasswordResetEmail(user, token);
+  }
+
   async deleteVerificationToken(token: string): Promise<void> {
     await this._verificationEmailRepo.deleteByToken(token);
   }
@@ -49,7 +64,7 @@ export class EmailService {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const verification = await this._verificationEmailRepo.findByToken(hashedToken);
     if (!verification) return null;
-    
+
     return {
       userId: verification.userId.toString(),
       token: verification.token,

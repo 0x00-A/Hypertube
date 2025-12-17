@@ -17,6 +17,10 @@ export class VerificationEmailRepository {
     await VerificationEmailModel.deleteOne({ token });
   }
 
+  async deleteByUserId(userId: string) {
+    await VerificationEmailModel.deleteOne({ userId });
+  }
+
   async create(data: IVerificationEmail): Promise<IVerificationEmail> {
     const doc = await VerificationEmailModel.create(data);
     if (!doc) {

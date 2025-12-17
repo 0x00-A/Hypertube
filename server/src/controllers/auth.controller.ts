@@ -107,4 +107,25 @@ export class AuthController {
       message: 'Logout successful',
     });
   });
+
+  requestPasswordReset = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.validated!.body as { email: string };
+
+    await this._authService.requestPasswordReset(email);
+    return res.status(200).json({
+      status: 'success',
+      message: 'Password reset email sent if the email exists in our system',
+    });
+  });
+
+  resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { token, newPassword } = req.validated!.body as { token: string; newPassword: string };
+
+    await this._authService.resetPassword(token, newPassword);
+    return res.status(200).json({
+      status: 'success',
+      message: 'Password has been reset successfully',
+    });
+  });
+
 }

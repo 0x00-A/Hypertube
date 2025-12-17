@@ -803,4 +803,352 @@ describe('Auth Signup Integration Tests', () => {
       expect(signupRes.status).not.toBe(401);
     });
   });
+
+  describe('POST /api/v1/auth/request-password-reset', () => {
+    it('should successfully send password reset email for existing user', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password reset email sent if the email exists in our system',
+      });
+
+      // Verify a password reset token was created
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+      const resetToken = await VerificationEmailModel.findOne({ userId: user?._id });
+      expect(resetToken).toBeTruthy();
+    });
+
+    it('should return success even for non-existent email (security)', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: 'nonexistent@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password reset email sent if the email exists in our system',
+      });
+    });
+
+    it('should return 400 when email is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.email',
+          }),
+        ]),
+      );
+    });
+
+    it('should return 400 when email format is invalid', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: 'invalid-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.stringContaining('Invalid email'),
+          }),
+        ]),
+      );
+    });
+
+    it('should trim whitespace from email', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: `  ${validUserData.email}  ` });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password reset email sent if the email exists in our system',
+      });
+    });
+
+    it('should create new reset token even if previous one exists', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      // First request
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+      const firstToken = await VerificationEmailModel.findOne({ userId: user?._id });
+      const firstTokenValue = firstToken?.token;
+
+      // Second request
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      const secondToken = await VerificationEmailModel.findOne({ userId: user?._id });
+      const secondTokenValue = secondToken?.token;
+
+      // Tokens should be different
+      expect(secondTokenValue).not.toBe(firstTokenValue);
+    });
+  });
+
+  describe('POST /api/v1/auth/reset-password', () => {
+    it('should successfully reset password with valid token', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      // Request password reset
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      // Get the reset token
+      const crypto = await import('crypto');
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      const newPassword = 'NewSecurePass456!';
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password has been reset successfully',
+      });
+
+      // Verify token is deleted after use
+      const deletedToken = await VerificationEmailModel.findOne({ userId: user?._id });
+      expect(deletedToken).toBeNull();
+
+      // Verify can login with new password
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.email,
+        password: newPassword,
+      });
+
+      expect(loginRes.status).toBe(200);
+    });
+
+    it('should not allow login with old password after reset', async () => {
+      const validUserData = generateUniqueUserData();
+      const oldPassword = validUserData.password;
+      await createActiveUser(validUserData);
+
+      // Request password reset
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      // Get the reset token
+      const crypto = await import('crypto');
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      // Reset password
+      const newPassword = 'NewSecurePass456!';
+      await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword });
+
+      // Try to login with old password
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: validUserData.email,
+        password: oldPassword,
+      });
+
+      expect(loginRes.status).toBe(401);
+      expect(loginRes.body).toMatchObject({
+        status: 'fail',
+        message: 'Invalid identifier or password',
+      });
+    });
+
+    it('should return 409 for invalid reset token', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'invalid-token-12345', newPassword: 'NewPassword123!' });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Invalid or expired password reset token',
+      });
+    });
+
+    it('should return 400 when token is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ newPassword: 'NewPassword123!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.token',
+          }),
+        ]),
+      );
+    });
+
+    it('should return 400 when newPassword is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'some-token' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.newPassword',
+          }),
+        ]),
+      );
+    });
+
+    it('should return 400 when newPassword is too short', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'some-token', newPassword: 'short' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.stringContaining('6 characters'),
+          }),
+        ]),
+      );
+    });
+
+    it('should return 400 when token is empty string', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: '', newPassword: 'NewPassword123!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: 'Token is required',
+          }),
+        ]),
+      );
+    });
+
+    it('should hash the new password before storing', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      // Request password reset
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      // Get the reset token
+      const crypto = await import('crypto');
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      const newPassword = 'NewSecurePass456!';
+      await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword });
+
+      // Verify password is hashed in database
+      const updatedUser = await UserModel.findOne({ email: validUserData.email }).select('+password');
+      expect(updatedUser?.password).toBeDefined();
+      expect(updatedUser?.password).not.toBe(newPassword);
+      expect(updatedUser?.password?.length).toBeGreaterThan(20);
+    });
+
+    it('should not reuse the same token after successful reset', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      // Request password reset
+      await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      // Get the reset token
+      const crypto = await import('crypto');
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      // Reset password
+      const newPassword = 'NewSecurePass456!';
+      await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword });
+
+      // Try to use the same token again
+      const res = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword: 'AnotherPassword789!' });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Invalid or expired password reset token',
+      });
+    });
+  });
 });

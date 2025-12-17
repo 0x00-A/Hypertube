@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { AuthController } from '../../controllers/auth.controller';
 import { validate } from '../../middleware/validate';
-import { SignUpSchema, LogInSchema, VerifyEmailSchema } from '../../validators/auth.schema';
+import { SignUpSchema, LogInSchema, VerifyEmailSchema, RequestPasswordResetSchema, ResetPasswordSchema } from '../../validators/auth.schema';
 
 
 export const createAuthRoutes = (controller: AuthController) => {
@@ -16,6 +16,8 @@ export const createAuthRoutes = (controller: AuthController) => {
   router.post('/login', validate(LogInSchema), (req, res, next) => controller.logIn(req, res, next));
   router.post('/refresh-token', (req, res, next) => controller.refreshToken(req, res, next));
   router.post('/logout', (req, res, next) => controller.logout(req, res, next));
+  router.post('/request-password-reset', validate(RequestPasswordResetSchema), (req, res, next) => controller.requestPasswordReset(req, res, next));
+  router.post('/reset-password', validate(ResetPasswordSchema), (req, res, next) => controller.resetPassword(req, res, next));
 
   return router;
 };

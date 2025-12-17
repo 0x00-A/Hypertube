@@ -9,6 +9,8 @@
   - POST /api/v1/auth/login - User authentication with JWT tokens
   - POST /api/v1/auth/verify-email - Email verification endpoint
   - POST /api/v1/auth/refresh-token - Refresh access tokens using refresh token
+  - POST /api/v1/auth/request-password-reset - Request password reset email
+  - POST /api/v1/auth/reset-password - Reset password with token
   - Password hashing using Argon2
   - JWT token generation with access and refresh tokens
   - Secure cookie-based token storage (HttpOnly, SameSite=Strict)
@@ -24,12 +26,14 @@
   - Token verification with proper error handling (expired, invalid, not valid yet)
   - Discriminated union type for type-safe result pattern
   - User data attached to request object after successful authentication
-- Comprehensive integration tests for authentication (40 tests)
+- Comprehensive integration tests for authentication (55 tests)
   - 11 signup tests covering validation, security, and error handling
   - 12 login tests covering authentication, cookies, security, and email verification
   - 5 email verification tests for token validation and edge cases
   - 5 refresh-token tests for token renewal
   - 7 auth middleware tests for route protection
+  - 6 password reset request tests for email handling and validation
+  - 9 password reset tests for token validation, security, and edge cases
 - OAuth 2.0 authentication system with Passport.js
   - Google OAuth integration with profile and email scopes
   - 42 School OAuth integration
@@ -53,7 +57,10 @@
   - Template builder system for HTML emails
   - Template caching for performance
   - Support for verification, welcome, and password reset emails
-- OpenAPI/Swagger documentation for authentication, email verification, and OAuth endpoints
+  - Password reset email with secure token generation
+  - Automatic deletion of old reset tokens when new one is requested
+  - Single-use tokens with 24-hour expiration
+- OpenAPI/Swagger documentation for authentication, email verification, password reset, and OAuth endpoints
 - User profile endpoints with privacy controls
   - GET /api/v1/profile/me - Get authenticated user's own profile (includes email)
   - GET /api/v1/profile/:username - Get public user profile by username
