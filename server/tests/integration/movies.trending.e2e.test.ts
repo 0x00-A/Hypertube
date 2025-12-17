@@ -20,6 +20,9 @@ describe('Movies API - New Endpoints (Integration)', () => {
       // Each movie should have isLocal field
       if (res.body.data.length > 0) {
         expect(res.body.data[0]).toHaveProperty('isLocal');
+        expect(res.body.data[0]).toHaveProperty('overview');
+        expect(res.body.data[0]).toHaveProperty('genres');
+        expect(Array.isArray(res.body.data[0].genres)).toBe(true);
       }
     });
 

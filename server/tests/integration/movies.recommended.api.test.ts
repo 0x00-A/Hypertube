@@ -40,8 +40,11 @@ describe('Movies API - Recommended Endpoint', () => {
         expect(movie).toHaveProperty('year');
         expect(movie).toHaveProperty('rating');
         expect(movie).toHaveProperty('originalLanguage');
+        expect(movie).toHaveProperty('overview');
+        expect(movie).toHaveProperty('genres');
         expect(movie).toHaveProperty('images');
         expect(movie).toHaveProperty('isLocal');
+        expect(Array.isArray(movie.genres)).toBe(true);
       }
     });
 
