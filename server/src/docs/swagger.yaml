@@ -1400,6 +1400,8 @@ components:
         - year
         - rating
         - originalLanguage
+        - overview
+        - genres
         - images
         - isLocal
       properties:
@@ -1423,6 +1425,16 @@ components:
           type: string
           description: Original language
           example: en
+        overview:
+          type: string
+          description: Movie overview/summary
+          example: With the price on his head ever increasing, John Wick uncovers a path to defeating The High Table. But before he can earn his freedom, Wick must face off against a new enemy with powerful alliances across the globe and forces that turn old friends into foes.
+        genres:
+          type: array
+          items:
+            type: string
+          description: List of genre names
+          example: [Action, Thriller, Crime]
         images:
           type: object
           properties:

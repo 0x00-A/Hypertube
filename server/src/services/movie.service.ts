@@ -8,6 +8,7 @@ import { getYtsMovieDetailsByImdbId } from './metadata/yts';
 import axios from 'axios';
 import { env } from '../config/env';
 import { BadGatewayError } from '../core/errors/customErrors';
+import { getGenreNames } from '../utils/genres';
 
 export class MovieService {
   private _movieRepository: MovieRepository;
@@ -279,6 +280,7 @@ export class MovieService {
       rating: m.vote_average.toFixed(1),
       originalLanguage: m.original_language,
       overview: m.overview,
+      genres: getGenreNames(m.genre_ids),
       images: {
         thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
       },
