@@ -8,6 +8,19 @@ export class UserController {
 
   constructor(private _service: UserService) {}
 
+  listUsers = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt((req.query.page as string) || '1', 10);
+    const limit = parseInt((req.query.limit as string) || '10', 10);
+    const result = await this._service.list(page, limit);
+    res.json({
+      data: result.data,
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.totalPages,
+    });
+  });
+
   getMe = asyncHandler(async (req: Request, res: Response) => {
     const username = req.user?.username;
 
@@ -26,11 +39,11 @@ export class UserController {
 
 
   getUser = asyncHandler(async (req: Request, res: Response) => {
-    const username = (req.validated?.params as { username: string })?.username;
+    const identifier = (req.validated?.params as { identifier: string })?.identifier;
 
-    if (!username) throw new NotFoundError('User not found');
+    if (!identifier) throw new NotFoundError('User not found');
 
-    const user = await this._service.getUser(username);
+    const user = await this._service.getUser(identifier);
     if (!user) throw new NotFoundError('User not found');
 
     res.json({
@@ -62,12 +75,3 @@ export class UserController {
 //   }
 //   res.json(user);
 // });
-
-// export async function patchUser(req: Request, res: Response, next: NextFunction) {
-//   try {
-//     const updated = await service.patch(req.params.id, req.body);
-//     if (!updated) return res.status(404).json({ message: 'Not found' });
-//     res.json(updated);
-//   } catch (err) {
-//     next(err);
-//   }

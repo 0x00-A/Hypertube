@@ -37,41 +37,78 @@ export class UserRepository {
     return user;
   }
 
-  async findByUsername(username: string, includePassword = false): Promise<Partial<IUser> | null> {
-    const query = UserModel.findOne({ username });
-    if (includePassword) {
-      query.select('+password');
-    }
-    const doc = await query.exec();
-    return this.toIUser(doc);
+  async existsByUsername(username: string): Promise<boolean> {
+    const count = await UserModel.countDocuments({ username }).exec();
+    return count > 0;
+  }
+  async existsByEmail(email: string): Promise<boolean> {
+    const count = await UserModel.countDocuments({ email }).exec();
+    return count > 0;
   }
 
-  async findByEmail(email: string, includePassword = false): Promise<Partial<IUser>  | null> {
-    const query = UserModel.findOne({ email });
-    if (includePassword) {
-      query.select('+password');
-    }
-    query.select('+oauth'); // Always include oauth for password reset checks
-    const doc = await query.exec();
+  async findById(id: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findById(id).exec();
     return this.toIUser(doc);
   }
-
-  async findById(id: string, includePassword = false): Promise<Partial<IUser> | null> {
-    const query = UserModel.findById(id);
-    if (includePassword) {
-      query.select('+password');
-    }
-    const doc = await query.exec();
+  async findByOtherId(id: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findById(id).select('-email').exec();
     return this.toIUser(doc);
   }
-
-  async findByOAuthProvider(oauth: IOAuth): Promise<Partial<IUser> | null> {
+  async findByIdWithOauth(id: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findById(id).select('+oauth').exec();
+    return this.toIUser(doc);
+  }
+  async findByUsername(username: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ username }).exec();
+    return this.toIUser(doc);
+  }
+  async findByOtherUsername(username: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ username }).select('-email').exec();
+    return this.toIUser(doc);
+  }
+  async findByEmail(email: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ email }).exec();
+    return this.toIUser(doc);
+  }
+  async findByOauth(oauth: IOAuth): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findOne({
       'oauth.provider': oauth.provider,
       'oauth.id': oauth.id
-    }).select('+oauth +password').exec();
-    if (!doc) return null;
+    }).exec();
     return this.toIUser(doc);
+  }
+
+  async findByUsernameLogin(username: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ username }).select('+password').exec();
+    return this.toIUser(doc);
+  }
+  async findByEmailLogin(email: string): Promise<Partial<IUser>  | null> {
+    const doc = await UserModel.findOne({ email }).select('+password +oauth').exec();
+    return this.toIUser(doc);
+  }
+  async findByEmailWithOauth(email: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ email }).select('+oauth').exec();
+    return this.toIUser(doc);
+  }
+  async findByUsernameWithOauth(username: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ username }).select('+oauth').exec();
+    return this.toIUser(doc);
+  }
+
+  async findAll(filter: Partial<IUser>, options: { skip?: number; limit?: number } = {}): Promise<Partial<IUser>[]> {
+    const query = UserModel.find(filter).select('-email');
+    if (options.skip !== undefined) {
+      query.skip(options.skip);
+    }
+    if (options.limit !== undefined) {
+      query.limit(options.limit);
+    }
+    const docs = await query.exec();
+    return docs.map(doc => this.toIUser(doc)!);
+  }
+
+  async countDocuments(filter: Partial<IUser>): Promise<number> {
+    return UserModel.countDocuments(filter).exec();
   }
 
   async linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null> {

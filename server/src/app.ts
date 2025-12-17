@@ -81,7 +81,7 @@ export const createApp = () => {
   app.use('/api/v1/auth', createAuthRoutes(authController));
   app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
-  app.use('/api/v1/profile', createUserRoutes(userController));
+  app.use('/api/v1/users', createUserRoutes(userController));
   app.use('/api/v1/interactions', createMovieInteractionRouter(movieInteractionController));
   app.use('/api/v1/comments', createCommentRouter(commentController));
 

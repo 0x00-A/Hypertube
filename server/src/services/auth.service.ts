@@ -15,8 +15,8 @@ export class AuthService {
   ) {}
 
   async signUp(userData: ISignupDTO) {
-    const exist_username = await this._userRepo.findByUsername(userData.username);
-    const exist_email = await this._userRepo.findByEmail(userData.email);
+    const exist_username = await this._userRepo.existsByUsername(userData.username);
+    const exist_email = await this._userRepo.existsByEmail(userData.email);
     if (exist_username) {
       throw new ConflictError('Username already taken');
     }
@@ -58,8 +58,8 @@ export class AuthService {
     body: ILoginDTO,
   ): Promise<Partial<IUser> | null> {
     const user = body.identifier.includes('@')
-      ? await this._userRepo.findByEmail(body.identifier, true)
-      : await this._userRepo.findByUsername(body.identifier, true);
+      ? await this._userRepo.findByEmailLogin(body.identifier)
+      : await this._userRepo.findByUsernameLogin(body.identifier);
     if (!user || !user.password) {
       return null;
     }
@@ -78,7 +78,7 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string): Promise<void> {
-    const user = await this._userRepo.findByEmail(email);
+    const user = await this._userRepo.findByEmailWithOauth(email);
     if (user) {
       if (user.oauth && !user.oauth.isPasswordSet) {
         throw new ConflictError(`Password reset is not available for ${user.oauth.provider} accounts`);
@@ -92,8 +92,8 @@ export class AuthService {
     if (!verification) {
       throw new ConflictError('Invalid or expired password reset token');
     }
-    const user = await this._userRepo.findById(verification.userId, true);
-    if (!user || !user.password) {
+    const user = await this._userRepo.findById(verification.userId);
+    if (!user) {
       throw new ConflictError('User not found');
     }
     const hashedPassword = await this._passwordService.hashPassword(newPassword);

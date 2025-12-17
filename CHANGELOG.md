@@ -68,19 +68,26 @@
   - Single-use tokens with 24-hour expiration
   - Token type validation prevents cross-use (email tokens can't reset passwords and vice versa)
 - OpenAPI/Swagger documentation for authentication, email verification, password reset, and OAuth endpoints
-- User profile endpoints with privacy controls
-  - GET /api/v1/profile/me - Get authenticated user's own profile (includes email)
-  - GET /api/v1/profile/:username - Get public user profile by username
-  - Username validation (minimum 3 characters, case-insensitive)
-  - Email privacy: only exposed when viewing own profile
+- User endpoints with privacy controls and flexible lookup
+  - GET /api/v1/users/ - List all users with pagination (page, limit parameters)
+  - GET /api/v1/users/me - Get authenticated user's own profile (includes email)
+  - GET /api/v1/users/:identifier - Get user by username OR MongoDB ID
+  - Smart identifier detection: automatically detects MongoDB ObjectId format (24 hex chars) vs username
+  - Unified validation: single route handles both lookup methods with appropriate validation
+  - Username validation (minimum 3 characters)
+  - MongoDB ID validation (24 hexadecimal characters)
+  - Email privacy: only exposed when viewing own profile via /me endpoint
   - Password and OAuth fields never exposed in any endpoint
-  - No authentication required for public profile viewing
-- Comprehensive user profile integration tests (25 tests)
-  - Authenticated profile access with JWT cookies
-  - Public profile viewing without authentication
-  - Privacy enforcement (email, password, oauth fields)
-  - Username validation and error handling
-  - Edge cases (special characters, whitespace, case sensitivity)
+  - Public access: no authentication required for viewing user lists or profiles
+  - Pagination support with metadata (page, limit, total, totalPages)
+- Comprehensive user endpoint integration tests (41 tests)
+  - GET /users/ endpoint: 7 tests (pagination, privacy, public access)
+  - GET /users/me endpoint: 6 tests (authentication, token validation, email exposure)
+  - GET /users/:identifier endpoint: 19 tests (username lookup, ID lookup, validation)
+  - Privacy enforcement: 3 tests (email, password, oauth field hiding)
+  - Response format consistency: 3 tests
+  - Edge cases: 4 tests (concurrent requests, special characters, whitespace)
+  - Full coverage of all user endpoints with success, error, and security scenarios
 - MongoDB integration with Mongoose ODM
 - Repository-Service-Controller architecture pattern
 - Input validation using Zod schemas

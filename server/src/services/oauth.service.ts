@@ -19,7 +19,7 @@ export class OAuthService {
 
         if (!googleId) throw new BadRequestError('Google account must have an identifier');
 
-        let user: Partial<IUser> | null = await this._userRepo.findByOAuthProvider({provider: 'google', id: googleId});
+        let user: Partial<IUser> | null = await this._userRepo.findByOauth({provider: 'google', id: googleId});
         if (!user) {
             if (!email) throw new BadRequestError('Google account must have an email address');
 
@@ -33,7 +33,6 @@ export class OAuthService {
                 return linkedUser;
             } else {
                 const uniqueUsername = await generateUniqueUsername(email.split('@')[0], this._userRepo);
-
                 user = await this._userRepo.createOauthUser({
                     email: email,
                     username: uniqueUsername,
@@ -57,7 +56,7 @@ export class OAuthService {
 
         if (!fortyTwoId) throw new BadRequestError('42 account must have an identifier');
 
-        let user: Partial<IUser> | null = await this._userRepo.findByOAuthProvider({provider: 'fortytwo', id: fortyTwoId});
+        let user: Partial<IUser> | null = await this._userRepo.findByOauth({provider: 'fortytwo', id: fortyTwoId});
         if (!user) {
             if (!email) throw new BadRequestError('42 account must have an email address');
 
@@ -71,7 +70,6 @@ export class OAuthService {
                 return linkedUser;
             } else {
                 const uniqueUsername = await generateUniqueUsername(profile._json.login || email.split('@')[0], this._userRepo);
-
                 user = await this._userRepo.createOauthUser({
                     email: email,
                     username: uniqueUsername,
