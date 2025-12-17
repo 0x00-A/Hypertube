@@ -283,6 +283,7 @@ export class MovieService {
       genres: getGenreNames(m.genre_ids),
       images: {
         thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
+        backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
       },
       isLocal: localTmdbIds.has(m.id),
     }));

@@ -1442,6 +1442,10 @@ components:
               type: string
               description: Thumbnail image URL
               example: https://image.tmdb.org/t/p/w200/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
+            backdrop:
+              type: string
+              description: Backdrop image URL
+              example: https://image.tmdb.org/t/p/original/1y5C5ZIp8VYcJq2vFv6y9y4n1cT.jpg
         isLocal:
           type: boolean
           description: Whether the movie is present in the local database

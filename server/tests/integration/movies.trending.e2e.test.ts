@@ -23,6 +23,9 @@ describe('Movies API - New Endpoints (Integration)', () => {
         expect(res.body.data[0]).toHaveProperty('overview');
         expect(res.body.data[0]).toHaveProperty('genres');
         expect(Array.isArray(res.body.data[0].genres)).toBe(true);
+        expect(res.body.data[0]).toHaveProperty('images');
+        expect(res.body.data[0].images).toHaveProperty('thumbnail');
+        expect(res.body.data[0].images).toHaveProperty('backdrop');
       }
     });
 

@@ -45,6 +45,8 @@ describe('Movies API - Recommended Endpoint', () => {
         expect(movie).toHaveProperty('images');
         expect(movie).toHaveProperty('isLocal');
         expect(Array.isArray(movie.genres)).toBe(true);
+        expect(movie.images).toHaveProperty('thumbnail');
+        expect(movie.images).toHaveProperty('backdrop');
       }
     });
 
