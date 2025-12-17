@@ -9,6 +9,7 @@ const userSchema = new Schema({
   avatarUrl: { type: String },
   createdAt: { type: Date, default: Date.now },
   password: { type: String, select: false, required: true },
+  isActive: { type: Boolean, default: false },
   oauth: {
     type: {
       provider: { type: String, enum: ['google', 'fortytwo'] },

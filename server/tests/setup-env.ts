@@ -48,6 +48,12 @@ process.env.MAX_AGE_REFRESH_TOKEN = '2592000000'; // 30 days in ms
 process.env.GOOGLE_CLIENT_ID = 'test-google-client-id-for-testing-purposes';
 process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret-for-testing-purposes';
 process.env.GOOGLE_CALLBACK_URL = 'http://localhost:3001/api/v1/oauth/google/callback';
+
+// Email configuration for testing - use mock values to prevent real SMTP connections
+process.env.EMAIL_HOST = 'localhost';
+process.env.EMAIL_PORT = '1025'; // MailHog default port
+process.env.EMAIL_USER = 'test@hypertube.test';
+process.env.EMAIL_PASS = 'test-password';
 process.env.FORTYTWO_CLIENT_ID = 'test-42-client-id-for-testing-purposes';
 process.env.FORTYTWO_CLIENT_SECRET = 'test-42-client-secret-for-testing-purposes';
 process.env.FORTYTWO_CALLBACK_URL = 'http://localhost:3001/api/v1/oauth/42/callback';

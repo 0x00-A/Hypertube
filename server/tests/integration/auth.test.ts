@@ -19,6 +19,29 @@ describe('Auth Signup Integration Tests', () => {
     };
   }
 
+  // Helper to create and activate a user using the verify-email endpoint
+  async function createActiveUser(userData: ReturnType<typeof generateUniqueUserData>) {
+    const crypto = await import('crypto');
+    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+
+    // Signup user
+    await request(app).post('/api/v1/auth/signup').send(userData);
+
+    // Get user and verification record
+    const user = await UserModel.findOne({ email: userData.email });
+
+    // Create a test token and update verification record
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await VerificationEmailModel.findOneAndUpdate(
+      { userId: user?._id },
+      { token: hashedToken }
+    );
+
+    // Verify email through the endpoint
+    await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
+  }
+
   beforeEach(async () => {
     // Clear users collection before each test
     if (mongoose.connection.readyState === 1) {
@@ -195,17 +218,132 @@ describe('Auth Signup Integration Tests', () => {
 
       const user = await UserModel.findOne({ email: validUserData.email });
       expect(user).toBeTruthy();
-      //   expect(user?.language).toBe('en'); // Default language
-      //   expect(user?.watchedMovies).toEqual([]); // Empty watched movies
+      expect(user?.isActive).toBe(false); // New users should not be active until email verified
+    });
+  });
+
+  describe('POST /v1/auth/verify-email', () => {
+    const validUserData = {
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'SecurePass123!',
+      firstName: 'Test',
+      lastName: 'User',
+    };
+
+    beforeEach(async () => {
+      // Create a user before each test
+      await request(app).post('/api/v1/auth/signup').send(validUserData);
+    });
+
+    it('should successfully verify email with valid token', async () => {
+      // Get the verification token from database (simulating email link)
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+      const verification = await VerificationEmailModel.findOne({ userId: user?._id });
+
+      expect(verification).toBeTruthy();
+      const _token = verification?.token;      // Since we hash the token, we need to create a raw token
+      // In real scenario, this would come from the email link
+      const crypto = await import('crypto');
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      // Update the verification record with our test token
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: rawToken });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Email verified successfully',
+      });
+
+      // Verify user is now active
+      const updatedUser = await UserModel.findOne({ email: validUserData.email });
+      expect(updatedUser?.isActive).toBe(true);
+
+      // Verify token is deleted after use
+      const deletedVerification = await VerificationEmailModel.findOne({ userId: user?._id });
+      expect(deletedVerification).toBeNull();
+    });
+
+    it('should return 409 for invalid verification token', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: 'invalid-token-12345' });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Invalid or expired verification token',
+      });
+    });
+
+    it('should return 409 when trying to verify already active user', async () => {
+      // Get the verification token
+      const crypto = await import('crypto');
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+      const user = await UserModel.findOne({ email: validUserData.email });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      await VerificationEmailModel.findOneAndUpdate(
+        { userId: user?._id },
+        { token: hashedToken }
+      );
+
+      // Verify once
+      await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: rawToken });
+
+      // Manually set isActive and create a new verification token (edge case)
+      await UserModel.findByIdAndUpdate(user?._id, { isActive: true });
+      await VerificationEmailModel.create({
+        userId: user?._id,
+        token: hashedToken
+      });
+
+      // Try to verify again
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: rawToken });
+
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('Email already verified');
+    });
+
+    it('should return 400 when token is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 when token is empty string', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: '' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
     });
   });
 
   describe('POST /v1/auth/login', () => {
-    // Each test creates its own user and logs in as needed
-
     it('should successfully login with username and set cookies', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -239,7 +377,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should successfully login with email and set cookies', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.email,
         password: validUserData.password,
@@ -259,7 +397,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should return success message without exposing user data', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -274,9 +412,36 @@ describe('Auth Signup Integration Tests', () => {
       expect(JSON.stringify(res.body)).not.toContain('password');
     });
 
+    it('should return 409 when user email is not verified', async () => {
+      // Create an unverified user
+      const unverifiedUserData = {
+        username: 'unverified',
+        email: 'unverified@example.com',
+        password: 'SecurePass123!',
+        firstName: 'Unverified',
+        lastName: 'User',
+      };
+      await request(app).post('/api/v1/auth/signup').send(unverifiedUserData);
+
+      const res = await request(app).post('/api/v1/auth/login').send({
+        identifier: unverifiedUserData.username,
+        password: unverifiedUserData.password,
+      });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Please verify your email before logging in',
+      });
+
+      // Should not set cookies for unverified user
+      const cookies = res.headers['set-cookie'];
+      expect(cookies).toBeUndefined();
+    });
+
     it('should return 401 with invalid password', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: 'WrongPassword123!',
@@ -343,9 +508,9 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body).toHaveProperty('validationErrors');
     });
 
-    it('should not expose password or user data in response', async () => {
+    it('should not expose sensitive data in response', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -359,7 +524,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should set cookies with correct expiration times', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       const res = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
         password: validUserData.password,
@@ -382,7 +547,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should allow login multiple times with same credentials', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // First login
       const res1 = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -413,11 +578,9 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('POST /api/v1/auth/refresh-token', () => {
-    // Each test creates its own user and logs in as needed
-
     it('should successfully refresh access token with valid refresh token', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -489,7 +652,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should generate a new access token different from the old one', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get initial tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -526,11 +689,9 @@ describe('Auth Signup Integration Tests', () => {
   });
 
   describe('Auth Middleware Tests', () => {
-    // Each test creates its own user and logs in as needed
-
     it('should allow access to protected route with valid access token', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,
@@ -590,7 +751,7 @@ describe('Auth Signup Integration Tests', () => {
 
     it('should attach user data to request object on successful authentication', async () => {
       const validUserData = generateUniqueUserData();
-      await request(app).post('/api/v1/auth/signup').send(validUserData);
+      await createActiveUser(validUserData);
       // Login to get tokens
       const loginRes = await request(app).post('/api/v1/auth/login').send({
         identifier: validUserData.username,

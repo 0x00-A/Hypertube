@@ -15,6 +15,8 @@ import { UserService } from '../services/user.service';
 import { MovieInteractionController } from '../controllers/movieInteraction.controller';
 import { MovieInteractionService } from '../services/movieInteraction.service';
 import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
+import { EmailService } from '../services/email.service';
+import { VerificationEmailRepository } from '../repositories/verificationEmail.repository';
 
 export const createControllers = () => {
   // Shared repositories
@@ -28,7 +30,9 @@ export const createControllers = () => {
 
   // Auth dependencies
   const jwtService = new JWTService(userRepository);
-  const authService = new AuthService(userRepository, passwordService);
+  const verificationEmailRepository = new VerificationEmailRepository();
+  const emailService = new EmailService(verificationEmailRepository);
+  const authService = new AuthService(userRepository, passwordService, emailService);
   const authController = new AuthController(authService, jwtService);
 
   // OAuth dependencies

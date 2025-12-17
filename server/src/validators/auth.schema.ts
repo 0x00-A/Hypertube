@@ -10,6 +10,12 @@ export const SignUpSchema = z.object({
   }),
 });
 
+export const VerifyEmailSchema = z.object({
+  body: z.object({
+    token: z.string().trim().min(1, 'Token is required'),
+  }),
+});
+
 export const LogInSchema = z.object({
   body: z.object({
     identifier: z.string().trim().min(1, 'Username or email is required').refine(

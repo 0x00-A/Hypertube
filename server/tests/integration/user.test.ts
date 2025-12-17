@@ -51,6 +51,7 @@ describe('User Profile Integration Tests', () => {
       password: hashedPassword,
       firstName: testUser.firstName,
       lastName: testUser.lastName,
+      isActive: true,
     });
 
     // Login to get auth token
@@ -211,6 +212,7 @@ describe('User Profile Integration Tests', () => {
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'Underscore',
+        isActive: true,
       });
 
       const res = await request(app).get('/api/v1/profile/test_user_123');
@@ -226,6 +228,7 @@ describe('User Profile Integration Tests', () => {
         password: hashedPassword,
         firstName: 'Test',
         lastName: 'Number',
+        isActive: true,
       });
 
       const res = await request(app).get('/api/v1/profile/testuser2024');
@@ -254,6 +257,7 @@ describe('User Profile Integration Tests', () => {
         password: hashedPassword,
         firstName: 'Another',
         lastName: 'User',
+        isActive: true,
       });
 
       // Authenticated user viewing their own profile - should include email
@@ -295,6 +299,7 @@ describe('User Profile Integration Tests', () => {
         password: hashedPassword,
         firstName: 'OAuth',
         lastName: 'User',
+        isActive: true,
         oauth: {
           provider: 'google',
           id: 'google123',

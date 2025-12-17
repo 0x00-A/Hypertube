@@ -7,20 +7,29 @@
 - (@driver) User authentication system with signup and login endpoints
   - POST /api/v1/auth/signup - User registration with validation
   - POST /api/v1/auth/login - User authentication with JWT tokens
+  - POST /api/v1/auth/verify-email - Email verification endpoint
   - POST /api/v1/auth/refresh-token - Refresh access tokens using refresh token
   - Password hashing using Argon2
   - JWT token generation with access and refresh tokens
   - Secure cookie-based token storage (HttpOnly, SameSite=Strict)
+- Email verification system for new user accounts
+  - Verification emails sent automatically upon registration
+  - Secure token generation with SHA-256 hashing
+  - Users must verify email before logging in (isActive flag)
+  - Tokens automatically deleted after successful verification
+  - Welcome email sent after email verification
+  - Professional HTML email templates (verification, welcome, password reset)
+  - OAuth users automatically activated (no email verification needed)
 - JWT authentication middleware for protected routes
   - Token verification with proper error handling (expired, invalid, not valid yet)
   - Discriminated union type for type-safe result pattern
   - User data attached to request object after successful authentication
-- Comprehensive integration tests for authentication (35 tests)
+- Comprehensive integration tests for authentication (40 tests)
   - 11 signup tests covering validation, security, and error handling
-  - 11 login tests covering authentication, cookies, and security
+  - 12 login tests covering authentication, cookies, security, and email verification
+  - 5 email verification tests for token validation and edge cases
   - 5 refresh-token tests for token renewal
   - 7 auth middleware tests for route protection
-  - 1 example test for protected route behavior
 - OAuth 2.0 authentication system with Passport.js
   - Google OAuth integration with profile and email scopes
   - 42 School OAuth integration
@@ -39,7 +48,12 @@
   - Username generation from OAuth profile data
   - Fallback values for missing profile fields
   - Error handling for missing email or profile data
-- OpenAPI/Swagger documentation for authentication and OAuth endpoints
+- Email service with Nodemailer integration
+  - SMTP configuration for email delivery
+  - Template builder system for HTML emails
+  - Template caching for performance
+  - Support for verification, welcome, and password reset emails
+- OpenAPI/Swagger documentation for authentication, email verification, and OAuth endpoints
 - User profile endpoints with privacy controls
   - GET /api/v1/profile/me - Get authenticated user's own profile (includes email)
   - GET /api/v1/profile/:username - Get public user profile by username

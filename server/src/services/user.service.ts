@@ -14,7 +14,7 @@ export class UserService {
       // Exclude sensitive fields for other users
       // Never return email, oauth, or password for other users
       // (oauth and password are not selected by default)
-      const { email, oauth, password, ...publicUser } = user;
+      const { email: _email, oauth: _oauth, password: _password, ...publicUser } = user;
       return publicUser;
     }
 
