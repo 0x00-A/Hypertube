@@ -278,6 +278,7 @@ export class MovieService {
       year: m.release_date ? parseInt(m.release_date.split('-')[0]) : 0,
       rating: m.vote_average.toFixed(1),
       originalLanguage: m.original_language,
+      overview: m.overview,
       images: {
         thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
       },
