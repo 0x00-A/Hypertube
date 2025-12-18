@@ -135,13 +135,14 @@ cd server && npm test -- --testPathPattern=auth.test.ts
 ```
 
 ### Test Coverage
-- **Authentication Tests:** 55 integration tests
+- **Authentication Tests:** 83 integration tests
   - Signup validation, security, and error handling
   - Login authentication, JWT cookies, and session management
   - Email verification with token validation and edge cases
   - Token refresh and protected route middleware
   - Password reset request and token validation
   - Password reset security and edge cases
+  - Email verification and password reset interaction tests (token separation)
 - **OAuth Tests:** 14 integration tests
   - Google and 42 OAuth flows
   - Account creation and linking

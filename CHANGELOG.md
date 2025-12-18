@@ -26,7 +26,7 @@
   - Token verification with proper error handling (expired, invalid, not valid yet)
   - Discriminated union type for type-safe result pattern
   - User data attached to request object after successful authentication
-- Comprehensive integration tests for authentication (55 tests)
+- Comprehensive integration tests for authentication (83 tests)
   - 11 signup tests covering validation, security, and error handling
   - 12 login tests covering authentication, cookies, security, and email verification
   - 5 email verification tests for token validation and edge cases
@@ -34,6 +34,8 @@
   - 7 auth middleware tests for route protection
   - 6 password reset request tests for email handling and validation
   - 9 password reset tests for token validation, security, and edge cases
+  - 9 interaction tests for email verification and password reset token separation
+  - 19 additional tests for edge cases and security scenarios
 - OAuth 2.0 authentication system with Passport.js
   - Google OAuth integration with profile and email scopes
   - 42 School OAuth integration
@@ -57,9 +59,12 @@
   - Template builder system for HTML emails
   - Template caching for performance
   - Support for verification, welcome, and password reset emails
+  - Unified token model: single VerificationEmail collection with type field ('verification' | 'password_reset')
+  - Compound unique index allows one token of each type per user
   - Password reset email with secure token generation
-  - Automatic deletion of old reset tokens when new one is requested
+  - Automatic deletion of old tokens when new one is requested (type-specific)
   - Single-use tokens with 24-hour expiration
+  - Token type validation prevents cross-use (email tokens can't reset passwords and vice versa)
 - OpenAPI/Swagger documentation for authentication, email verification, password reset, and OAuth endpoints
 - User profile endpoints with privacy controls
   - GET /api/v1/profile/me - Get authenticated user's own profile (includes email)
