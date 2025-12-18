@@ -31,7 +31,7 @@ export class AuthService {
       email: userData.email,
       password: hashedPassword,
     });
-    await this._emailService.createVerificationEmail(user);
+    await this._emailService.createVerificationEmail(user, 'verification');
     return true;
   }
 
@@ -80,12 +80,15 @@ export class AuthService {
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this._userRepo.findByEmail(email);
     if (user) {
-      await this._emailService.createPasswordResetEmail(user);
+      if (user.oauth && !user.oauth.isPasswordSet) {
+        throw new ConflictError(`Password reset not available for ${user.oauth.provider} accounts`);
+      }
+      await this._emailService.createVerificationEmail(user, 'password_reset');
     }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const verification = await this._emailService.verifyEmailToken(token);
+    const verification = await this._emailService.verifyPasswordResetToken(token);
     if (!verification) {
       throw new ConflictError('Invalid or expired password reset token');
     }

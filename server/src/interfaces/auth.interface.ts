@@ -25,11 +25,5 @@ export interface ILoginDTO {
 export interface IVerificationEmail {
   userId: string;
   token: string;
-  // createdAt: Date;
+  type: 'verification' | 'password_reset';
 }
-
-// export interface IVerificationEmailDTO {
-//   userId: string;
-//   token: string;
-//   email: string;
-// }

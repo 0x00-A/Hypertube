@@ -15,7 +15,7 @@ describe('MovieInteraction API Integration Tests', () => {
 
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
-    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail');
+    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
 
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;

@@ -14,6 +14,7 @@ const userSchema = new Schema({
     type: {
       provider: { type: String, enum: ['google', 'fortytwo'] },
       id: { type: String },
+      isPasswordSet: { type: Boolean, default: false },
     },
     _id: false,
     select: false,
