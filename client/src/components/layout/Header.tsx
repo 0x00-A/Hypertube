@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, Film, Menu, X, SlidersHorizontal, Compass, Library, Star, Clock } from 'lucide-react';
+import { Search, Bell, Film, Menu, X, SlidersHorizontal, Compass, Library, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthState } from '../../hooks/useAuth';
 import ProfileDropdown from './ProfileDropdown';
 
 const navLinks = [
   { label: 'Browse', path: '/browse', icon: Compass },
+  { label: 'Movies', path: '/movies', icon: Film },
   { label: 'Library', path: '/library', icon: Library },
-  { label: 'Watchlist', path: '/watchlist', icon: Star },
   { label: 'History', path: '/history', icon: Clock },
 ];
 

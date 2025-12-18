@@ -1,11 +1,19 @@
 import { useNavigate } from 'react-router-dom';
-import { HeroSection, MovieCarousel, LastWatchingCarousel } from '../../components/movie';
-import { heroMovies, lastWatchingMovies, recommendedMovies, trendingMovies } from '../../data/mockMovies';
-import type { IMovie } from '../../types/movie.types';
+import { HeroSection, MovieCarousel, LastWatchingCarousel, GenresSection } from '../../components/movie';
+import { lastWatchingMovies } from '../../data/mockMovies';
+import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
+import { useMovies } from '../../hooks/useMovies';
+import { useFetchGenreMovies } from '../../hooks/useMovies';
 
 export default function Browse() {
   const navigate = useNavigate();
+  
+  // Fetch movies
+  const { trending, recommended } = useMovies();
+  const genreData = useFetchGenreMovies();
 
+  // Get first 6 trending movies for hero slider
+  const heroMovies = trending.trending.slice(0, 6);
   const handlePlayClick = (movie: IMovie) => {
     navigate(`/watch/${movie.imdbId}`);
   };
@@ -14,8 +22,10 @@ export default function Browse() {
     navigate('/history');
   };
 
-  const handleMovieClick = (movie: IMovie) => {
-    navigate(`/movie/${movie.imdbId}`);
+  const handleMovieClick = (movie: IMovie | ITrendingMovie | IRecommendedMovie) => {
+    // Use tmdbId for trending/recommended movies, imdbId for full movies
+    const id = 'imdbId' in movie ? movie.imdbId : movie.tmdbId;
+    navigate(`/movies/${id}`);
   };
 
   const handleWatchlistToggle = () => {
@@ -30,11 +40,19 @@ export default function Browse() {
     navigate('/library?filter=trending');
   };
 
+  const handleViewAllGenres = () => {
+    navigate(`/library?filter=genre&genre=${genreData.selectedGenre}`);
+  };
+
+  const handleGenreChange = (genre: string) => {
+    genreData.changeGenre(genre);
+  };
+
   return (
     <div className="min-h-screen bg-bg-primary">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <HeroSection
-          heroMovies={heroMovies}
+          heroMovies={heroMovies.length > 0 ? heroMovies : []}
           lastWatchingList={lastWatchingMovies}
           onPlayClick={handlePlayClick}
           onViewAllLastWatching={handleViewAllLastWatching}
@@ -52,20 +70,34 @@ export default function Browse() {
         <div className="mt-8 lg:mt-12">
           <MovieCarousel
             title="Recommended for You"
-            movies={recommendedMovies}
+            movies={recommended.recommended}
             onMovieClick={handleMovieClick}
             onWatchlistToggle={handleWatchlistToggle}
             onViewAll={handleViewAllRecommended}
+            isLoading={recommended.isLoading}
           />
         </div>
 
         <div className="mt-8 lg:mt-12">
           <MovieCarousel
             title="Trending Movies"
-            movies={trendingMovies}
+            movies={trending.trending}
             onMovieClick={handleMovieClick}
             onWatchlistToggle={handleWatchlistToggle}
             onViewAll={handleViewAllTrending}
+            isLoading={trending.isLoading}
+          />
+        </div>
+
+        <div className="mt-8 lg:mt-12">
+          <GenresSection
+            movies={genreData.movies}
+            selectedGenre={genreData.selectedGenre}
+            onGenreChange={handleGenreChange}
+            onMovieClick={handleMovieClick}
+            onWatchlistToggle={handleWatchlistToggle}
+            onViewAll={handleViewAllGenres}
+            isLoading={genreData.isLoading}
           />
         </div>
       </div>

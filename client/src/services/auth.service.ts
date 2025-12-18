@@ -76,7 +76,7 @@ export const authService = {
    * Verify email with token
    */
   verifyEmail: async (token: string): Promise<MessageResponse> => {
-    return httpClient.post<MessageResponse>(`/auth/verify-email/${token}`);
+    return httpClient.post<MessageResponse>('/auth/verify-email', { token });
   },
 
   /**

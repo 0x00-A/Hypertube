@@ -14,33 +14,79 @@ export const SliderMovies = ({
   const currentMovie = movies[currentIndex];
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % movies.length);
-    }, autoPlayInterval);
+    if (movies && movies.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % movies.length);
+      }, autoPlayInterval);
 
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    }
   }, [movies, autoPlayInterval]);
 
-  const formatRating = (rating?: number) => {
-    return rating ? rating.toFixed(1) : 'N/A';
+  const formatRating = (rating: string) => {
+    return rating || 'N/A';
   };
 
   const handleWatchClick = () => {
-    navigate(`/movie/${currentMovie.imdbId}`);
+    if (currentMovie) {
+      navigate(`/movies/${currentMovie.tmdbId}`);
+    }
   };
 
   const handleTrailerClick = () => {
-    if (currentMovie.trailer) {
-      window.open(currentMovie.trailer, '_blank', 'noopener,noreferrer');
+    // Trailer functionality will be implemented later
+    // For now, just navigate to the movie page
+    if (currentMovie) {
+      navigate(`/movies/${currentMovie.tmdbId}`);
     }
   };
+
+  // Safety check: if no movies, show skeleton loader
+  if (!movies || movies.length === 0) {
+    return (
+      <div className={clsx('relative w-full h-full overflow-hidden rounded-xl bg-bg-secondary', className)}>
+        {/* Skeleton Background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary via-bg-tertiary to-bg-secondary animate-pulse" />
+        
+        {/* Skeleton Card */}
+        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto z-10">
+          <div className="max-w-sm md:max-w-md lg:max-w-lg">
+            <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-5 lg:p-6 shadow-2xl border border-white/10">
+              {/* Skeleton Title */}
+              <div className="h-8 md:h-10 bg-white/20 rounded-md mb-3 animate-pulse w-3/4" />
+              
+              {/* Skeleton Meta Info */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-5 w-12 bg-white/20 rounded animate-pulse" />
+                <div className="h-5 w-16 bg-white/20 rounded animate-pulse" />
+                <div className="h-5 w-8 bg-white/20 rounded animate-pulse" />
+                <div className="h-5 w-20 bg-white/20 rounded animate-pulse" />
+              </div>
+              
+              {/* Skeleton Overview */}
+              <div className="space-y-2 mb-4">
+                <div className="h-4 bg-white/20 rounded animate-pulse w-full" />
+                <div className="h-4 bg-white/20 rounded animate-pulse w-5/6" />
+              </div>
+              
+              {/* Skeleton Buttons */}
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse" />
+                <div className="h-9 w-20 bg-white/20 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={clsx('relative w-full h-full overflow-hidden rounded-xl', className)}>
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src={currentMovie.images.backdrop || currentMovie.images.poster || '/images/movies/placeholder.jpg'}
+          src={currentMovie.images.backdrop || currentMovie.images.thumbnail || '/images/movies/placeholder.jpg'}
           alt={currentMovie.title}
           className="w-full h-full object-cover"
         />
@@ -48,41 +94,50 @@ export const SliderMovies = ({
         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
       </div>
 
-      {/* Glassmorphism Card - Bottom Left */}
-
-      <div className="absolute bottom-6 left-8 right-8 z-10">
-        <div className="max-w-xl lg:max-w-2xl xl:max-w-3xl transition-all duration-300">
-          <div className="backdrop-blur-xl bg-black/30 rounded-xl p-5 lg:p-8 xl:p-10 shadow-2xl border border-white/10">
+      {/* Glassmorphism Card - Compact Version */}
+      <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto z-10">
+        <div className="max-w-sm md:max-w-md lg:max-w-lg transition-all duration-300">
+          <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-5 lg:p-6 shadow-2xl border border-white/10">
             {/* Movie Title */}
-            <h1 className="text-3xl lg:text-4xl xl:text-6xl font-bold text-white leading-tight mb-2.5 lg:mb-4">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight mb-2">
               {currentMovie.title}
             </h1>
 
-            {/* IMDb Badge + Rating + Genres - Single Line */}
-            <div className="flex items-center gap-2 lg:gap-3 mb-2.5 lg:mb-4 flex-wrap">
+            {/* IMDb Badge + Rating + Language + Genres */}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               {/* IMDb Badge */}
-              <div className="bg-yellow-400 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded">
-                <span className="text-black font-bold text-xs lg:text-sm">IMDb</span>
+              <div className="bg-yellow-400 px-1.5 py-0.5 rounded">
+                <span className="text-black font-bold text-xs">IMDb</span>
               </div>
 
               {/* Star Rating */}
               <div className="flex items-center gap-1">
-                <span className="text-yellow-400 text-sm lg:text-base">★</span>
-                <span className="text-white text-sm lg:text-base font-bold">
+                <span className="text-yellow-400 text-sm">★</span>
+                <span className="text-white text-sm font-bold">
                   {formatRating(currentMovie.rating)}
                 </span>
               </div>
 
+              {/* Original Language */}
+              {currentMovie.originalLanguage && (
+                <>
+                  <span className="text-text-muted text-sm">|</span>
+                  <span className="text-text-secondary text-xs uppercase">
+                    {currentMovie.originalLanguage}
+                  </span>
+                </>
+              )}
+
               {/* Genres */}
               {currentMovie.genres && currentMovie.genres.length > 0 && (
                 <>
-                  <span className="text-text-muted text-sm lg:text-base">|</span>
-                  <div className="flex items-center gap-1.5 lg:gap-2">
-                    {currentMovie.genres.slice(0, 3).map((genre, index) => (
+                  <span className="text-text-muted text-sm">|</span>
+                  <div className="flex items-center gap-1.5">
+                    {currentMovie.genres.slice(0, 2).map((genre, index) => (
                       <div key={genre} className="flex items-center gap-1.5">
-                        <span className="text-text-secondary text-xs lg:text-base">{genre}</span>
-                        {index < Math.min(currentMovie.genres!.length, 3) - 1 && (
-                          <span className="text-text-muted text-xs lg:text-base">•</span>
+                        <span className="text-text-secondary text-xs">{genre}</span>
+                        {index < Math.min(currentMovie.genres!.length, 2) - 1 && (
+                          <span className="text-text-muted text-xs">•</span>
                         )}
                       </div>
                     ))}
@@ -91,24 +146,24 @@ export const SliderMovies = ({
               )}
             </div>
 
-            {/* Synopsis */}
-            {currentMovie.synopsis && (
-              <p className="text-text-secondary text-xs lg:text-base xl:text-lg leading-relaxed line-clamp-2 lg:line-clamp-3 xl:line-clamp-4 mb-3.5 lg:mb-6 max-w-prose">
-                {currentMovie.synopsis}
+            {/* Overview - Compact */}
+            {currentMovie.overview && (
+              <p className="text-text-secondary text-xs md:text-sm leading-relaxed line-clamp-2 mb-3 max-w-prose">
+                {currentMovie.overview}
               </p>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 lg:gap-4">
+            {/* Action Buttons - Compact */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleWatchClick}
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-6 py-2 lg:px-8 lg:py-3 rounded-lg transition-all duration-200 shadow-lg text-xs lg:text-base xl:text-lg"
+                className="bg-primary hover:bg-primary-light text-black font-bold px-4 py-1.5 md:px-5 md:py-2 rounded-lg transition-all duration-200 shadow-lg text-xs md:text-sm"
               >
                 WATCH
               </button>
               <button
                 onClick={handleTrailerClick}
-                className="bg-black/50 backdrop-blur-sm border-2 border-yellow-400 text-yellow-400 font-bold px-5 py-2 lg:px-7 lg:py-3 rounded-lg hover:bg-yellow-400 hover:text-black transition-all duration-200 text-xs lg:text-base xl:text-lg"
+                className="bg-bg-tertiary hover:bg-border-light border border-border text-text-secondary hover:text-white font-bold px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all duration-200 text-xs md:text-sm"
               >
                 Trailer
               </button>

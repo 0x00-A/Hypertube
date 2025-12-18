@@ -21,8 +21,25 @@ export const MovieCard = ({
     onWatchlistToggle?.(movie);
   };
 
-  const formatRating = (rating?: number) => {
-    return rating ? rating.toFixed(1) : 'N/A';
+  const formatRating = (rating?: number | string) => {
+    if (!rating) return 'N/A';
+    return typeof rating === 'string' ? rating : rating.toFixed(1);
+  };
+
+  // Helper to get image from different movie types
+  const getMovieImage = () => {
+    if ('images' in movie) {
+      const images = movie.images;
+      // Check if images has poster property (IMovie)
+      if ('poster' in images && images.poster) {
+        return images.poster;
+      }
+      // Check if images has thumbnail property (all types)
+      if ('thumbnail' in images && images.thumbnail) {
+        return images.thumbnail;
+      }
+    }
+    return '/images/movies/placeholder.jpg';
   };
 
   return (
@@ -38,7 +55,7 @@ export const MovieCard = ({
     >
       <div className="relative aspect-auto w-full overflow-hidden rounded-lg">
         <img
-          src={movie.images.poster || '/images/movies/placeholder.jpg'}
+          src={getMovieImage()}
           alt={movie.title}
           className={clsx(
             'w-full h-full object-cover transition-transform duration-700 ease-in-out',
@@ -74,14 +91,14 @@ export const MovieCard = ({
           "absolute inset-0 flex items-center justify-center px-4 text-center transition-opacity duration-500 z-10 pointer-events-none",
           isHovered ? "opacity-100" : "opacity-0"
         )}>
-          {movie.synopsis && (
+          {(('synopsis' in movie && movie.synopsis) || ('overview' in movie && movie.overview)) && (
             <p className="text-white/90 text-sm font-medium leading-relaxed drop-shadow-md line-clamp-4">
-              {movie.synopsis}
+              {'synopsis' in movie && movie.synopsis ? movie.synopsis : 'overview' in movie ? movie.overview : ''}
             </p>
           )}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-black/30 z-10">
+        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-black/60 z-10 rounded-b-md">
           <div className="p-3">
             <h3 className={clsx(
               "text-white font-bold text-base leading-tight mb-1 drop-shadow-sm transition-colors line-clamp-2",
@@ -95,9 +112,15 @@ export const MovieCard = ({
                 "absolute inset-0 transition-all duration-500 ease-out flex items-center",
                 isHovered ? "transform translate-y-8 opacity-0" : "transform translate-y-0 opacity-100"
               )}>
-                <p className="text-text-muted text-xs font-medium truncate">
-                  {movie.genres?.slice(0, 3).join(', ') || 'Unknown Genre'}
-                </p>
+                {'genres' in movie && movie.genres ? (
+                  <p className="text-text-secondary text-xs font-medium truncate">
+                    {movie.genres.slice(0, 3).join(', ')}
+                  </p>
+                ) : (
+                  <p className="text-text-secondary text-xs font-medium truncate uppercase">
+                    {movie.originalLanguage || 'Unknown'}
+                  </p>
+                )}
               </div>
 
               <div className={clsx(
@@ -105,10 +128,16 @@ export const MovieCard = ({
                 isHovered ? "transform translate-y-0 opacity-100 delay-100" : "transform -translate-y-8 opacity-0"
               )}>
                 <span className="text-white/90 text-xs font-semibold">{movie.year}</span>
-                {movie.duration && (
+                {'duration' in movie && movie.duration && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-text-muted" />
                     <span className="text-text-secondary text-xs">{movie.duration} min</span>
+                  </>
+                )}
+                {movie.originalLanguage && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-text-muted" />
+                    <span className="text-text-secondary text-xs uppercase">{movie.originalLanguage}</span>
                   </>
                 )}
               </div>

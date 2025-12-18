@@ -1,10 +1,10 @@
-import type { IMovie, IWatchProgress } from '../../types/movie.types';
+import type { IMovie, IWatchProgress, ITrendingMovie } from '../../types/movie.types';
 import { SliderMovies } from './SliderMovies';
 import { LastWatchingSection } from './LastWatchingSection';
 import { clsx } from 'clsx';
 
 interface HeroSectionProps {
-  heroMovies: IMovie[];
+  heroMovies: ITrendingMovie[];
   lastWatchingList: IWatchProgress[];
   onPlayClick?: (movie: IMovie) => void;
   onViewAllLastWatching?: () => void;
