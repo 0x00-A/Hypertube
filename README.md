@@ -10,6 +10,7 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 ### 🔐 Authentication & Security
 * **Multiple Strategies:** Secure login via username/password and OAuth 2.0 (42 School, Google).
 * **Email Verification:** New users must verify their email address before logging in. Automated verification emails with secure tokens.
+* **Password Reset:** Secure password reset flow with email verification and single-use tokens that expire after 24 hours.
 * **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management. OAuth users are automatically verified.
 * **Security First:** Passwords are hashed with Argon2 (never plain text), JWT tokens in httpOnly cookies, and all forms are protected against SQL injections and XSS attacks.
 * **Profile Management:** Users can edit profiles, upload avatars, and view other user profiles while maintaining email privacy.
@@ -73,7 +74,7 @@ FORTYTWO_CLIENT_SECRET=your-42-client-secret
 FORTYTWO_CALLBACK_URL=http://localhost:3001/api/v1/oauth/42/callback
 CLIENT_URL=http://localhost:3000
 
-# Email Configuration (for email verification)
+# Email Configuration (for email verification and password reset)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
@@ -134,11 +135,14 @@ cd server && npm test -- --testPathPattern=auth.test.ts
 ```
 
 ### Test Coverage
-- **Authentication Tests:** 40 integration tests
+- **Authentication Tests:** 83 integration tests
   - Signup validation, security, and error handling
   - Login authentication, JWT cookies, and session management
   - Email verification with token validation and edge cases
   - Token refresh and protected route middleware
+  - Password reset request and token validation
+  - Password reset security and edge cases
+  - Email verification and password reset interaction tests (token separation)
 - **OAuth Tests:** 14 integration tests
   - Google and 42 OAuth flows
   - Account creation and linking
@@ -178,6 +182,16 @@ http://localhost:3001/api-docs
 **POST** `/v1/auth/refresh-token`
 - Refresh access token using refresh token cookie
 - Returns new access token in httpOnly cookie
+
+**POST** `/v1/auth/request-password-reset`
+- Request password reset email
+- Sends reset link with secure token to user's email
+- Always returns success for security (doesn't reveal if email exists)
+
+**POST** `/v1/auth/reset-password`
+- Reset password using token from email
+- Token is single-use and expires after 24 hours
+- Old password is invalidated after successful reset
 
 ### OAuth Endpoints
 

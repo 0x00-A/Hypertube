@@ -30,3 +30,16 @@ export const LogInSchema = z.object({
     password: z.string().min(1, 'Password is required'),
   })
 });
+
+export const RequestPasswordResetSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email('Invalid email address'),
+  }),
+});
+
+export const ResetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().trim().min(1, 'Token is required'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters long'),
+  }),
+});

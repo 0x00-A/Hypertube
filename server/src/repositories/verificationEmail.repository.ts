@@ -1,4 +1,4 @@
-import { VerificationEmailModel } from '../models/VerificationEmail';
+import { VerificationEmailModel } from '../models/VerificationEmail.model';
 import { IVerificationEmail } from '../interfaces/auth.interface';
 
 export class VerificationEmailRepository {
@@ -6,6 +6,7 @@ export class VerificationEmailRepository {
         return {
             userId: doc.userId,
             token: doc.token,
+            type: doc.type,
         };
     }
 
@@ -15,6 +16,22 @@ export class VerificationEmailRepository {
 
   async deleteByToken(token: string) {
     await VerificationEmailModel.deleteOne({ token });
+  }
+
+  async deleteByUserId(userId: string) {
+    await VerificationEmailModel.deleteOne({ userId });
+  }
+
+  async deleteByUserIdAndType(userId: string, type: 'verification' | 'password_reset'): Promise<void> {
+    await VerificationEmailModel.deleteOne({ userId, type });
+  }
+
+  async findByUserIdAndType(userId: string, type: 'verification' | 'password_reset'): Promise<IVerificationEmail | null> {
+    const doc = await VerificationEmailModel.findOne({ userId, type });
+    if (!doc) {
+      return null;
+    }
+    return this.toIVerificationEmail(doc);
   }
 
   async create(data: IVerificationEmail): Promise<IVerificationEmail> {

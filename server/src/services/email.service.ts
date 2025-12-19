@@ -23,22 +23,31 @@ export class EmailService {
     this._verificationEmailRepo = verificationEmailRepo;
   }
 
-  /**
-   * Create and send email verification
-   */
-  async createVerificationEmail(user: Partial<IUser>): Promise<void> {
+  async createVerificationEmail(user: Partial<IUser>, type: 'verification' | 'password_reset'): Promise<void> {
     const token = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Delete any existing token of this type for this user (best practice: only most recent token is valid)
+    await this._verificationEmailRepo.deleteByUserIdAndType(user._id!, type);
 
     await this._verificationEmailRepo.create({
       userId: user._id!,
       token: hashedToken,
+      type,
     });
 
-    const verificationLink = `${env.CLIENT_URL}/verify-email?token=${token}`;
-    const html = EmailBuilder.renderVerification({ verificationLink });
-
-    await this.sendEmail(user.email!, 'Verify your email', html);
+    if (type === 'verification') {
+      const verificationLink = `${env.CLIENT_URL}/verify-email?token=${token}`;
+      const html = EmailBuilder.renderVerification({ verificationLink });
+      await this.sendEmail(user.email!, 'Verify your email', html);
+    } else {
+      const resetLink = `${env.CLIENT_URL}/reset-password?token=${token}`;
+      const html = EmailBuilder.renderPasswordReset({
+        username: user.username!,
+        resetLink,
+      });
+      await this.sendEmail(user.email!, 'Reset your password', html);
+    }
   }
 
   async deleteVerificationToken(token: string): Promise<void> {
@@ -48,25 +57,25 @@ export class EmailService {
   async verifyEmailToken(token: string): Promise<IVerificationEmail | null> {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const verification = await this._verificationEmailRepo.findByToken(hashedToken);
-    if (!verification) return null;
-    
+    if (!verification || verification.type !== 'verification') return null;
+
     return {
       userId: verification.userId.toString(),
       token: verification.token,
+      type: verification.type,
     };
   }
 
-  /**
-   * Send password reset email
-   */
-  async sendPasswordResetEmail(user: Partial<IUser>, resetToken: string): Promise<void> {
-    const resetLink = `${env.CLIENT_URL}/reset-password?token=${resetToken}`;
-    const html = EmailBuilder.renderPasswordReset({
-      username: user.username!,
-      resetLink,
-    });
+  async verifyPasswordResetToken(token: string): Promise<IVerificationEmail | null> {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const verification = await this._verificationEmailRepo.findByToken(hashedToken);
+    if (!verification || verification.type !== 'password_reset') return null;
 
-    await this.sendEmail(user.email!, 'Reset your password', html);
+    return {
+      userId: verification.userId.toString(),
+      token: verification.token,
+      type: verification.type,
+    };
   }
 
   async sendWelcomeEmail(user: Partial<IUser>): Promise<void> {

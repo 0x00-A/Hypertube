@@ -1,6 +1,7 @@
 export interface IOAuth {
   provider: 'google' | 'fortytwo';
   id: string;
+  isPasswordSet?: boolean;
 }
 
 export interface IUser {
