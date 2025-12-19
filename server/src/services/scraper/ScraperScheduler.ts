@@ -44,9 +44,9 @@ export class ScraperScheduler {
       })
     ).pagination.total;
 
-    if (movieCount < 50) {
+    if (movieCount < 500) {
       logger.info('Server Startup: Triggering initial quick scrape...');
-      this.safeScrape(1, 2).catch((err) => logger.error({ err }, 'Startup scrape failed'));
+      this.safeScrape(1, 100).catch((err) => logger.error({ err }, 'Startup scrape failed'));
     }
   }
 

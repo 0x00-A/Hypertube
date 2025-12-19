@@ -46,14 +46,14 @@ export const MovieCard = ({
     <div
       className={clsx(
         'relative cursor-pointer rounded-xl bg-border p-2 shadow-lg transition-all duration-500',
-        'hover:shadow-2xl hover:z-10 w-full',
+        'hover:shadow-2xl hover:z-10 w-full h-full flex flex-col',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
     >
-      <div className="relative aspect-auto w-full overflow-hidden rounded-lg">
+      <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg flex-1">
         <img
           src={getMovieImage()}
           alt={movie.title}
@@ -74,7 +74,7 @@ export const MovieCard = ({
 
           <button
             onClick={handleWatchlistClick}
-            className="flex items-center justify-center bg-text-muted px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
+            className="flex items-center justify-center bg-black/60 backdrop-blur-md  px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
           >
             <Heart
               className={clsx(
@@ -99,7 +99,7 @@ export const MovieCard = ({
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-black/60 z-10 rounded-b-md">
-          <div className="p-3">
+          <div className="p-3 text-center">
             <h3 className={clsx(
               "text-white font-bold text-base leading-tight mb-1 drop-shadow-sm transition-colors line-clamp-2",
               isHovered && "text-primary-400"
@@ -109,7 +109,7 @@ export const MovieCard = ({
 
             <div className="h-5 relative overflow-hidden">
               <div className={clsx(
-                "absolute inset-0 transition-all duration-500 ease-out flex items-center",
+                "absolute inset-0 transition-all duration-500 ease-out flex items-center justify-center",
                 isHovered ? "transform translate-y-8 opacity-0" : "transform translate-y-0 opacity-100"
               )}>
                 {'genres' in movie && movie.genres ? (
@@ -124,7 +124,7 @@ export const MovieCard = ({
               </div>
 
               <div className={clsx(
-                "absolute inset-0 transition-all duration-500 ease-out flex items-center gap-2",
+                "absolute inset-0 transition-all duration-500 ease-out flex items-center justify-center gap-2",
                 isHovered ? "transform translate-y-0 opacity-100 delay-100" : "transform -translate-y-8 opacity-0"
               )}>
                 <span className="text-white/90 text-xs font-semibold">{movie.year}</span>

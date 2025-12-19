@@ -41,7 +41,8 @@ export default function Browse() {
   };
 
   const handleViewAllGenres = () => {
-    navigate(`/library?filter=genre&genre=${genreData.selectedGenre}`);
+    // Navigate to all-movies with the selected genre pre-applied
+    navigate(`/all-movies?genre=${genreData.selectedGenre}`);
   };
 
   const handleGenreChange = (genre: string) => {
@@ -50,7 +51,7 @@ export default function Browse() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection
           heroMovies={heroMovies.length > 0 ? heroMovies : []}
           lastWatchingList={lastWatchingMovies}

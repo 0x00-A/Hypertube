@@ -73,6 +73,7 @@ function App() {
             <Route path="/" element={<Navigate to="/browse" replace />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/movies" element={<Movies />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />

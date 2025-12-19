@@ -4,6 +4,7 @@ import type {
   IRecommendedMoviesResponse,
   IMoviesResponse,
 } from '../types/movie.types';
+import type { IMovieFilters } from '../types/movieFilter.types';
 
 // ============================================================================
 // Movie Service
@@ -60,6 +61,29 @@ class MovieService {
       {
         params: { genre, page, limit },
       }
+    );
+    return response;
+  }
+
+  /**
+   * Get all movies with optional filters
+   */
+  async getAllMovies(filters?: IMovieFilters): Promise<IMoviesResponse> {
+    const params: Record<string, string | number> = {};
+    
+    if (filters) {
+      if (filters.sortBy) params.sortBy = filters.sortBy;
+      if (filters.sortOrder) params.sortOrder = filters.sortOrder;
+      if (filters.genre && filters.genre !== 'All') params.genre = filters.genre;
+      if (filters.minRating && filters.minRating > 0) params.minRating = filters.minRating;
+      if (filters.year && filters.year > 0) params.year = filters.year;
+      if (filters.page) params.page = filters.page;
+      if (filters.limit) params.limit = filters.limit;
+    }
+
+    const response = await httpClient.get<IMoviesResponse>(
+      `${this.BASE_PATH}`,
+      { params }
     );
     return response;
   }
