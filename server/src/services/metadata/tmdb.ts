@@ -57,8 +57,8 @@ export async function getMetadata(imdbId: string) {
     return null;
   }
 
-  // fetch Details and Trailer
-  const detailUrl = `${TMDB_BASE}/movie/${tmdbMovie.id}?append_to_response=videos`;
+  // fetch Details, Trailer, and Cast
+  const detailUrl = `${TMDB_BASE}/movie/${tmdbMovie.id}?append_to_response=videos,credits`;
   const detailRes = await axios.get(detailUrl, {
     headers: {
       Authorization: `Bearer ${TMDB_KEY}`,
@@ -101,6 +101,28 @@ export async function getMetadata(imdbId: string) {
     thumbnail:
       typeof poster_path === 'string' && poster_path ? `${IMAGE_BASE}/w200${poster_path}` : '',
   });
+  const parseCast = (credits: unknown) => {
+    if (
+      typeof credits === 'object' &&
+      credits &&
+      'cast' in credits &&
+      Array.isArray((credits as any).cast)
+    ) {
+      return (credits as any).cast
+        .slice(0, 6)
+        .map((actor: any) => ({
+          id: typeof actor.id === 'number' ? actor.id : 0,
+          name: typeof actor.name === 'string' ? actor.name : '',
+          character: typeof actor.character === 'string' ? actor.character : '',
+          profilePath:
+            typeof actor.profile_path === 'string' && actor.profile_path
+              ? `${IMAGE_BASE}/w185${actor.profile_path}`
+              : undefined,
+        }))
+        .filter((actor: any) => actor.name && actor.character);
+    }
+    return [];
+  };
   const youtubeTrailer =
     details.videos && details.videos.results && Array.isArray(details.videos.results)
       ? details.videos.results.find(
@@ -124,6 +146,7 @@ export async function getMetadata(imdbId: string) {
     originalLanguage: parseString(details.original_language) || 'en',
     images: parseImages(details.poster_path, details.backdrop_path),
     trailer: trailerUrl,
+    cast: parseCast(details.credits),
   };
 }
 

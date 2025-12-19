@@ -1429,6 +1429,17 @@ components:
           type: string
           description: YouTube trailer URL
           example: https://www.youtube.com/watch?v=6hB3S9bIaco
+        cast:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cast'
+          maxItems: 6
+          description: Main cast members (up to 6 actors)
+          example:
+            - id: 3894
+              name: Christian Bale
+              character: Bruce Wayne / Batman
+              profilePath: https://image.tmdb.org/t/p/w185/3qx2QFUbG6t6IlzR0F9k3Z6Yhf7.jpg
         images:
           type: object
           required:
@@ -1529,6 +1540,31 @@ components:
           type: string
           description: Torrent source provider
           example: YTS
+
+    Cast:
+      type: object
+      required:
+        - id
+        - name
+        - character
+      properties:
+        id:
+          type: integer
+          description: TMDB actor ID
+          example: 3894
+        name:
+          type: string
+          description: Actor's name
+          example: Christian Bale
+        character:
+          type: string
+          description: Character name in the movie
+          example: Bruce Wayne / Batman
+        profilePath:
+          type: string
+          description: URL to actor's profile image
+          example: https://image.tmdb.org/t/p/w185/3qx2QFUbG6t6IlzR0F9k3Z6Yhf7.jpg
+
     TrendingMovieItem:
       type: object
       required:
