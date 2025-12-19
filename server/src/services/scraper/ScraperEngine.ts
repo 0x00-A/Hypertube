@@ -85,6 +85,7 @@ export class ScraperEngine {
           ...metadata,
           ...partial,
           title: metadata.title,
+          rating: partial.rating ?? metadata.rating,
         };
 
         try {

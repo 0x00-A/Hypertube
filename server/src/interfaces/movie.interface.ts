@@ -73,6 +73,7 @@ export interface IScrapedMovie {
   title: string;
   year: number;
   slug: string;
+  rating: number;
   torrents: ITorrent[]; // Array of torrents from this specific source
   trailer?: string;
   images?: {

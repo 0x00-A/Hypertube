@@ -24,6 +24,7 @@ class MockYtsProvider extends BaseProvider {
         title: 'The Shawshank Redemption',
         year: 1994,
         slug: 'the-shawshank-redemption-1994',
+        rating: 9.3,
         torrents: [],
       },
     ];
