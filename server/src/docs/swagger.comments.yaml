@@ -1,0 +1,310 @@
+openapi: 3.1.0
+info:
+  title: Hypertube Comments API
+  version: 0.1.0
+
+paths:
+  /api/v1/comments/movie/{tmdbId}:
+    get:
+      summary: Get comments for a movie (paginated)
+      tags:
+        - Comments
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt]
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PopulatedComment'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/comments:
+    get:
+      summary: Get all comments (paginated)
+      tags:
+        - Comments
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt]
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PopulatedComment'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create a comment for movie (requires auth)
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/comments/{id}:
+    get:
+      summary: Get a single comment by ID (requires auth)
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update a comment (requires auth, owner only)
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentRequest'
+      responses:
+        '200':
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a comment (requires auth, owner only)
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Comment deleted (no content)
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+        - tmdbId
+      properties:
+        content:
+          type: string
+          description: Comment text
+          example: Great movie!
+        tmdbId:
+          type: integer
+          description: TMDB movie id
+          example: 550
+
+    UpdateCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Updated comment text
+          example: Even better second time around.
+
+    Comment:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        tmdbId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PopulatedComment:
+      allOf:
+        - $ref: '#/components/schemas/Comment'
+        - type: object
+          properties:
+            user:
+              type: object
+              properties:
+                _id:
+                  type: string
+                username:
+                  type: string
+                avatarUrl:
+                  type: string
+
+    CommentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PopulatedComment'
+        message:
+          type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNextPage:
+          type: boolean
+        hasPrevPage:
+          type: boolean
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+              path:
+                type: string
+    Conflict:
+      description: Conflict (duplicate)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
