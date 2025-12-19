@@ -32,57 +32,7 @@ export class CommentRepository {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-        hasPrevPage: page > 1,
-      },
-    };
-  }
-
-  async findAllByMovie(
-    tmdbId: number,
-    paginationOptions?: IPaginationOptions,
-  ): Promise<IPaginatedResponse<IPopulatedComment>> {
-    const movie = await MovieModel.findOne({ tmdbId });
-
-    if (!movie) {
-      return {
-        data: [] as IPopulatedComment[],
-        pagination: {
-          page: 1,
-          limit: 0,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPrevPage: false,
-        },
-      };
-    }
-
-    const page = paginationOptions?.page || 1;
-    const limit = paginationOptions?.limit || 20;
-    const sortBy = paginationOptions?.sortBy || 'createdAt';
-    const sortOrder = paginationOptions?.sortOrder === 'asc' ? 1 : -1;
-
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await Promise.all([
-      CommentModel.find({ tmdbId })
-        .populate('user', 'username avatarUrl')
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean<IPopulatedComment[]>(),
-      CommentModel.countDocuments({ tmdbId }),
-    ]);
-
-    return {
-      data: data as IPopulatedComment[],
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
         hasNextPage: page * limit < total,
         hasPrevPage: page > 1,
       },

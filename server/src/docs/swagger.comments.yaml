@@ -112,8 +112,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentResponse'
-        '409':
-          $ref: '#/components/responses/Conflict'
 
   /api/v1/comments/{id}:
     get:
