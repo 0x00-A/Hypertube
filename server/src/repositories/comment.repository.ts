@@ -32,7 +32,7 @@ export class CommentRepository {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
         hasNextPage: page * limit < total,
         hasPrevPage: page > 1,
       },
