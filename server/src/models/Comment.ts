@@ -12,4 +12,5 @@ const commentSchema = new Schema(
   },
 );
 
+commentSchema.index({ tmdbId: 1 });
 export const CommentModel = model<ICommentDocument, ICommentModel>('Comment', commentSchema);
