@@ -1,6 +1,5 @@
 import z from 'zod';
-import { TmdbIdParamSchema } from './movie.schema';
-import { tmdbIdBodySchema } from './movie.schema';
+import { TmdbIdParamSchema, tmdbIdBodySchema } from './movie.schema';
 import { IdParamSchema } from './common.schema';
 
 const paginationQuery = z.object({
