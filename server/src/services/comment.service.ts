@@ -1,5 +1,5 @@
 import { CommentRepository } from '../repositories/comment.repository';
-import { ICreateCommentDTO } from '../interfaces/comment.interface';
+import { IComment, ICreateCommentDTO } from '../interfaces/comment.interface';
 import { MovieRepository } from '../repositories/movie.repository';
 import { NotFoundError, UnauthorizedError } from '../core/errors/customErrors';
 import { Types } from 'mongoose';
@@ -45,38 +45,31 @@ export class CommentService {
   }
 
   async update(id: string, content: string, userId: Types.ObjectId) {
-    const existingComment = await this._commentRepository.findById(id);
-    if (!existingComment) {
-      throw new NotFoundError('Comment not found');
-    }
-
-    const existingCommentUserId =
-      typeof existingComment.user === 'object' && existingComment.user !== null
-        ? existingComment.user._id
-        : existingComment.user;
-
-    if (!existingCommentUserId.equals(userId)) {
-      throw new UnauthorizedError('Unauthorized to update this comment');
-    }
+    await this.verifyCommentOwnership(id, userId);
 
     return this._commentRepository.update(id, content);
   }
 
   async delete(id: string, userId: Types.ObjectId) {
-    const existingComment = await this._commentRepository.findById(id);
-    if (!existingComment) {
-      throw new NotFoundError('Comment not found');
-    }
-
-    const existingCommentUserId =
-      typeof existingComment.user === 'object' && existingComment.user !== null
-        ? existingComment.user._id
-        : existingComment.user;
-
-    if (!existingCommentUserId.equals(userId)) {
-      throw new UnauthorizedError('Unauthorized to delete this comment');
-    }
+    await this.verifyCommentOwnership(id, userId);
 
     return this._commentRepository.delete(id);
+  }
+
+  private async verifyCommentOwnership(
+    commentId: string,
+    userId: Types.ObjectId,
+  ): Promise<IComment> {
+    const comment = await this._commentRepository.findById(commentId);
+    if (!comment) throw new NotFoundError('Comment not found');
+
+    const commentUserId =
+      typeof comment.user === 'object' && comment.user !== null ? comment.user._id : comment.user;
+
+    if (!commentUserId.equals(userId)) {
+      throw new UnauthorizedError('Unauthorized to modify this comment');
+    }
+
+    return comment;
   }
 }
