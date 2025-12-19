@@ -1,7 +1,6 @@
 import { CommentModel } from '../models/Comment';
 import { IComment, ICreateCommentDTO, IPopulatedComment } from '../interfaces/comment.interface';
 import { IPaginatedResponse, IPaginationOptions } from '../core/interfaces/IPagination';
-import { MovieModel } from '../models/Movie';
 import { Types } from 'mongoose';
 
 export class CommentRepository {
@@ -47,16 +46,16 @@ export class CommentRepository {
 
   async findById(id: string): Promise<IComment | null> {
     const doc = await CommentModel.findById(id)
-      .lean<IComment>()
-      .populate('user', 'username avatarUrl');
+      .populate('user', 'username avatarUrl')
+      .lean<IComment>();
 
     return doc;
   }
 
   async update(id: string, content: string): Promise<IComment | null> {
     const doc = await CommentModel.findByIdAndUpdate(id, { content }, { new: true })
-      .lean<IComment>()
-      .populate('user', 'username avatarUrl');
+      .populate('user', 'username avatarUrl')
+      .lean<IComment>();
     return doc;
   }
 
