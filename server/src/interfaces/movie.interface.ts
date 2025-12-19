@@ -38,7 +38,7 @@ export interface ITorrent {
 }
 export interface IMovie {
   imdbId: string;
-  tmdbId: number | null;
+  tmdbId: number;
   title: string;
   year: number;
   rating?: number | null | undefined;
