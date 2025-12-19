@@ -54,7 +54,6 @@ export const TmdbIdBodySchema = z.object({
   }),
 });
 
-export const tmdbIdBodySchema = TmdbIdBodySchema;
 export const MovieSearchQuerySchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1)).default(1),

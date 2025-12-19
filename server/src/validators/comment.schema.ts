@@ -1,5 +1,5 @@
 import z from 'zod';
-import { TmdbIdParamSchema, tmdbIdBodySchema } from './movie.schema';
+import { TmdbIdParamSchema, TmdbIdBodySchema } from './movie.schema';
 import { IdParamSchema } from './common.schema';
 
 const paginationQuery = z.object({
@@ -28,7 +28,7 @@ export const commentListByMovieQuerySchema = z.object({
 export const createCommentSchema = z.object({
   body: z.object({
     content: z.string().min(1).max(500).trim(),
-    tmdbId: tmdbIdBodySchema.shape.body.shape.tmdbId,
+    tmdbId: TmdbIdBodySchema.shape.body.shape.tmdbId,
   }),
 });
 
