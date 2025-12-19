@@ -105,8 +105,8 @@ export class CommentRepository {
 
   async update(id: string, content: string): Promise<IComment | null> {
     const doc = await CommentModel.findByIdAndUpdate(id, { content }, { new: true })
-      .populate('user', 'username avatarUrl')
-      .lean<IComment>();
+      .lean<IComment>()
+      .populate('user', 'username avatarUrl');
     return doc;
   }
 
