@@ -95,6 +95,7 @@ jest.mock('../../src/services/metadata/tmdb', () => {
       const metadata: Record<string, unknown> = {
         tt0111161: {
           title: 'The Shawshank Redemption',
+          tmdbId: 278,
           year: 1994,
           synopsis:
             'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
@@ -111,6 +112,7 @@ jest.mock('../../src/services/metadata/tmdb', () => {
         },
         tt0468569: {
           title: 'The Dark Knight',
+          tmdbId: 155,
           year: 2008,
           synopsis:
             'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.',

@@ -43,7 +43,7 @@ describe('Movie Search API', () => {
     const repo = new MovieRepository();
     await repo.create({
       imdbId: 'tt0111161',
-      //   tmdbId: '278',
+      tmdbId: 278,
       title: 'The Shawshank Redemption',
       year: 1994,
       images: { poster: '', backdrop: '', thumbnail: '' },

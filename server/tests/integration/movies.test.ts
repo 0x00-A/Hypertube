@@ -533,6 +533,7 @@ describe('Movies API Integration Tests', () => {
     it('should handle movie with minimal required fields', async () => {
       const minimalMovie = await MovieModel.create({
         imdbId: 'tt1111111',
+        tmdbId: 1111,
         title: 'Minimal Movie',
         year: 2023,
         images: {
@@ -554,6 +555,7 @@ describe('Movies API Integration Tests', () => {
       const movieWithLongTitle = await MovieModel.create({
         ...sampleMovie1,
         imdbId: 'tt2222222',
+        tmdbId: 2222,
         title: longTitle,
       });
 
@@ -567,6 +569,7 @@ describe('Movies API Integration Tests', () => {
       const movieWithMultipleTorrents = await MovieModel.create({
         ...sampleMovie1,
         imdbId: 'tt3333333',
+        tmdbId: 3333,
         torrents: [
           sampleMovie1.torrents![0],
           {

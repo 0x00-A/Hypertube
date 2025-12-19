@@ -22,7 +22,7 @@ const movieSchema = new Schema(
   {
     // Normalized Data (The generic UI data)
     imdbId: { type: String, unique: true, required: true }, // The universal key
-    tmdbId: { type: Number, unique: true, default: null }, // TMDB ID for metadata linkage
+    tmdbId: { type: Number, unique: true, required: true }, // TMDB ID for metadata linkage
     title: { type: String, required: true },
     year: { type: Number, required: true, min: 1900, max: new Date().getFullYear() + 1 },
     rating: { type: Number, min: 0, max: 10, default: null }, // IMDb/OMDb rating, allows 0 or null

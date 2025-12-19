@@ -33,7 +33,9 @@ describe('MovieInteraction API Integration Tests', () => {
     });
 
     if (signupRes.status !== 201) {
-      throw new Error(`Signup failed with status ${signupRes.status}: ${JSON.stringify(signupRes.body)}`);
+      throw new Error(
+        `Signup failed with status ${signupRes.status}: ${JSON.stringify(signupRes.body)}`,
+      );
     }
 
     // Get user and verify email using the endpoint
@@ -43,10 +45,7 @@ describe('MovieInteraction API Integration Tests', () => {
     // Create a test token and verify email through the endpoint
     const rawToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    await VerificationEmailModel.findOneAndUpdate(
-      { userId: user._id },
-      { token: hashedToken }
-    );
+    await VerificationEmailModel.findOneAndUpdate({ userId: user._id }, { token: hashedToken });
     await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
 
     // Login
@@ -65,6 +64,7 @@ describe('MovieInteraction API Integration Tests', () => {
 
   const sampleMovie: Partial<IMovie> = {
     imdbId: 'tt1234567',
+    tmdbId: 12444356,
     title: 'Test Movie',
     year: 2023,
     rating: 8.5,
@@ -103,11 +103,23 @@ describe('MovieInteraction API Integration Tests', () => {
     // Create test movies (static, only once)
     const movie = await MovieModel.create(sampleMovie);
     movieId = movie._id.toString();
-    const movie2 = await MovieModel.create({ ...sampleMovie, imdbId: 'tt9999999' });
+    const movie2 = await MovieModel.create({
+      ...sampleMovie,
+      imdbId: 'tt9999999',
+      tmdbId: 9999999,
+    });
     movieId2 = movie2._id.toString();
-    const movie3 = await MovieModel.create({ ...sampleMovie, imdbId: 'tt8888888' });
+    const movie3 = await MovieModel.create({
+      ...sampleMovie,
+      imdbId: 'tt8888888',
+      tmdbId: 8888888,
+    });
     movieId3 = movie3._id.toString();
-    const movie4 = await MovieModel.create({ ...sampleMovie, imdbId: 'tt7777777' });
+    const movie4 = await MovieModel.create({
+      ...sampleMovie,
+      imdbId: 'tt7777777',
+      tmdbId: 7777777,
+    });
     movieId4 = movie4._id.toString();
   });
 
