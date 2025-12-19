@@ -18,6 +18,16 @@ const torrentSchema = new Schema(
   { _id: false },
 );
 
+const castSchema = new Schema(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    character: { type: String, required: true },
+    profilePath: { type: String },
+  },
+  { _id: false },
+);
+
 const movieSchema = new Schema(
   {
     // Normalized Data (The generic UI data)
@@ -31,6 +41,7 @@ const movieSchema = new Schema(
     genres: [{ type: String }], // Array for filtering
     originalLanguage: { type: String, default: 'en' }, // Original language
     trailer: { type: String },
+    cast: { type: [castSchema], default: () => [] }, // Up to 6 main actors
 
     images: {
       thumbnail: { type: String }, // Medium image for lists
