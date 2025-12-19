@@ -31,7 +31,7 @@ export class CommentRepository {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit) || 1,
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
         hasNextPage: page * limit < total,
         hasPrevPage: page > 1,
       },
