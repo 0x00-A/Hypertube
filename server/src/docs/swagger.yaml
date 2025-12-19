@@ -895,6 +895,8 @@ paths:
       summary: Get a single movie by ID
       tags:
         - Movies
+      security:
+        - cookieAuth: []
       parameters:
         - in: path
           name: id
@@ -945,6 +947,8 @@ paths:
       summary: Search movies from external sources and database
       tags:
         - Movies
+      security:
+        - cookieAuth: []
       parameters:
         - in: query
           name: page
@@ -1181,6 +1185,8 @@ paths:
       summary: Get movie details by TMDB ID (fetches and stores if not local)
       tags:
         - Movies
+      security:
+        - cookieAuth: []
       parameters:
         - in: path
           name: tmdbId
