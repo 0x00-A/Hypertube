@@ -48,12 +48,13 @@ export const TmdbIdParamSchema = z.object({
   }),
 });
 
-export const tmdbIdBodySchema = z.object({
+export const TmdbIdBodySchema = z.object({
   body: z.object({
     tmdbId: z.number().int().min(1),
   }),
 });
 
+export const tmdbIdBodySchema = TmdbIdBodySchema;
 export const MovieSearchQuerySchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1)).default(1),
