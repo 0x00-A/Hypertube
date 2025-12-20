@@ -327,6 +327,41 @@ describe('Movie State Flags API (Optional Auth)', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.userRating).toBe(8);
     });
+
+    it('should add a movie to the user watchlist via POST /movies/watchlist/:tmdbId', async () => {
+      const { accessToken } = await createUserAndLogin();
+
+      const movie = await MovieModel.create({
+        imdbId: 'tt0137523',
+        tmdbId: 550,
+        title: 'Fight Club',
+        year: 1999,
+        images: { thumbnail: '', poster: '', backdrop: '' },
+        torrents: [],
+        downloadStatus: 'not_downloaded',
+        lastUpdated: new Date(),
+      });
+
+      const res = await request(app)
+        .post(`/api/v1/movies/watchlist/${movie.tmdbId}`)
+        .set('Cookie', [`accessToken=${accessToken}`])
+        .send();
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.interactionType).toBe('watchlist');
+      expect(res.body.data.movieId).toBe(movie._id.toString());
+
+      // Verify the movie is marked inWatchlist on subsequent fetch
+      const listRes = await request(app)
+        .get('/api/v1/movies')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+      expect(listRes.status).toBe(200);
+      const added = listRes.body.data.find(
+        (m: any) => m.tmdbId === movie.tmdbId || m.imdbId === movie.imdbId,
+      );
+      expect(added).toBeDefined();
+      expect(added.inWatchlist).toBe(true);
+    });
   });
 
   describe('Unauthenticated User - Default State Flags', () => {
