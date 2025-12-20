@@ -53,7 +53,7 @@ export class ScraperScheduler {
   private scheduleNightlyScrape(): void {
     this._cronTask = cron.schedule('0 3 * * *', async () => {
       logger.info('Cron Job: Starting nightly deep scrape...');
-      await this.safeScrape(1, 50);
+      await this.safeScrape(1, 5);
     });
 
     logger.info('Nightly scrape scheduled for 03:00 AM');

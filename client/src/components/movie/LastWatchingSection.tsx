@@ -131,7 +131,7 @@ export const LastWatchingSection = ({
     <div className={clsx('rounded-lg h-full flex flex-col', className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4 shrink-0">
-        <h2 className="text-white text-2xl font-bold">Last Watching</h2>
+        <h2 className="text-white text-2xl font-bold">Continue Watching</h2>
       </div>
 
       {/* Movie Cards */}
