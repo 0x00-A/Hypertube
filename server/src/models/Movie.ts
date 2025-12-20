@@ -62,6 +62,9 @@ const movieSchema = new Schema(
     localPath: { type: String, default: null }, // Path to the file on your server
     lastUpdated: { type: Date, default: Date.now }, // Last updated timestamp
     metadataSource: { type: String, default: 'tmdb' }, // Source of metadata
+    isWatched: { type: Boolean, default: false },
+    inWatchlist: { type: Boolean, default: false },
+    userRating: { type: Number, min: 1, max: 10, default: null },
   },
   { versionKey: false },
 );

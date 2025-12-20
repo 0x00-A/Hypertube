@@ -109,8 +109,8 @@ describe('Movie Search API', () => {
       .set('Cookie', [`accessToken=${accessToken}`])
       .query({ search: 'Shawshank', page: 1, limit: 10 });
     expect(res.status).toBe(200);
-    expect(res.body.data.data).toBeDefined();
-    expect(res.body.data.data[0].title).toBe('The Shawshank Redemption');
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data[0].title).toBe('The Shawshank Redemption');
   });
 
   it('should return empty array if no match', async () => {
@@ -120,6 +120,6 @@ describe('Movie Search API', () => {
       .set('Cookie', [`accessToken=${accessToken}`])
       .query({ search: 'Nonexistent', page: 1, limit: 10 });
     expect(res.status).toBe(200);
-    expect(res.body.data.data.length).toBe(0);
+    expect(res.body.data.length).toBe(0);
   });
 });

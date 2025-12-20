@@ -16,12 +16,26 @@ export interface ITmdbTrendingMovie {
   vote_count: number;
 }
 
-// TMDB Trending Response (paginated)
 export interface ITmdbTrendingResponse {
   page: number;
   results: ITmdbTrendingMovie[];
   total_results: number;
   total_pages: number;
+}
+
+export interface ITmdbListMovie {
+  tmdbId: number;
+  title: string;
+  year: number;
+  rating: string;
+  originalLanguage: string;
+  overview: string;
+  genres: string[];
+  images: {
+    thumbnail: string;
+    backdrop: string;
+  };
+  isLocal: boolean;
 }
 
 export interface ITorrent {
@@ -66,6 +80,10 @@ export interface IMovie {
   lastWatched?: Date;
   localPath?: string;
   lastUpdated: Date;
+  metadataSource?: string;
+  isWatched?: boolean;
+  inWatchlist?: boolean;
+  userRating?: number | null;
 }
 
 export interface IScrapedMovie {
@@ -96,3 +114,9 @@ export interface ICreateMovieDTO {
 }
 
 export interface IUpdateMovieDTO extends Partial<ICreateMovieDTO> {}
+
+export interface IMovieState {
+  isWatched: boolean;
+  inWatchlist: boolean;
+  userRating: number | null;
+}

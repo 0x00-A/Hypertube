@@ -99,7 +99,7 @@ process.on('SIGTERM', () => {
     const port = env.PORT;
     server = app.listen(port, () => logger.info({ port }, 'Server started'));
 
-    scheduler.init();
+    // scheduler.init();
   } catch (err) {
     logger.error({ err }, 'Startup failure');
     process.exit(1);
