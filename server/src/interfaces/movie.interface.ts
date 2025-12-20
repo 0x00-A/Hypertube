@@ -36,9 +36,17 @@ export interface ITorrent {
   sizeBytes: number;
   provider?: string;
 }
+
+export interface ICast {
+  id: number;
+  name: string;
+  character: string;
+  profilePath?: string;
+}
+
 export interface IMovie {
   imdbId: string;
-  tmdbId: number | null;
+  tmdbId: number;
   title: string;
   year: number;
   rating?: number | null | undefined;
@@ -47,6 +55,7 @@ export interface IMovie {
   genres?: string[];
   originalLanguage?: string;
   trailer?: string;
+  cast?: ICast[];
   images: {
     thumbnail: string;
     poster: string;
