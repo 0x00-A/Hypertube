@@ -3,14 +3,14 @@
 // ============================================================================
 
 export interface User {
-  id: string;
+  _id: string;
   username: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  avatar?: string;
+  avatarUrl?: string;
   createdAt: string;
-  updatedAt?: string;
+  isActive?: boolean;
 }
 
 // ============================================================================
@@ -58,8 +58,8 @@ export interface ChangePasswordData {
 // ============================================================================
 
 export interface AuthResponse {
-  user: User;
-  message?: string;
+  status: string;
+  message: string;
 }
 
 export interface MessageResponse {

@@ -7,3 +7,4 @@ export { LastWatchingCard, LastWatchingSection } from './LastWatchingSection';
 export { LastWatchingCarousel } from './LastWatchingCarousel';
 export { GenresSection } from './GenresSection';
 export { FilterBar } from './FilterBar';
+export { default as MoviePreviewModal } from './MoviePreviewModal';

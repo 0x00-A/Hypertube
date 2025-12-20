@@ -41,7 +41,8 @@ export const authService = {
    * Get current authenticated user
    */
   getCurrentUser: async (): Promise<User> => {
-    return httpClient.get<User>('/auth/me');
+    const response = await httpClient.get<{ status: string; data: { user: User } }>('/profile/me');
+    return response.data.user;
   },
 
   /**

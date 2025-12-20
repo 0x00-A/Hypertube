@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { User, UserPen } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
@@ -9,11 +9,11 @@ interface ProfileDropdownProps {
   onClose: () => void;
   userInitials: string;
   username?: string;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export default function ProfileDropdown({ isOpen, onClose, userInitials, username }: ProfileDropdownProps) {
+export default function ProfileDropdown({ isOpen, onClose, userInitials, username, triggerRef }: ProfileDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const logoutMutation = useLogout();
 
   // Close dropdown when clicking outside
@@ -21,21 +21,27 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+
+      // If clicking the trigger button, let the trigger handle the toggle
+      if (triggerRef.current && triggerRef.current.contains(target)) {
+        return;
+      }
+
+      // Don't close if clicking on a link inside the dropdown (let navigation happen)
+      // actually, we will handle closing on link click manually to be safe
+
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         onClose();
       }
     };
 
-    // Small delay to prevent immediate closing when clicking profile button
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 100);
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, triggerRef]);
 
   // Close on escape key
   useEffect(() => {
@@ -53,11 +59,12 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      // Close dropdown immediately to provide feedback
       onClose();
-      navigate('/browse');
+      await logoutMutation.mutateAsync();
       toast.success('Logged out successfully');
     } catch (error: unknown) {
+      console.error('Logout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to logout';
       toast.error(errorMessage);
     }
@@ -92,7 +99,7 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
         <Link
           to="/profile"
           onClick={onClose}
-          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white transition-colors"
+          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         >
           <User className="w-5 h-5" />
           <span>View profile</span>
@@ -101,7 +108,7 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
         <Link
           to="/user/edit"
           onClick={onClose}
-          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white transition-colors"
+          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         >
           <UserPen className="w-5 h-5" />
           <span>Edit Profile</span>

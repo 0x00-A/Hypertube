@@ -4,10 +4,12 @@ import { lastWatchingMovies } from '../../data/mockMovies';
 import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
 import { useMovies } from '../../hooks/useMovies';
 import { useFetchGenreMovies } from '../../hooks/useMovies';
+import { useAuthState } from '../../hooks/useAuth';
 
 export default function Browse() {
   const navigate = useNavigate();
-  
+  const { isAuthenticated } = useAuthState();
+
   // Fetch movies
   const { trending, recommended } = useMovies();
   const genreData = useFetchGenreMovies();
@@ -42,7 +44,7 @@ export default function Browse() {
 
   const handleViewAllGenres = () => {
     // Navigate to all-movies with the selected genre pre-applied
-    navigate(`/all-movies?genre=${genreData.selectedGenre}`);
+    navigate(`/movies?genre=${genreData.selectedGenre}`);
   };
 
   const handleGenreChange = (genre: string) => {
@@ -54,30 +56,34 @@ export default function Browse() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection
           heroMovies={heroMovies.length > 0 ? heroMovies : []}
-          lastWatchingList={lastWatchingMovies}
+          lastWatchingList={isAuthenticated ? lastWatchingMovies : []}
           onPlayClick={handlePlayClick}
           onViewAllLastWatching={handleViewAllLastWatching}
         />
 
-        <div className="mt-8 lg:mt-12 lg:hidden">
-          <LastWatchingCarousel
-            title="Continue Watching"
-            progressList={lastWatchingMovies}
-            onPlayClick={handlePlayClick}
-            onViewAll={handleViewAllLastWatching}
-          />
-        </div>
+        {isAuthenticated && (
+          <div className="mt-8 lg:mt-12 lg:hidden">
+            <LastWatchingCarousel
+              title="Continue Watching"
+              progressList={lastWatchingMovies}
+              onPlayClick={handlePlayClick}
+              onViewAll={handleViewAllLastWatching}
+            />
+          </div>
+        )}
 
-        <div className="mt-8 lg:mt-12">
-          <MovieCarousel
-            title="Recommended for You"
-            movies={recommended.recommended}
-            onMovieClick={handleMovieClick}
-            onWatchlistToggle={handleWatchlistToggle}
-            onViewAll={handleViewAllRecommended}
-            isLoading={recommended.isLoading}
-          />
-        </div>
+        {isAuthenticated && (
+          <div className="mt-8 lg:mt-12">
+            <MovieCarousel
+              title="Recommended for You"
+              movies={recommended.recommended}
+              onMovieClick={handleMovieClick}
+              onWatchlistToggle={handleWatchlistToggle}
+              onViewAll={handleViewAllRecommended}
+              isLoading={recommended.isLoading}
+            />
+          </div>
+        )}
 
         <div className="mt-8 lg:mt-12">
           <MovieCarousel
@@ -105,3 +111,5 @@ export default function Browse() {
     </div>
   );
 }
+
+

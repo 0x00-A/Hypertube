@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // This event is dispatched from http.ts on 401 errors
       dispatch(clearUser());
       queryClient.clear();
-      navigate('/auth/login');
+      // navigate('/auth/login');
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
