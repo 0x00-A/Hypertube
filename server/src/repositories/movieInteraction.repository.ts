@@ -29,6 +29,16 @@ export class MovieInteractionRepository {
     return await MovieInteractionModel.findOne({ userId, movieId, interactionType });
   }
 
+  async findByUserAndMovies(
+    userId: string,
+    movieIds: Types.ObjectId[],
+  ): Promise<IMovieInteractionDocument[]> {
+    return await MovieInteractionModel.find({
+      userId: new Types.ObjectId(userId),
+      movieId: { $in: movieIds },
+    });
+  }
+
   async upsertWatchProgress(
     userId: Types.ObjectId,
     movieId: Types.ObjectId,

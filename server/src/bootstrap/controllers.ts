@@ -26,9 +26,14 @@ export const createControllers = () => {
   const userRepository = new UserRepository();
   const passwordService = new PasswordService();
 
+  // MovieInteraction dependencies
+  const movieInteractionRepository = new MovieInteractionRepository();
+  const movieInteractionService = new MovieInteractionService(movieInteractionRepository);
+  const movieInteractionController = new MovieInteractionController(movieInteractionService);
+
   // Movie dependencies
   const movieRepository = new MovieRepository();
-  const movieService = new MovieService(movieRepository, scraperEngine);
+  const movieService = new MovieService(movieRepository, scraperEngine, movieInteractionRepository);
   const movieController = new MovieController(movieService);
 
   // Auth dependencies
@@ -42,11 +47,6 @@ export const createControllers = () => {
   const oauthService = new OAuthService(userRepository, passwordService);
   const oauthController = new OAuthController(jwtService);
 
-  // MovieInteraction dependencies
-  const movieInteractionRepository = new MovieInteractionRepository();
-  const movieInteractionService = new MovieInteractionService(movieInteractionRepository);
-  const movieInteractionController = new MovieInteractionController(movieInteractionService);
-
   // Configure Passport with injected dependencies
   configurePassport(oauthService);
 
@@ -56,13 +56,7 @@ export const createControllers = () => {
 
   // comments dependencies
   const commentRepository = new CommentRepository();
-  const movieRepositoryForComments = new MovieRepository();
-  const movieServiceForComments = new MovieService(movieRepositoryForComments, scraperEngine);
-  const commentService = new CommentService(
-    commentRepository,
-    movieRepositoryForComments,
-    movieServiceForComments,
-  );
+  const commentService = new CommentService(commentRepository, movieRepository, movieService);
   const commentController = new CommentController(commentService);
 
   return {

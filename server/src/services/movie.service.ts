@@ -1,44 +1,74 @@
 import { MovieRepository } from '../repositories/movie.repository';
-import { IPaginationOptions, MovieFilterOptions } from '../core/interfaces/IPagination';
+import {
+  IPaginatedResponse,
+  IPaginationOptions,
+  MovieFilterOptions,
+} from '../core/interfaces/IPagination';
 import { logger } from '../utils/logger';
 import { ScraperEngine } from './scraper/ScraperEngine';
-import { IMovie, ITmdbTrendingMovie, ITmdbTrendingResponse } from '../interfaces/movie.interface';
+import {
+  IMovie,
+  IMovieState,
+  ITmdbListMovie,
+  ITmdbTrendingMovie,
+  ITmdbTrendingResponse,
+} from '../interfaces/movie.interface';
 import { getImdbIdFromTmdbId, getMetadata } from './metadata/tmdb';
 import { getYtsMovieDetailsByImdbId } from './metadata/yts';
 import axios from 'axios';
 import { env } from '../config/env';
-import { BadGatewayError } from '../core/errors/customErrors';
+import { BadGatewayError, NotFoundError } from '../core/errors/customErrors';
 import { getGenreNames } from '../utils/genres';
+import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
+import { Types } from 'mongoose';
 
 export class MovieService {
   private _movieRepository: MovieRepository;
   private _scraperEngine: ScraperEngine;
+  private _movieInteractionRepository: MovieInteractionRepository;
 
-  constructor(movieRepository: MovieRepository, scraperEngine: ScraperEngine) {
+  constructor(
+    movieRepository: MovieRepository,
+    scraperEngine: ScraperEngine,
+    movieInteractionRepository: MovieInteractionRepository,
+  ) {
     this._movieRepository = movieRepository;
     this._scraperEngine = scraperEngine;
+    this._movieInteractionRepository = movieInteractionRepository;
   }
 
-  async list(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions = {}) {
-    return this._movieRepository.findAll(paginationOptions, filterOptions);
+  async list(
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions = {},
+    userId?: string | undefined,
+  ) {
+    const result = await this._movieRepository.findAll(paginationOptions, filterOptions);
+
+    result.data = (await this.addUserMovieState(userId, result.data, true)) as IMovie[];
+
+    return result;
   }
 
-  async get(id: string): Promise<IMovie | null> {
+  async get(id: string, userId?: string | undefined): Promise<IMovie | null> {
     const movie = await this._movieRepository.findById(id);
-    return movie?.toObject();
+
+    return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
   }
 
-  async getByTmdbId(tmdbId: number): Promise<IMovie | null> {
+  async getByTmdbId(tmdbId: number, userId?: string | undefined): Promise<IMovie | null> {
     let movie = await this._movieRepository.findByTmdbId(tmdbId);
     if (!movie) {
       await this.completeMovieData(tmdbId);
       movie = await this._movieRepository.findByTmdbId(tmdbId);
     }
 
-    return movie?.toObject();
+    return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
   }
 
-  async getTrending(paginationOptions: Partial<IPaginationOptions>) {
+  async getTrending(
+    paginationOptions: Partial<IPaginationOptions>,
+    userId?: string | undefined,
+  ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
       const trendingUrl = `${env.TMDB_BASE_API_URL}/trending/movie/week`;
       const results = await axios.get<ITmdbTrendingResponse>(trendingUrl, {
@@ -51,10 +81,7 @@ export class MovieService {
         },
       });
 
-      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
-
-      logger.info(`[MovieService] Fetched and normalized trending movies from TMDB API.`);
-      logger.debug(`[MovieService] Trending movies data: ${JSON.stringify(normalized)}`);
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
       return {
         data: normalized,
@@ -75,7 +102,10 @@ export class MovieService {
     }
   }
 
-  async getRecommended(paginationOptions: Partial<IPaginationOptions>, _userId: string) {
+  async getRecommended(
+    paginationOptions: Partial<IPaginationOptions>,
+    userId: string,
+  ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
       // Temporary hardcoded recommended movies until user preferences are implemented
       const hardcodedTmdbIds = [
@@ -99,10 +129,7 @@ export class MovieService {
         },
       });
 
-      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
-
-      logger.info(`[MovieService] Fetched and normalized recommended movies from TMDB API.`);
-      logger.debug(`[MovieService] Recommended movies data: ${JSON.stringify(normalized)}`);
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
       return {
         data: normalized,
@@ -123,7 +150,10 @@ export class MovieService {
     }
   }
 
-  async getPopular(paginationOptions: Partial<IPaginationOptions>) {
+  async getPopular(
+    paginationOptions: Partial<IPaginationOptions>,
+    userId?: string | undefined,
+  ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
       const popularUrl = `${env.TMDB_BASE_API_URL}/movie/popular`;
       const results = await axios.get<ITmdbTrendingResponse>(popularUrl, {
@@ -135,10 +165,9 @@ export class MovieService {
           language: 'en-US',
         },
       });
-      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results);
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
       logger.info(`[MovieService] Fetched and normalized popular movies from TMDB API.`);
-      logger.debug(`[MovieService] Popular movies data: ${JSON.stringify(normalized)}`);
       return {
         data: normalized,
         pagination: {
@@ -158,6 +187,18 @@ export class MovieService {
     }
   }
 
+  async addToWatchlist(userId: Types.ObjectId, tmdbId: number) {
+    let movie = await this._movieRepository.findByTmdbId(tmdbId);
+    if (!movie) {
+      await this.completeMovieData(tmdbId);
+
+      movie = await this._movieRepository.findByTmdbId(tmdbId);
+      if (!movie) throw new NotFoundError('Movie not found');
+    }
+    const interaction = await this._movieInteractionRepository.addToWatchlist(userId, movie._id);
+    return interaction.toObject();
+  }
+
   async completeMovieData(tmdbId: number) {
     try {
       const imdbId = await getImdbIdFromTmdbId(tmdbId);
@@ -166,15 +207,9 @@ export class MovieService {
         return null;
       }
 
-      // In case movie metadata is from OMDB so it exists but it doesnt have imdbId
+      // If movie already exists, return it (avoid extra network calls and double-creation)
       const movieExists = await this._movieRepository.findByImdbId(imdbId);
-      if (movieExists) {
-        logger.info(
-          `[MovieService] Movie with IMDb ID "${imdbId}" already exists in database. Skipping completion.`,
-        );
-        await movieExists.save();
-        return movieExists.toObject();
-      }
+      if (movieExists) return movieExists.toObject();
 
       let metadata = await getMetadata(imdbId);
       if (!metadata) {
@@ -189,7 +224,7 @@ export class MovieService {
         logger.debug({ ytsMovieDetails }, 'YTS full response');
       }
 
-      const movieData: Partial<IMovie> = {
+      const movieData: IMovie = {
         imdbId,
         tmdbId,
         title: metadata.title,
@@ -200,6 +235,7 @@ export class MovieService {
         genres: metadata.genres || [],
         originalLanguage: metadata.originalLanguage,
         trailer: metadata.trailer,
+        cast: metadata.cast || [],
         images: metadata.images,
         torrents: ytsMovieDetails?.torrents
           ? ytsMovieDetails.torrents.map((t) => ({
@@ -244,7 +280,11 @@ export class MovieService {
     return this._movieRepository.findAll(paginationOptions, filterOptions);
   }
 
-  async searchExternal(paginationOptions: IPaginationOptions, filterOptions: MovieFilterOptions) {
+  async searchExternal(
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+    userId: string | undefined,
+  ) {
     let results = await this.searchDatabase(paginationOptions, filterOptions);
 
     if (results.data) {
@@ -265,27 +305,98 @@ export class MovieService {
       }
     }
 
+    results.data = (await this.addUserMovieState(userId, results.data, true)) as IMovie[];
+
     return results;
   }
 
-  private async normalizeTmdbMoviesWithLocalData(tmdbMovies: ITmdbTrendingMovie[]) {
+  private async normalizeTmdbMoviesWithLocalData(
+    tmdbMovies: ITmdbTrendingMovie[],
+    userId?: string | undefined,
+  ): Promise<ITmdbListMovie[]> {
     const tmdbIds = tmdbMovies.map((m) => m.id);
     const localMovies = await this._movieRepository.findByTmdbIds(tmdbIds);
+    const localMoviesWithState = await this.addUserMovieState(
+      userId,
+      localMovies.map((m) => m.toObject()),
+      true,
+    );
+
     const localTmdbIds = new Set(localMovies.map((m) => m.tmdbId));
 
-    return tmdbMovies.map((m: ITmdbTrendingMovie) => ({
-      tmdbId: m.id,
-      title: m.title,
-      year: m.release_date ? parseInt(m.release_date.split('-')[0]) : 0,
-      rating: m.vote_average.toFixed(1),
-      originalLanguage: m.original_language,
-      overview: m.overview,
-      genres: getGenreNames(m.genre_ids),
-      images: {
-        thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
-        backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
-      },
-      isLocal: localTmdbIds.has(m.id),
-    }));
+    return tmdbMovies.map((m: ITmdbTrendingMovie) => {
+      const isLocal = localTmdbIds.has(m.id);
+      let localMovie = {};
+
+      if (isLocal) {
+        localMovie = (localMoviesWithState as IMovie[]).find((lm) => lm.tmdbId === m.id) as IMovie;
+      }
+
+      return {
+        tmdbId: m.id,
+        title: m.title,
+        year: m.release_date ? parseInt(m.release_date.split('-')[0]) : 0,
+        rating: m.vote_average.toFixed(1),
+        originalLanguage: m.original_language,
+        overview: m.overview,
+        genres: getGenreNames(m.genre_ids),
+        images: {
+          thumbnail: m.poster_path ? `${env.TMDB_IMAGE_BASE_URL}/w200${m.poster_path}` : '',
+          backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
+        },
+        isLocal,
+        inWatchlist: isLocal ? (localMovie as IMovie).inWatchlist : false,
+        isWatched: isLocal ? (localMovie as IMovie).isWatched : false,
+        userRating: isLocal ? (localMovie as IMovie).userRating : null,
+      };
+    });
+  }
+
+  private async addUserMovieState(
+    userId: string | undefined,
+    movies: IMovie | IMovie[] | undefined,
+    isArray: boolean = false,
+  ): Promise<IMovie | IMovie[] | undefined> {
+    if (!userId || !movies) return movies;
+
+    const moviesArray: IMovie[] = isArray ? (movies as IMovie[]) : [movies as IMovie];
+
+    if (moviesArray.length === 0) return movies;
+
+    const movieIds = moviesArray.map((movie) => (movie as any)._id);
+
+    const userMoviesInteractions = await this._movieInteractionRepository.findByUserAndMovies(
+      userId,
+      movieIds,
+    );
+
+    const interactionMap = new Map<string, IMovieState>();
+
+    for (const it of userMoviesInteractions) {
+      const state = interactionMap.get(it.movieId.toString()) ?? {
+        isWatched: false,
+        inWatchlist: false,
+        userRating: null,
+      };
+
+      if (it.interactionType === 'watchlist') state.inWatchlist = true;
+      if (it.interactionType === 'watched' && it.isCompleted) state.isWatched = true;
+      if (it.interactionType === 'rated' && it.rating) state.userRating = it.rating;
+
+      interactionMap.set(it.movieId.toString(), state);
+    }
+
+    const mapped: IMovie[] = moviesArray.map((movie: IMovie) => {
+      const interaction = interactionMap.get((movie as any)._id.toString());
+
+      return {
+        ...movie,
+        isWatched: interaction?.isWatched ?? false,
+        inWatchlist: interaction?.inWatchlist ?? false,
+        userRating: interaction?.userRating ?? null,
+      };
+    });
+
+    return isArray ? mapped : mapped[0];
   }
 }

@@ -8,45 +8,65 @@ import {
   TmdbIdParamSchema,
   MoviePageQuerySchema,
 } from '../../validators/movie.schema';
-import { auth } from '../../middleware/auth';
+import { auth, optionalAuth } from '../../middleware/auth';
 
 export const createMovieRouter = (movieController: MovieController): Router => {
   const router = Router();
 
-  router.get('/', validate(MovieListQuerySchema), movieController.listMovies.bind(movieController));
+  router.get(
+    '/',
+    optionalAuth,
+    validate(MovieListQuerySchema),
+    movieController.listMovies.bind(movieController),
+  );
 
   router.get(
     '/trending',
+    optionalAuth,
     validate(MoviePageQuerySchema),
     movieController.getTrendingMovies.bind(movieController),
   );
 
   router.get(
     '/popular',
+    optionalAuth,
     validate(MoviePageQuerySchema),
     movieController.getPopularMovies.bind(movieController),
   );
 
-  router.use(auth);
-
   router.get(
     '/search',
+    optionalAuth,
     validate(MovieSearchQuerySchema),
     movieController.searchExternalMovies.bind(movieController),
   );
 
   router.get(
+    '/tmdb/:tmdbId',
+    optionalAuth,
+    validate(TmdbIdParamSchema),
+    movieController.getMovieByTmdbId.bind(movieController),
+  );
+
+  router.get(
     '/recommended',
+    auth,
     validate(MoviePageQuerySchema),
     movieController.getRecommendedMovies.bind(movieController),
   );
 
-  router.get('/:id', validate(MovieIdParamSchema), movieController.getMovie.bind(movieController));
+  router.post(
+    '/watchlist/:tmdbId',
+    auth,
+    validate(TmdbIdParamSchema),
+    movieController.addToWatchlist.bind(movieController),
+  );
 
   router.get(
-    '/tmdb/:tmdbId',
-    validate(TmdbIdParamSchema),
-    movieController.getMovieByTmdbId.bind(movieController),
+    '/:id',
+    optionalAuth,
+    validate(MovieIdParamSchema),
+    movieController.getMovie.bind(movieController),
   );
 
   return router;

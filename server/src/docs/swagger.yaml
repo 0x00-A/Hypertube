@@ -706,8 +706,16 @@ paths:
   /api/v1/movies:
     get:
       summary: List movies with pagination and filters
+      description: |
+        Returns a paginated list of movies with optional filters. Supports **optional authentication** via cookies.
+
+        - **Authenticated users**: Each movie includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
+        - **Unauthenticated users**: Movies include these fields with default values (`false`, `null`).
       tags:
         - Movies
+      security:
+        - cookieAuth: []
+        - {}
       parameters:
         - in: query
           name: page
@@ -893,10 +901,16 @@ paths:
   /api/v1/movies/{id}:
     get:
       summary: Get a single movie by ID
+      description: |
+        Returns a single movie by its MongoDB ObjectId. Supports **optional authentication**.
+
+        - **Authenticated users**: Includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
+        - **Unauthenticated users**: Includes these fields with default values (`false`, `null`).
       tags:
         - Movies
       security:
         - cookieAuth: []
+        - {}
       parameters:
         - in: path
           name: id
@@ -945,10 +959,14 @@ paths:
   /api/v1/movies/search:
     get:
       summary: Search movies from external sources and database
+      description: |
+        Searches movies in the local database first. If fewer than 10 results are found, scrapes external sources.
+        Supports **optional authentication** - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
+        - {}
       parameters:
         - in: query
           name: page
@@ -1109,8 +1127,14 @@ paths:
   /api/v1/movies/trending:
     get:
       summary: Get trending movies from TMDB (external)
+      description: |
+        Fetches weekly trending movies from TMDB and enriches local movies with user state flags.
+        Supports **optional authentication** - authenticated users see personalized flags for local movies.
       tags:
         - Movies
+      security:
+        - cookieAuth: []
+        - {}
       parameters:
         - in: query
           name: page
@@ -1183,10 +1207,14 @@ paths:
   /api/v1/movies/tmdb/{tmdbId}:
     get:
       summary: Get movie details by TMDB ID (fetches and stores if not local)
+      description: |
+        Fetches a movie by TMDB ID. If not in local database, fetches metadata and creates it.
+        Supports **optional authentication** - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
+        - {}
       parameters:
         - in: path
           name: tmdbId
@@ -1301,11 +1329,69 @@ paths:
                 message: Failed to fetch recommended movies from TMDB.
                 path: /api/v1/movies/recommended
 
+  /api/v1/movies/watchlist/{tmdbId}:
+    post:
+      summary: Add a movie (by TMDb ID) to the authenticated user's watchlist
+      description: |
+        Adds the movie identified by `tmdbId` to the current user's watchlist. Requires authentication.
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+          description: TMDB movie ID
+      responses:
+        '201':
+          description: Movie added to watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Movie added to watchlist.
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized, No access token provided
+        '404':
+          description: Movie not found (TMDb ID not present and cannot be created)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/movies/popular:
     get:
       summary: Get popular movies from TMDB (external)
+      description: |
+        Fetches popular movies from TMDB and enriches local movies with user state flags.
+        Supports **optional authentication** - authenticated users see personalized flags for local movies.
       tags:
         - Movies
+      security:
+        - cookieAuth: []
+        - {}
       parameters:
         - in: query
           name: page
@@ -1492,6 +1578,27 @@ components:
           format: date-time
           description: Last update timestamp
           example: 2025-12-08T10:00:00Z
+        isWatched:
+          type: boolean
+          description: |
+            Whether the authenticated user has completed watching this movie (watch progress >= 90%).
+            Always `false` for unauthenticated users.
+          example: false
+        inWatchlist:
+          type: boolean
+          description: |
+            Whether the authenticated user has added this movie to their watchlist.
+            Always `false` for unauthenticated users.
+          example: false
+        userRating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: |
+            The authenticated user's rating for this movie (1-10 scale).
+            Always `null` for unauthenticated users or if the user hasn't rated the movie.
+          example: null
 
     Torrent:
       type: object
@@ -1629,6 +1736,98 @@ components:
           type: boolean
           description: Whether the movie is present in the local database
           example: false
+        isWatched:
+          type: boolean
+          description: |
+            Whether the authenticated user has completed watching this movie.
+            Only present when `isLocal` is `true`. Always `false` for unauthenticated users.
+          example: false
+        inWatchlist:
+          type: boolean
+          description: |
+            Whether the authenticated user has added this movie to their watchlist.
+            Only present when `isLocal` is `true`. Always `false` for unauthenticated users.
+          example: false
+        userRating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: |
+            The authenticated user's rating for this movie (1-10 scale).
+            Only present when `isLocal` is `true`. Always `null` for unauthenticated users.
+          example: null
+
+    MovieInteraction:
+      type: object
+      required:
+        - _id
+        - userId
+        - movieId
+        - interactionType
+      properties:
+        _id:
+          type: string
+          example: '507f1f77bcf86cd799439011'
+        userId:
+          type: string
+          description: MongoDB ObjectId of the user
+          example: '507f1f77bcf86cd799439011'
+        movieId:
+          type: string
+          description: MongoDB ObjectId of the movie
+          example: '507f1f77bcf86cd799439022'
+        interactionType:
+          type: string
+          enum: [watched, rated, watchlist, downloaded]
+          example: watchlist
+        lastWatchedPosition:
+          type: number
+          description: Last watched position in seconds
+          example: 3600
+        duration:
+          type: number
+          description: Movie duration in seconds
+          example: 7200
+        watchProgress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Percentage watched
+          example: 100
+        isCompleted:
+          type: boolean
+          description: Whether the watch progress indicates completion
+          example: true
+        rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Rating given by the user
+          example: 9
+        watchedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the movie was last watched
+          example: 2025-12-01T12:00:00Z
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the movie was completed
+          example: 2025-12-01T13:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: Document creation timestamp
+          example: 2025-12-01T12:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Document update timestamp
+          example: 2025-12-01T12:30:00Z
 
     ErrorResponse:
       type: object
@@ -1693,8 +1892,13 @@ components:
           example: 2024-05-01T12:34:56.789Z
 
   securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+      description: JWT access token stored in httpOnly cookie (set after login or OAuth callback)
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT access token from login or OAuth callback
+      description: JWT access token from login or OAuth callback (alternative to cookie auth)
