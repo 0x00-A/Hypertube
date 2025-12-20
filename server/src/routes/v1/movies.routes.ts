@@ -50,14 +50,6 @@ export const createMovieRouter = (movieController: MovieController): Router => {
   );
 
   router.get(
-    '/:id',
-    optionalAuth,
-    validate(MovieIdParamSchema),
-    movieController.getMovie.bind(movieController),
-  );
-
-  // Protected routes (auth required)
-  router.get(
     '/recommended',
     auth,
     validate(MoviePageQuerySchema),
@@ -69,6 +61,13 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     auth,
     validate(TmdbIdParamSchema),
     movieController.addToWatchlist.bind(movieController),
+  );
+
+  router.get(
+    '/:id',
+    optionalAuth,
+    validate(MovieIdParamSchema),
+    movieController.getMovie.bind(movieController),
   );
 
   return router;
