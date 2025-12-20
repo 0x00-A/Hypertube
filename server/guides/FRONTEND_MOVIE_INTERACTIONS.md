@@ -4,13 +4,113 @@ This guide explains how to implement the MovieInteraction features on the fronte
 
 ## Table of Contents
 
-1. [API Service Setup](#api-service-setup)
-2. [Watch Progress Tracking](#watch-progress-tracking)
-3. [Rating System](#rating-system)
-4. [Watchlist Management](#watchlist-management)
-5. [History & Continue Watching](#history--continue-watching)
-6. [React Hooks](#react-hooks)
-7. [Complete Examples](#complete-examples)
+1. [Movie State Flags (Optional Auth)](#movie-state-flags-optional-auth)
+2. [API Service Setup](#api-service-setup)
+3. [Watch Progress Tracking](#watch-progress-tracking)
+4. [Rating System](#rating-system)
+5. [Watchlist Management](#watchlist-management)
+6. [History & Continue Watching](#history--continue-watching)
+7. [React Hooks](#react-hooks)
+8. [Complete Examples](#complete-examples)
+
+---
+
+## Movie State Flags (Optional Auth)
+
+### Overview
+
+Most movie list endpoints (`GET /api/v1/movies`, `GET /api/v1/movies/trending`, `GET /api/v1/movies/popular`, `GET /api/v1/movies/search`) support **optional authentication**. This means:
+
+- **Authenticated users**: Movie objects include `isWatched`, `inWatchlist`, and `userRating` fields based on their interaction history.
+- **Unauthenticated users**: Movie objects still include these fields but with default values (`false` for booleans, `null` for rating).
+
+### Movie Response Shape
+
+```typescript
+interface MovieResponse {
+  _id: string;
+  imdbId: string;
+  tmdbId: number;
+  title: string;
+  year: number;
+  rating?: number;
+  synopsis?: string;
+  genres?: string[];
+  images: {
+    thumbnail: string;
+    poster: string;
+    backdrop: string;
+  };
+  torrents: ITorrent[];
+  // State flags (populated when user is authenticated)
+  isWatched?: boolean; // true if user completed watching
+  inWatchlist?: boolean; // true if user added to watchlist
+  userRating?: number | null; // user's rating (1-10) or null
+  // ... other fields
+}
+```
+
+### Frontend Usage
+
+```typescript
+// Example: Rendering a movie thumbnail with state indicators
+const MovieThumbnail = ({ movie }: { movie: MovieResponse }) => {
+  return (
+    <div className="movie-card">
+      <img src={movie.images.thumbnail} alt={movie.title} />
+
+      {/* Show badges based on state */}
+      {movie.isWatched && (
+        <span className="badge watched">✓ Watched</span>
+      )}
+
+      {movie.inWatchlist && (
+        <span className="badge watchlist">★ In Watchlist</span>
+      )}
+
+      {movie.userRating && (
+        <span className="badge rating">⭐ {movie.userRating}/10</span>
+      )}
+
+      <h3>{movie.title}</h3>
+    </div>
+  );
+};
+```
+
+### Endpoints Supporting Optional Auth
+
+| Endpoint                      | Method | Auth     | Returns State Flags |
+| ----------------------------- | ------ | -------- | ------------------- |
+| `/api/v1/movies`              | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/trending`     | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/popular`      | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/search`       | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/:id`          | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/tmdb/:tmdbId` | GET    | Optional | ✅ Yes              |
+| `/api/v1/movies/recommended`  | GET    | Required | ✅ Yes              |
+
+### How It Works (Backend)
+
+1. The `optionalAuth` middleware checks for an access token:
+   - If present and valid → attaches `req.user` to the request
+   - If missing or invalid → continues without `req.user`
+
+2. The `MovieService` checks if `userId` is provided:
+   - If yes → queries `MovieInteractionRepository` for user's interactions
+   - Maps `isWatched`, `inWatchlist`, `userRating` to each movie
+   - If no → returns movies with default values (`false`, `null`)
+
+3. Frontend can always rely on these fields existing (no need for optional chaining beyond the initial `?`).
+
+### Best Practices
+
+✅ **DO**: Use state flags to differentiate thumbnails (e.g., add overlay, badge, or icon)
+✅ **DO**: Show different CTAs based on state (`Continue Watching` vs `Watch Now`)
+✅ **DO**: Handle both authenticated and unauthenticated states gracefully
+
+❌ **DON'T**: Assume fields are missing (they're always present, just with default values)
+❌ **DON'T**: Make additional API calls to check watch status (use the flags provided)
 
 ---
 
