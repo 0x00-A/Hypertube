@@ -207,6 +207,10 @@ export class MovieService {
         return null;
       }
 
+      // If movie already exists, return it (avoid extra network calls and double-creation)
+      const movieExists = await this._movieRepository.findByImdbId(imdbId);
+      if (movieExists) return movieExists.toObject();
+
       let metadata = await getMetadata(imdbId);
       if (!metadata) {
         logger.error(`[MovieService] TMDB metadata not found for IMDb ID "${imdbId}".`);
