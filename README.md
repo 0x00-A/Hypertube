@@ -11,6 +11,7 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 * **Multiple Strategies:** Secure login via username/password and OAuth 2.0 (42 School, Google).
 * **Email Verification:** New users must verify their email address before logging in. Automated verification emails with secure tokens.
 * **Password Reset:** Secure password reset flow with email verification and single-use tokens that expire after 24 hours.
+* **Rate Limiting:** Password reset requests limited to 3 per hour per email address to prevent abuse and email bombing attacks.
 * **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management. OAuth users are automatically verified.
 * **Security First:** Passwords are hashed with Argon2 (never plain text), JWT tokens in httpOnly cookies, and all forms are protected against SQL injections and XSS attacks.
 * **Profile Management:** Users can edit profiles, upload avatars, and view other user profiles while maintaining email privacy.
@@ -135,14 +136,16 @@ cd server && npm test -- --testPathPattern=auth.test.ts
 ```
 
 ### Test Coverage
-- **Authentication Tests:** 83 integration tests
+- **Authentication Tests:** 88 integration tests
   - Signup validation, security, and error handling
   - Login authentication, JWT cookies, and session management
   - Email verification with token validation and edge cases
   - Token refresh and protected route middleware
-  - Password reset request and token validation
+  - Password reset request and token validation (including OAuth user scenarios and rate limiting)
   - Password reset security and edge cases
   - Email verification and password reset interaction tests (token separation)
+  - OAuth password reset protection (isPasswordSet flag validation)
+  - Rate limiting enforcement and email-based throttling
 - **OAuth Tests:** 14 integration tests
   - Google and 42 OAuth flows
   - Account creation and linking

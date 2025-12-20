@@ -31,7 +31,7 @@ export class AuthService {
       email: userData.email,
       password: hashedPassword,
     });
-    await this._emailService.createVerificationEmail(user, 'verification');
+    await this._emailService.createEmailToken(user, 'verification');
     return true;
   }
 
@@ -81,9 +81,9 @@ export class AuthService {
     const user = await this._userRepo.findByEmail(email);
     if (user) {
       if (user.oauth && !user.oauth.isPasswordSet) {
-        throw new ConflictError(`Password reset not available for ${user.oauth.provider} accounts`);
+        throw new ConflictError(`Password reset is not available for ${user.oauth.provider} accounts`);
       }
-      await this._emailService.createVerificationEmail(user, 'password_reset');
+      await this._emailService.createEmailToken(user, 'password_reset');
     }
   }
 
@@ -98,6 +98,9 @@ export class AuthService {
     }
     const hashedPassword = await this._passwordService.hashPassword(newPassword);
     await this._userRepo.update(user._id!, { password: hashedPassword });
+    // TODO[SECURITY]: Invalidate all existing refresh tokens for this user after password reset
+    // once the refresh token storage/blacklisting mechanism is available, to ensure old sessions
+    // cannot continue using previously issued tokens.
     await this._emailService.deleteVerificationToken(verification.token);
   }
 }

@@ -47,6 +47,8 @@
   - GET /api/v1/oauth/google/callback - Handle Google OAuth callback
   - GET /api/v1/oauth/42 - Initiate 42 OAuth
   - GET /api/v1/oauth/42/callback - Handle 42 OAuth callback
+  - Password reset protection: OAuth users without explicit password (isPasswordSet=false) cannot reset randomly generated passwords
+  - Smart OAuth linking: when linking OAuth to existing user with password, isPasswordSet=true allows password reset
 - Comprehensive OAuth integration tests (14 tests)
   - OAuth route redirect tests for Google and 42
   - User creation with OAuth providers
@@ -101,5 +103,9 @@
 - Input sanitization (whitespace trimming)
 - Generic error messages to prevent user enumeration
 - Password never exposed in API responses
+- Rate limiting on password reset endpoint (3 requests per hour per email address)
+  - Prevents email bombing attacks where attackers spam password reset requests
+  - Email-based rate limiting (not IP-based) for accurate protection
+  - Consistent error responses to prevent timing attacks
 
 ## [0.1.0] - 2025-09-15

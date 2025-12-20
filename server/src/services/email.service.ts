@@ -23,7 +23,7 @@ export class EmailService {
     this._verificationEmailRepo = verificationEmailRepo;
   }
 
-  async createVerificationEmail(user: Partial<IUser>, type: 'verification' | 'password_reset'): Promise<void> {
+  async createEmailToken(user: Partial<IUser>, type: 'verification' | 'password_reset'): Promise<void> {
     const token = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
