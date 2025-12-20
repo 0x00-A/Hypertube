@@ -911,6 +911,169 @@ describe('Auth Signup Integration Tests', () => {
       // Tokens should be different
       expect(secondTokenValue).not.toBe(firstTokenValue);
     });
+
+    it('should enforce rate limit after 3 password reset requests per email', async () => {
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      // Make 3 requests (should all succeed)
+      for (let i = 0; i < 3; i++) {
+        const res = await request(app)
+          .post('/api/v1/auth/request-password-reset')
+          .send({ email: validUserData.email });
+
+        expect(res.status).toBe(200);
+      }
+
+      // 4th request should be rate limited
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      expect(res.status).toBe(429);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: expect.stringContaining('Too many password reset requests'),
+      });
+    });
+
+    it('should rate limit per email address, not globally', async () => {
+      const user1Data = generateUniqueUserData();
+      const user2Data = generateUniqueUserData();
+      await createActiveUser(user1Data);
+      await createActiveUser(user2Data);
+
+      // Make 3 requests for user1
+      for (let i = 0; i < 3; i++) {
+        const res = await request(app)
+          .post('/api/v1/auth/request-password-reset')
+          .send({ email: user1Data.email });
+        expect(res.status).toBe(200);
+      }
+
+      // user1's 4th request should be rate limited
+      const user1Res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: user1Data.email });
+      expect(user1Res.status).toBe(429);
+
+      // But user2 should still be able to make requests
+      const user2Res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: user2Data.email });
+      expect(user2Res.status).toBe(200);
+    });
+
+    it('should return 409 for OAuth user without password set (isPasswordSet=false)', async () => {
+      // Create OAuth user with randomly generated password
+      const crypto = await import('crypto');
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await (await import('../../src/services/password.service')).PasswordService.prototype.hashPassword.call(
+        { argon2: require('argon2') },
+        randomPassword
+      );
+
+      const oauthUser = await UserModel.create({
+        username: `oauth_user_${Date.now()}`,
+        email: `oauth_${Date.now()}@example.com`,
+        firstName: 'OAuth',
+        lastName: 'User',
+        password: hashedPassword,
+        isActive: true,
+        oauth: {
+          provider: 'google',
+          id: 'google123',
+          isPasswordSet: false, // OAuth user never set password
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: oauthUser.email });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: expect.stringContaining('Password reset is not available'),
+      });
+
+      // Verify no reset token was created
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+      const resetToken = await VerificationEmailModel.findOne({ userId: oauthUser._id, type: 'password_reset' });
+      expect(resetToken).toBeNull();
+    });
+
+    it('should allow password reset for OAuth user with password set (isPasswordSet=true)', async () => {
+      // Create OAuth user who has explicitly set a password
+      const userPassword = 'SecurePass123!';
+      const hashedPassword = await (await import('../../src/services/password.service')).PasswordService.prototype.hashPassword.call(
+        { argon2: require('argon2') },
+        userPassword
+      );
+
+      const oauthUser = await UserModel.create({
+        username: `oauth_pwset_${Date.now()}`,
+        email: `oauth_pwset_${Date.now()}@example.com`,
+        firstName: 'OAuth',
+        lastName: 'WithPassword',
+        password: hashedPassword,
+        isActive: true,
+        oauth: {
+          provider: 'google',
+          id: 'google456',
+          isPasswordSet: true, // User explicitly set password
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: oauthUser.email });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password reset email sent if the email exists in our system',
+      });
+
+      // Verify reset token was created
+      const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+      const resetToken = await VerificationEmailModel.findOne({ userId: oauthUser._id, type: 'password_reset' });
+      expect(resetToken).toBeTruthy();
+    });
+
+    it('should set isPasswordSet=true when linking OAuth to existing user with password', async () => {
+      // Create regular user with password
+      const validUserData = generateUniqueUserData();
+      await createActiveUser(validUserData);
+
+      const user = await UserModel.findOne({ email: validUserData.email }).select('+oauth');
+      expect(user).toBeTruthy();
+      expect(user?.oauth).toBeUndefined();
+
+      // Simulate OAuth linking (as done in OAuthService)
+      const { UserRepository } = await import('../../src/repositories/user.repository');
+      const userRepo = new UserRepository();
+      const linkedUser = await userRepo.linkOAuthAccount(user!._id!.toString(), {
+        provider: 'google',
+        id: 'google789',
+      });
+
+      expect(linkedUser).toBeTruthy();
+
+      // Verify isPasswordSet was set to true
+      const updatedUser = await UserModel.findById(user?._id).select('+oauth');
+      expect(updatedUser?.oauth).toBeDefined();
+      expect(updatedUser?.oauth?.provider).toBe('google');
+      expect(updatedUser?.oauth?.id).toBe('google789');
+      expect(updatedUser?.oauth?.isPasswordSet).toBe(true);
+
+      // Verify user can request password reset
+      const res = await request(app)
+        .post('/api/v1/auth/request-password-reset')
+        .send({ email: validUserData.email });
+
+      expect(res.status).toBe(200);
+    });
   });
 
   describe('POST /api/v1/auth/reset-password', () => {

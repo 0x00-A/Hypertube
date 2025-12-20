@@ -51,6 +51,7 @@ export class UserRepository {
     if (includePassword) {
       query.select('+password');
     }
+    query.select('+oauth'); // Always include oauth for password reset checks
     const doc = await query.exec();
     return this.toIUser(doc);
   }
@@ -74,10 +75,13 @@ export class UserRepository {
   }
 
   async linkOAuthAccount(userId: string, oauth: IOAuth): Promise<Partial<IUser> | null> {
-    const existingUser = await UserModel.findById(userId).exec();
+    const existingUser = await UserModel.findById(userId).select('+password').exec();
     if (!existingUser) {
       return null;
     }
+
+    // If user has a password, they can use password reset even with OAuth linked
+    const hasPassword = !!existingUser.password;
 
     const doc = await UserModel.findByIdAndUpdate(
       userId,
@@ -85,6 +89,7 @@ export class UserRepository {
         $set: {
           'oauth.provider': oauth.provider,
           'oauth.id': oauth.id,
+          'oauth.isPasswordSet': hasPassword,
           'isActive': true
         }
       },

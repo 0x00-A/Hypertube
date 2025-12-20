@@ -15,6 +15,9 @@ const userSchema = new Schema({
       provider: { type: String, enum: ['google', 'fortytwo'] },
       id: { type: String },
       isPasswordSet: { type: Boolean, default: false },
+      // Indicates whether an OAuth user has explicitly set a local password.
+      // true  -> user has set a password and can use password login / reset.
+      // false -> user relies solely on OAuth; password-based reset is not allowed.
     },
     _id: false,
     select: false,
