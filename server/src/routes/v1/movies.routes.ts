@@ -13,7 +13,6 @@ import { auth, optionalAuth } from '../../middleware/auth';
 export const createMovieRouter = (movieController: MovieController): Router => {
   const router = Router();
 
-  // Public/optional auth routes
   router.get(
     '/',
     optionalAuth,

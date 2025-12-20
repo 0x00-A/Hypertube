@@ -38,12 +38,12 @@ export class MovieController {
 
     const result = await this._movieService.list(paginationOptions, filterOptions, userId);
 
-    const respose: IPaginatedResponse<IMovie> = {
+    const response: IPaginatedResponse<IMovie> = {
       ...result,
       message: 'Movies fetched successfully.',
     };
 
-    res.json(respose);
+    res.json(response);
   });
 
   getMovie = asyncHandler(async (req: Request, res: Response) => {

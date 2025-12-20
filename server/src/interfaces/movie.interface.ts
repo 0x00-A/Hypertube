@@ -36,6 +36,9 @@ export interface ITmdbListMovie {
     backdrop: string;
   };
   isLocal: boolean;
+  isWatched?: boolean;
+  inWatchlist?: boolean;
+  userRating?: number | null;
 }
 
 export interface ITorrent {

@@ -83,9 +83,6 @@ export class MovieService {
 
       const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
-      logger.info(`[MovieService] Fetched and normalized trending movies from TMDB API.`);
-      logger.debug(`[MovieService] Trending movies data: ${JSON.stringify(normalized)}`);
-
       return {
         data: normalized,
         pagination: {
@@ -134,9 +131,6 @@ export class MovieService {
 
       const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
-      logger.info(`[MovieService] Fetched and normalized recommended movies from TMDB API.`);
-      logger.debug(`[MovieService] Recommended movies data: ${JSON.stringify(normalized)}`);
-
       return {
         data: normalized,
         pagination: {
@@ -174,7 +168,6 @@ export class MovieService {
       const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
       logger.info(`[MovieService] Fetched and normalized popular movies from TMDB API.`);
-      logger.debug(`[MovieService] Popular movies data: ${JSON.stringify(normalized)}`);
       return {
         data: normalized,
         pagination: {
@@ -202,10 +195,8 @@ export class MovieService {
       movie = await this._movieRepository.findByTmdbId(tmdbId);
       if (!movie) throw new NotFoundError('Movie not found');
     }
-    if (movie) {
-      const interaction = await this._movieInteractionRepository.addToWatchlist(userId, movie._id);
-      return interaction.toObject();
-    }
+    const interaction = await this._movieInteractionRepository.addToWatchlist(userId, movie._id);
+    return interaction.toObject();
   }
 
   async completeMovieData(tmdbId: number) {
@@ -214,16 +205,6 @@ export class MovieService {
       if (!imdbId) {
         logger.error(`[MovieService] No IMDb ID found for TMDb ID "${tmdbId}".`);
         return null;
-      }
-
-      // In case movie metadata is from OMDB so it exists but it doesnt have imdbId
-      const movieExists = await this._movieRepository.findByImdbId(imdbId);
-      if (movieExists) {
-        logger.info(
-          `[MovieService] Movie with IMDb ID "${imdbId}" already exists in database. Skipping completion.`,
-        );
-        await movieExists.save();
-        return movieExists.toObject();
       }
 
       let metadata = await getMetadata(imdbId);
@@ -337,7 +318,6 @@ export class MovieService {
       true,
     );
 
-    logger.info('local Movies with state: ' + JSON.stringify(localMoviesWithState));
     const localTmdbIds = new Set(localMovies.map((m) => m.tmdbId));
 
     return tmdbMovies.map((m: ITmdbTrendingMovie) => {
@@ -346,9 +326,6 @@ export class MovieService {
 
       if (isLocal) {
         localMovie = (localMoviesWithState as IMovie[]).find((lm) => lm.tmdbId === m.id) as IMovie;
-        logger.info(
-          `[MovieService] Local movie found for TMDb ID "${m.id}": ${JSON.stringify(localMovie)}`,
-        );
       }
 
       return {
