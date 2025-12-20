@@ -9,6 +9,7 @@ import { NotFoundError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
 import { IMovie, ITmdbListMovie } from '../interfaces/movie.interface';
 import { IResponse } from '../core/interfaces/IResponse';
+import { Types } from 'mongoose';
 
 export class MovieController {
   private _movieService: MovieService;
@@ -164,5 +165,18 @@ export class MovieController {
     };
 
     res.json(response);
+  });
+
+  addToWatchlist = asyncHandler(async (req: Request, res: Response) => {
+    const userId = new Types.ObjectId(req.user?._id);
+    const { tmdbId } = req.validated?.params as { tmdbId: number };
+
+    const interaction = await this._movieService.addToWatchlist(userId, tmdbId);
+
+    const response: IResponse<typeof interaction> = {
+      data: interaction,
+      message: 'Movie added to watchlist.',
+    };
+    res.status(201).json(response);
   });
 }

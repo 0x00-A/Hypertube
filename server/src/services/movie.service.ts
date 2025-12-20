@@ -17,9 +17,10 @@ import { getImdbIdFromTmdbId, getMetadata } from './metadata/tmdb';
 import { getYtsMovieDetailsByImdbId } from './metadata/yts';
 import axios from 'axios';
 import { env } from '../config/env';
-import { BadGatewayError } from '../core/errors/customErrors';
+import { BadGatewayError, NotFoundError } from '../core/errors/customErrors';
 import { getGenreNames } from '../utils/genres';
 import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
+import { Types } from 'mongoose';
 
 export class MovieService {
   private _movieRepository: MovieRepository;
@@ -193,6 +194,20 @@ export class MovieService {
     }
   }
 
+  async addToWatchlist(userId: Types.ObjectId, tmdbId: number) {
+    let movie = await this._movieRepository.findByTmdbId(tmdbId);
+    if (!movie) {
+      await this.completeMovieData(tmdbId);
+
+      movie = await this._movieRepository.findByTmdbId(tmdbId);
+      if (!movie) throw new NotFoundError('Movie not found');
+    }
+    if (movie) {
+      const interaction = await this._movieInteractionRepository.addToWatchlist(userId, movie._id);
+      return interaction.toObject();
+    }
+  }
+
   async completeMovieData(tmdbId: number) {
     try {
       const imdbId = await getImdbIdFromTmdbId(tmdbId);
@@ -224,7 +239,7 @@ export class MovieService {
         logger.debug({ ytsMovieDetails }, 'YTS full response');
       }
 
-      const movieData: Partial<IMovie> = {
+      const movieData: IMovie = {
         imdbId,
         tmdbId,
         title: metadata.title,
@@ -235,6 +250,7 @@ export class MovieService {
         genres: metadata.genres || [],
         originalLanguage: metadata.originalLanguage,
         trailer: metadata.trailer,
+        cast: metadata.cast || [],
         images: metadata.images,
         torrents: ytsMovieDetails?.torrents
           ? ytsMovieDetails.torrents.map((t) => ({

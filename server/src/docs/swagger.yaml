@@ -1329,6 +1329,58 @@ paths:
                 message: Failed to fetch recommended movies from TMDB.
                 path: /api/v1/movies/recommended
 
+  /api/v1/movies/watchlist/{tmdbId}:
+    post:
+      summary: Add a movie (by TMDb ID) to the authenticated user's watchlist
+      description: |
+        Adds the movie identified by `tmdbId` to the current user's watchlist. Requires authentication.
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+          description: TMDB movie ID
+      responses:
+        '201':
+          description: Movie added to watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Movie added to watchlist.
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized, No access token provided
+        '404':
+          description: Movie not found (TMDb ID not present and cannot be created)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/movies/popular:
     get:
       summary: Get popular movies from TMDB (external)
@@ -1705,6 +1757,77 @@ components:
             The authenticated user's rating for this movie (1-10 scale).
             Only present when `isLocal` is `true`. Always `null` for unauthenticated users.
           example: null
+
+    MovieInteraction:
+      type: object
+      required:
+        - _id
+        - userId
+        - movieId
+        - interactionType
+      properties:
+        _id:
+          type: string
+          example: '507f1f77bcf86cd799439011'
+        userId:
+          type: string
+          description: MongoDB ObjectId of the user
+          example: '507f1f77bcf86cd799439011'
+        movieId:
+          type: string
+          description: MongoDB ObjectId of the movie
+          example: '507f1f77bcf86cd799439022'
+        interactionType:
+          type: string
+          enum: [watched, rated, watchlist, downloaded]
+          example: watchlist
+        lastWatchedPosition:
+          type: number
+          description: Last watched position in seconds
+          example: 3600
+        duration:
+          type: number
+          description: Movie duration in seconds
+          example: 7200
+        watchProgress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Percentage watched
+          example: 100
+        isCompleted:
+          type: boolean
+          description: Whether the watch progress indicates completion
+          example: true
+        rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Rating given by the user
+          example: 9
+        watchedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the movie was last watched
+          example: 2025-12-01T12:00:00Z
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the movie was completed
+          example: 2025-12-01T13:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: Document creation timestamp
+          example: 2025-12-01T12:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Document update timestamp
+          example: 2025-12-01T12:30:00Z
 
     ErrorResponse:
       type: object
