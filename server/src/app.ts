@@ -4,7 +4,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
-// import { router as commentsRouter } from './routes/v1/comments.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
 import { createMovieInteractionRouter } from './routes/v1/movieInteractions.routes';
 import { errorHandler } from './middleware/errorHandler';
@@ -19,6 +18,7 @@ import { createControllers } from './bootstrap/controllers';
 import { createOAuthRoutes } from './routes/v1/oauth.routes';
 import { passport } from './config/passport';
 import { createUserRoutes } from './routes/v1/users.routes';
+import { createCommentRouter } from './routes/v1/comment.routes';
 
 export const createApp = () => {
   const app = express();
@@ -76,12 +76,14 @@ export const createApp = () => {
     oauthController,
     userController,
     movieInteractionController,
+    commentController,
   } = createControllers();
   app.use('/api/v1/auth', createAuthRoutes(authController));
   app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
   app.use('/api/v1/profile', createUserRoutes(userController));
   app.use('/api/v1/interactions', createMovieInteractionRouter(movieInteractionController));
+  app.use('/api/v1/comments', createCommentRouter(commentController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {
@@ -89,7 +91,6 @@ export const createApp = () => {
   });
 
   // Other routes (not protected by default)
-  // app.use('/v1/comments', commentsRouter);
 
   // accounts routes
   // app.use('/v1/accounts', usersRouter);

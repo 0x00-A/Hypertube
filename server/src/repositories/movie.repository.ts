@@ -1,5 +1,4 @@
 import { MovieModel } from '../models/Movie';
-import mongoose, { FilterQuery } from 'mongoose';
 import { IMovieDocument } from '../models/movie.model.types';
 import {
   IPaginationOptions,
@@ -7,6 +6,7 @@ import {
   IPaginatedResponse,
 } from '../core/interfaces/IPagination';
 import { IMovie } from '../interfaces/movie.interface';
+import { FilterQuery } from 'mongoose';
 
 export class MovieRepository {
   async findAll(
@@ -17,20 +17,6 @@ export class MovieRepository {
     const limit = paginationOptions.limit || 10;
     const sortBy = paginationOptions.sortBy || 'lastUpdated';
     const sortOrder = paginationOptions.sortOrder === 'asc' ? 1 : -1;
-
-    if (mongoose.connection.readyState !== 1) {
-      return {
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPrevPage: false,
-        },
-      };
-    }
 
     const skip = (page - 1) * limit;
 

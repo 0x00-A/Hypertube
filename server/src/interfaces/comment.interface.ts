@@ -1,11 +1,30 @@
+import { Types } from 'mongoose';
+
 export interface IComment {
-  id: string;
-  userId: string;
-  movieId: string;
+  user: Types.ObjectId;
+  tmdbId: number;
   content: string;
   createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface ICreateCommentDTO extends Omit<IComment, 'id' | 'createdAt'> {}
+export interface ICreateCommentDTO {
+  content: string;
+  tmdbId: number;
+}
 
-export interface IUpdateCommentDTO extends Partial<ICreateCommentDTO> {}
+export interface IUpdateCommentDTO {
+  content: string;
+}
+
+export interface IPopulatedComment {
+  user: {
+    _id: Types.ObjectId | string;
+    username: string;
+    avatarUrl?: string;
+  };
+  tmdbId: number;
+  content: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

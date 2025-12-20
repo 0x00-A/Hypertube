@@ -17,6 +17,9 @@ import { MovieInteractionService } from '../services/movieInteraction.service';
 import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
 import { EmailService } from '../services/email.service';
 import { VerificationEmailRepository } from '../repositories/verificationEmail.repository';
+import { CommentRepository } from '../repositories/comment.repository';
+import { CommentService } from '../services/comment.service';
+import { CommentController } from '../controllers/comment.controller';
 
 export const createControllers = () => {
   // Shared repositories
@@ -51,11 +54,23 @@ export const createControllers = () => {
   const userService = new UserService(userRepository);
   const userController = new UserController(userService);
 
+  // comments dependencies
+  const commentRepository = new CommentRepository();
+  const movieRepositoryForComments = new MovieRepository();
+  const movieServiceForComments = new MovieService(movieRepositoryForComments, scraperEngine);
+  const commentService = new CommentService(
+    commentRepository,
+    movieRepositoryForComments,
+    movieServiceForComments,
+  );
+  const commentController = new CommentController(commentService);
+
   return {
     movieController,
     authController,
     oauthController,
     userController,
     movieInteractionController,
+    commentController,
   };
 };

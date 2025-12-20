@@ -4,6 +4,8 @@ import { createApp } from '../../src/app';
 import { MovieModel } from '../../src/models/Movie';
 import mongoose from 'mongoose';
 import { IMovie } from '../../src/interfaces/movie.interface';
+import { Types } from 'mongoose';
+import { UserModel } from '../../src/models/User';
 
 afterEach(async () => {
   // Ensure no leftover movies between tests
@@ -14,6 +16,55 @@ afterEach(async () => {
 
 describe('Movies API Integration Tests', () => {
   const app = createApp();
+
+  // Helper to create a user and get a valid access token via API
+  async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
+    const crypto = await import('crypto');
+    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+
+    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
+    const testUsername = `testuser_${unique}`;
+    const testEmail = `test_${unique}@example.com`;
+    const password = 'SecurePass123!';
+
+    // Sign up
+    const signupRes = await request(app).post('/api/v1/auth/signup').send({
+      email: testEmail,
+      username: testUsername,
+      password,
+      firstName: 'Test',
+      lastName: 'User',
+    });
+
+    if (signupRes.status !== 201) {
+      throw new Error(
+        `Signup failed with status ${signupRes.status}: ${JSON.stringify(signupRes.body)}`,
+      );
+    }
+
+    // Get user and verify email using the endpoint
+    const user = await UserModel.findOne({ username: testUsername });
+    if (!user) throw new Error('User not found after signup');
+
+    // Create a test token and verify email through the endpoint
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await VerificationEmailModel.findOneAndUpdate({ userId: user._id }, { token: hashedToken });
+    await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
+
+    // Login
+    const loginRes = await request(app).post('/api/v1/auth/login').send({
+      identifier: testUsername,
+      password,
+    });
+    const cookies = loginRes.headers['set-cookie'] as unknown as string[];
+    const accessToken = cookies
+      .find((cookie: string) => cookie.startsWith('accessToken='))
+      ?.split(';')[0]
+      .split('=')[1];
+    if (!accessToken) throw new Error('No accessToken found in login response');
+    return { accessToken, userId: user._id };
+  }
 
   // Use a unique suffix for all sample movies in this test run
   const unique = Math.random().toString(36).substring(2, 8) + Date.now();
@@ -349,15 +400,20 @@ describe('Movies API Integration Tests', () => {
 
   describe('GET /api/v1/movies/:id', () => {
     let movieId: string;
+    let accessToken: string;
 
     beforeEach(async () => {
+      const auth = await createUserAndLogin();
+      accessToken = auth.accessToken;
       // Insert a sample movie and get its ID (already unique)
       const movie = await MovieModel.create(sampleMovie1);
       movieId = movie._id.toString();
     });
 
     it('should return a movie by valid ID', async () => {
-      const res = await request(app).get(`/api/v1/movies/${movieId}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieId}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('data');
@@ -374,7 +430,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return movie with all required fields', async () => {
-      const res = await request(app).get(`/api/v1/movies/${movieId}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieId}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       const movie = res.body.data;
@@ -394,7 +452,9 @@ describe('Movies API Integration Tests', () => {
 
     it('should return 404 for non-existent movie ID', async () => {
       const nonExistentId = new mongoose.Types.ObjectId().toString();
-      const res = await request(app).get(`/api/v1/movies/${nonExistentId}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${nonExistentId}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({
@@ -404,7 +464,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid ObjectId format', async () => {
-      const res = await request(app).get('/api/v1/movies/invalid-id-format');
+      const res = await request(app)
+        .get('/api/v1/movies/invalid-id-format')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -415,7 +477,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for too short ID', async () => {
-      const res = await request(app).get('/api/v1/movies/123');
+      const res = await request(app)
+        .get('/api/v1/movies/123')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -425,7 +489,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for ID with invalid characters', async () => {
-      const res = await request(app).get('/api/v1/movies/507f1f77bcf86cd79943901g'); // 'g' is invalid
+      const res = await request(app)
+        .get('/api/v1/movies/507f1f77bcf86cd79943901g')
+        .set('Cookie', [`accessToken=${accessToken}`]); // 'g' is invalid
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -435,7 +501,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return movie with torrent details', async () => {
-      const res = await request(app).get(`/api/v1/movies/${movieId}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieId}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       const torrent = res.body.data.torrents[0];
@@ -452,7 +520,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return correct data types for all fields', async () => {
-      const res = await request(app).get(`/api/v1/movies/${movieId}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieId}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       const movie = res.body.data;
@@ -530,9 +600,17 @@ describe('Movies API Integration Tests', () => {
   });
 
   describe('Edge Cases', () => {
+    let accessToken: string;
+
+    beforeEach(async () => {
+      const auth = await createUserAndLogin();
+      accessToken = auth.accessToken;
+    });
+
     it('should handle movie with minimal required fields', async () => {
       const minimalMovie = await MovieModel.create({
         imdbId: 'tt1111111',
+        tmdbId: 1111,
         title: 'Minimal Movie',
         year: 2023,
         images: {
@@ -543,7 +621,9 @@ describe('Movies API Integration Tests', () => {
         torrents: [],
       });
 
-      const res = await request(app).get(`/api/v1/movies/${minimalMovie._id}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${minimalMovie._id}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.title).toBe('Minimal Movie');
@@ -554,10 +634,13 @@ describe('Movies API Integration Tests', () => {
       const movieWithLongTitle = await MovieModel.create({
         ...sampleMovie1,
         imdbId: 'tt2222222',
+        tmdbId: 2222,
         title: longTitle,
       });
 
-      const res = await request(app).get(`/api/v1/movies/${movieWithLongTitle._id}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieWithLongTitle._id}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.title).toBe(longTitle);
@@ -567,6 +650,7 @@ describe('Movies API Integration Tests', () => {
       const movieWithMultipleTorrents = await MovieModel.create({
         ...sampleMovie1,
         imdbId: 'tt3333333',
+        tmdbId: 3333,
         torrents: [
           sampleMovie1.torrents![0],
           {
@@ -584,7 +668,9 @@ describe('Movies API Integration Tests', () => {
         ],
       });
 
-      const res = await request(app).get(`/api/v1/movies/${movieWithMultipleTorrents._id}`);
+      const res = await request(app)
+        .get(`/api/v1/movies/${movieWithMultipleTorrents._id}`)
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.torrents.length).toBe(3);
