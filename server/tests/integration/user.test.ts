@@ -176,8 +176,8 @@ describe('User Profile Integration Tests', () => {
       expect(res.body).toHaveProperty('validationErrors');
     });
 
-    it('should return 400 for username shorter than 3 characters', async () => {
-      const res = await request(app).get('/api/v1/users/ab');
+    it('should return 400 for single character username', async () => {
+      const res = await request(app).get('/api/v1/users/a');
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('status', 'fail');
@@ -464,6 +464,90 @@ describe('User Profile Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
+    });
+
+    it('should return 400 for negative page number', async () => {
+      const res = await request(app).get('/api/v1/users/?page=-1');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for negative limit', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=-5');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for zero page', async () => {
+      const res = await request(app).get('/api/v1/users/?page=0');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for zero limit', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=0');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for limit exceeding maximum (100)', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=101');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for page exceeding maximum (10000)', async () => {
+      const res = await request(app).get('/api/v1/users/?page=10001');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for non-numeric page', async () => {
+      const res = await request(app).get('/api/v1/users/?page=abc');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for non-numeric limit', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=xyz');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for decimal page number', async () => {
+      const res = await request(app).get('/api/v1/users/?page=1.5');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for decimal limit', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=10.5');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should allow maximum valid limit (100)', async () => {
+      const res = await request(app).get('/api/v1/users/?limit=100');
+
+      expect(res.status).toBe(200);
+      expect(res.body.limit).toBe(100);
+    });
+
+    it('should allow maximum valid page (10000)', async () => {
+      const res = await request(app).get('/api/v1/users/?page=10000');
+
+      expect(res.status).toBe(200);
+      expect(res.body.page).toBe(10000);
     });
   });
 

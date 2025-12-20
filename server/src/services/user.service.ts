@@ -13,13 +13,17 @@ export class UserService {
     total: number;
     totalPages: number;
   }> {
-    const skip = (page - 1) * limit;
+    // Ensure page and limit are positive integers to prevent negative skip values
+    const safePage = Math.max(1, Math.floor(page));
+    const safeLimit = Math.max(1, Math.floor(limit));
+    
+    const skip = (safePage - 1) * safeLimit;
     const [data, total] = await Promise.all([
-      this._repo.findAll({ isActive: true }, { skip, limit }),
+      this._repo.findAll({ isActive: true }, { skip, limit: safeLimit }),
       this._repo.countDocuments({ isActive: true }),
     ]);
-    const totalPages = Math.ceil(total / limit);
-    return { data, page, limit, total, totalPages };
+    const totalPages = Math.ceil(total / safeLimit);
+    return { data, page: safePage, limit: safeLimit, total, totalPages };
   }
 
   async getUser(identifier: string, me = false): Promise<Partial<IUser> | null> {

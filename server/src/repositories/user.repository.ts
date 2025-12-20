@@ -20,7 +20,7 @@ export class UserRepository {
     const user: Partial<IUser> = {
       _id: doc._id.toString(),
       username: doc.username,
-      email: doc.email,
+      email: doc.email ?? undefined,
       firstName: doc.firstName,
       lastName: doc.lastName,
       avatarUrl: doc.avatarUrl,
@@ -104,7 +104,9 @@ export class UserRepository {
       query.limit(options.limit);
     }
     const docs = await query.exec();
-    return docs.map(doc => this.toIUser(doc)!);
+    return docs
+      .map(doc => this.toIUser(doc))
+      .filter((user): user is Partial<IUser> => user !== null);
   }
 
   async countDocuments(filter: Partial<IUser>): Promise<number> {

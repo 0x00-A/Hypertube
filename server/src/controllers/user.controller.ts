@@ -9,8 +9,7 @@ export class UserController {
   constructor(private _service: UserService) {}
 
   listUsers = asyncHandler(async (req: Request, res: Response) => {
-    const page = parseInt((req.query.page as string) || '1', 10);
-    const limit = parseInt((req.query.limit as string) || '10', 10);
+    const { page, limit } = (req.validated?.query as { page: number; limit: number }) || { page: 1, limit: 10 };
     const result = await this._service.list(page, limit);
     res.json({
       data: result.data,
