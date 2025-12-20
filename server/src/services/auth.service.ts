@@ -98,7 +98,9 @@ export class AuthService {
     }
     const hashedPassword = await this._passwordService.hashPassword(newPassword);
     await this._userRepo.update(user._id!, { password: hashedPassword });
-    // should remove refresh tokens here (not implemented yet)
+    // TODO[SECURITY]: Invalidate all existing refresh tokens for this user after password reset
+    // once the refresh token storage/blacklisting mechanism is available, to ensure old sessions
+    // cannot continue using previously issued tokens.
     await this._emailService.deleteVerificationToken(verification.token);
   }
 }
