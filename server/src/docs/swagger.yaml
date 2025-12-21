@@ -1454,66 +1454,6 @@ paths:
             application/json:
               schema:
                 type: object
-  /api/v1/movies/recommended/{tmdbId}:
-    get:
-      summary: Get recommended movies for a specific TMDB movie (TMDB-based)
-      tags:
-        - Movies
-      security:
-        - cookieAuth: []
-      parameters:
-        - in: path
-          name: tmdbId
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          description: Page number for pagination
-      responses:
-        '200':
-          description: Paginated list of recommended movies (external)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TrendingMovieItem'
-                  pagination:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                        example: 1
-                      total:
-                        type: integer
-                        example: 1000
-                      totalPages:
-                        type: integer
-                        example: 50
-                      limit:
-                        type: integer
-                        example: 20
-                      hasNextPage:
-                        type: boolean
-                        example: true
-                      hasPrevPage:
-                        type: boolean
-                        example: false
-        '502':
-          description: Failed to fetch recommendations from TMDB
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
                 properties:
                   status:
                     type: string
