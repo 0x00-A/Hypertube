@@ -121,4 +121,9 @@ export class MovieRepository {
       .exec();
     return randomMovie;
   }
+
+  async getDistinctGenres(): Promise<string[]> {
+    const genres = await MovieModel.distinct('genres').exec();
+    return genres as string[];
+  }
 }

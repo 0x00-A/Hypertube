@@ -44,6 +44,8 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getPopularMovies.bind(movieController),
   );
 
+  router.get('/genres', optionalAuth, movieController.getGenres.bind(movieController));
+
   router.get(
     '/search',
     optionalAuth,

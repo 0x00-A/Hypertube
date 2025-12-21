@@ -235,6 +235,11 @@ export class MovieService {
     return result;
   }
 
+  async getGenres(): Promise<string[]> {
+    const genres = await this._movieRepository.getDistinctGenres();
+    return (genres || []).filter(Boolean).sort();
+  }
+
   async addToWatchlist(userId: Types.ObjectId, tmdbId: number) {
     let movie = await this._movieRepository.findByTmdbId(tmdbId);
     if (!movie) {

@@ -1514,6 +1514,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/movies/genres:
+    get:
+      summary: Get list of available genres from local DB
+      tags:
+        - Movies
+      security:
+        - {}
+      responses:
+        '200':
+          description: Array of genre strings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+              example:
+                data: ['Action', 'Drama', 'Comedy']
+                message: Genres fetched successfully.
                 properties:
                   status:
                     type: string

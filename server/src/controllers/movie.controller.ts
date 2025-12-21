@@ -130,6 +130,11 @@ export class MovieController {
     res.json(response);
   });
 
+  getGenres = asyncHandler(async (req: Request, res: Response) => {
+    const genres = await this._movieService.getGenres();
+    res.json({ data: genres, message: 'Genres fetched successfully.' });
+  });
+
   getPopularMovies = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?._id;
     const query = req.validated?.query as Partial<IPaginationOptions>;
