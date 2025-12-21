@@ -123,7 +123,7 @@ export class MovieController {
   });
 
   getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
-    const userId = new Types.ObjectId(req.user?._id);
+    const userId = req.user!._id;
     const { page } = req.validated?.query as { page?: number };
     const { tmdbId } = (req.validated?.params ?? {}) as { tmdbId?: number | undefined };
 

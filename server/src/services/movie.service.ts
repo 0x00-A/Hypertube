@@ -110,7 +110,7 @@ export class MovieService {
   async getRecommended(
     paginationOptions: Partial<IPaginationOptions>,
     tmdbId: number | undefined,
-    userId: Types.ObjectId,
+    userId: string | undefined,
   ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
       const hardcodedTmdbIds = [
@@ -139,8 +139,9 @@ export class MovieService {
         634649, // Spider-Man: No Way Home
       ];
 
-      const lastWatchedTmdbId =
-        await this._movieInteractionRepository.getLastWatchedMovieTmdbId(userId);
+      const lastWatchedTmdbId = await this._movieInteractionRepository.getLastWatchedMovieTmdbId(
+        new Types.ObjectId(userId),
+      );
 
       const movieId =
         tmdbId ||
@@ -159,10 +160,7 @@ export class MovieService {
         },
       });
 
-      const normalized = await this.normalizeTmdbMoviesWithLocalData(
-        results.data.results,
-        userId.toString(),
-      );
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
 
       return {
         data: normalized,

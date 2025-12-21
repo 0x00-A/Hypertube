@@ -69,6 +69,13 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getRecommendedMovies.bind(movieController),
   );
 
+  router.get(
+    '/recommended/:tmdbId',
+    auth,
+    validate(MoviePageQuerySchema),
+    movieController.getRecommendedMovies.bind(movieController),
+  );
+
   router.post(
     '/watchlist/:tmdbId',
     auth,
