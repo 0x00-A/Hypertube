@@ -7,5 +7,5 @@ module.exports = {
   verbose: false,
   collectCoverage: false,
   // maxWorkers: 2,
-  testTimeout: 20000,
+  testTimeout: 10000,
 };
