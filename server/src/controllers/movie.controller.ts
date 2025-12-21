@@ -114,12 +114,13 @@ export class MovieController {
   getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
     const userId = new Types.ObjectId(req.user?._id);
     const { page } = req.validated?.query as { page?: number };
+    const { tmdbId } = (req.validated?.params ?? {}) as { tmdbId?: number | undefined };
 
     const paginationOptions: Partial<IPaginationOptions> = {
       page: page || 1,
     };
 
-    const result = await this._movieService.getRecommended(paginationOptions, userId);
+    const result = await this._movieService.getRecommended(paginationOptions, tmdbId, userId);
 
     const response: IPaginatedResponse<ITmdbListMovie> = {
       ...result,

@@ -329,4 +329,20 @@ export class MovieInteractionRepository {
   async delete(userId: Types.ObjectId, movieId: Types.ObjectId, interactionType: string) {
     return await MovieInteractionModel.deleteOne({ userId, movieId, interactionType });
   }
+
+  async getLastWatchedMovieTmdbId(userId: Types.ObjectId): Promise<number | null> {
+    const interaction = await MovieInteractionModel.findOne({
+      userId,
+      interactionType: 'watched',
+    })
+      .sort({ watchedAt: -1 })
+      .populate('movieId')
+      .exec();
+
+    if (interaction && interaction.movieId && !(interaction.movieId instanceof Types.ObjectId)) {
+      const movie = interaction.movieId as unknown as IMovieDocument;
+      return movie.tmdbId;
+    }
+    return null;
+  }
 }
