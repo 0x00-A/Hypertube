@@ -224,7 +224,7 @@ export class MovieService {
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions,
     userId?: string | undefined,
-  ) {
+  ): Promise<IPaginatedResponse<IMovie>> {
     const result = await this._movieRepository.findAll(paginationOptions, filterOptions);
 
     result.data = (await this.addUserMovieState(userId, result.data, true)) as IMovie[];
