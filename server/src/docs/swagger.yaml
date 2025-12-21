@@ -1454,6 +1454,12 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MovieInteraction'
+                  message:
+                    type: string
+                    example: Movie added to watchlist.
   /api/v1/movies/recommended/{tmdbId}:
     get:
       summary: Get recommended movies for a specific TMDB movie (TMDB-based)
@@ -1542,11 +1548,42 @@ paths:
                   status:
                     type: string
                     example: success
+
+  /api/v1/movies/slider:
+    get:
+      summary: Get 6 trending movies for homepage slider
+      description: >-
+        Fetches the first 6 trending movies from TMDB and enriches them with local
+        metadata when available. Heavy fields (torrents, cast, downloadStatus,
+        lastWatched, userRatings, metadataSource) are excluded from the response
+        to keep the payload light for the homepage slider.
+      tags:
+        - Movies
+      security:
+        - {}
+      responses:
+        '200':
+          description: Array of up to 6 local `Movie` objects (heavy fields excluded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   data:
-                    $ref: '#/components/schemas/MovieInteraction'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
                   message:
                     type: string
-                    example: Movie added to watchlist.
+              example:
+                data: []
+                message: Homepage slider movies fetched successfully.
+        '502':
+          description: Failed to fetch trending movies from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Not authenticated
           content:

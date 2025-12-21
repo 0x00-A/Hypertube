@@ -27,6 +27,8 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getTrendingMovies.bind(movieController),
   );
 
+  router.get('/slider', optionalAuth, movieController.getHomepageSlider.bind(movieController));
+
   // Curated list from scripts/movies.csv (supports optional auth)
   router.get(
     '/curated',

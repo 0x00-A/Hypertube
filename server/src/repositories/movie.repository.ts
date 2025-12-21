@@ -12,6 +12,15 @@ export class MovieRepository {
   async findAll(
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions = {},
+    excludeFields: string[] = [
+      'torrents',
+      'cast',
+      'trailer',
+      'downloadStatus',
+      'lastWatched',
+      'userRatings',
+      'metadataSource',
+    ],
   ): Promise<IPaginatedResponse<IMovie>> {
     const page = paginationOptions.page || 1;
     const limit = paginationOptions.limit || 10;
@@ -47,9 +56,12 @@ export class MovieRepository {
       filter.year = filterOptions.year;
     }
 
+    const selectStr = excludeFields.length ? excludeFields.map((f) => `-${f}`).join(' ') : '';
+
     // Execute queries
     const [data, total] = await Promise.all([
       MovieModel.find(filter)
+        .select(selectStr)
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
@@ -91,8 +103,9 @@ export class MovieRepository {
     return MovieModel.findOne({ imdbId: imdbId }).exec();
   }
 
-  async findByTmdbId(tmdbId: number): Promise<IMovieDocument | null> {
-    return MovieModel.findOne({ tmdbId: tmdbId }).exec();
+  async findByTmdbId(tmdbId: number, excludeFields: string[] = []): Promise<IMovieDocument | null> {
+    const selectStr = excludeFields.length ? excludeFields.map((f) => `-${f}`).join(' ') : '';
+    return MovieModel.findOne({ tmdbId: tmdbId }).select(selectStr).exec();
   }
 
   async findByTmdbIds(tmdbIds: number[]): Promise<IMovieDocument[]> {

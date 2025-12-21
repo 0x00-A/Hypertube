@@ -111,6 +111,17 @@ export class MovieController {
     res.json(response);
   });
 
+  getHomepageSlider = asyncHandler(async (req: Request, res: Response) => {
+    const movies = await this._movieService.getHomepageSlider();
+
+    const response: IResponse<IMovie[]> = {
+      data: movies,
+      message: 'Homepage slider movies fetched successfully.',
+    };
+
+    res.json(response);
+  });
+
   getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
     const userId = new Types.ObjectId(req.user?._id);
     const { page } = req.validated?.query as { page?: number };

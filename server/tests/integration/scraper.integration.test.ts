@@ -177,12 +177,16 @@ describe('ScraperEngine Integration Test', () => {
         );
 
         // Verify movies were saved to the database
-        const response = await movieRepository.findAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'lastUpdated',
-          sortOrder: 'desc',
-        });
+        const response = await movieRepository.findAll(
+          {
+            page: 1,
+            limit: 10,
+            sortBy: 'lastUpdated',
+            sortOrder: 'desc',
+          },
+          {},
+          [],
+        );
         expect(response.data).toBeDefined();
         expect(response.data!.length).toBe(2);
         const shawshank = response.data!.find((m: IMovie) => m.imdbId === 'tt0111161');
@@ -198,12 +202,16 @@ describe('ScraperEngine Integration Test', () => {
       await engine.scrapePage(1);
 
       // Verify movies were saved to the database
-      const response = await movieRepository.findAll({
-        page: 1,
-        limit: 10,
-        sortBy: 'lastUpdated',
-        sortOrder: 'desc',
-      });
+      const response = await movieRepository.findAll(
+        {
+          page: 1,
+          limit: 10,
+          sortBy: 'lastUpdated',
+          sortOrder: 'desc',
+        },
+        {},
+        [],
+      );
 
       if (useRealProviders) {
         // When using real providers, we just verify that movies were scraped
@@ -257,12 +265,16 @@ describe('ScraperEngine Integration Test', () => {
         await engine.scrapePage(1);
 
         // Get initial movie
-        const initialResponse = await movieRepository.findAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'lastUpdated',
-          sortOrder: 'desc',
-        });
+        const initialResponse = await movieRepository.findAll(
+          {
+            page: 1,
+            limit: 10,
+            sortBy: 'lastUpdated',
+            sortOrder: 'desc',
+          },
+          {},
+          [],
+        );
         const initialMovie = initialResponse.data!.find((m: IMovie) => m.imdbId === 'tt0111161');
         const initialCount = initialMovie!.torrents.length;
 
@@ -297,12 +309,16 @@ describe('ScraperEngine Integration Test', () => {
         await engine.scrapePage(1);
 
         // Verify the torrent was added to Shawshank only
-        const updatedResponse = await movieRepository.findAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'lastUpdated',
-          sortOrder: 'desc',
-        });
+        const updatedResponse = await movieRepository.findAll(
+          {
+            page: 1,
+            limit: 10,
+            sortBy: 'lastUpdated',
+            sortOrder: 'desc',
+          },
+          {},
+          [],
+        );
         const updatedMovie = updatedResponse.data!.find((m: IMovie) => m.imdbId === 'tt0111161');
         const darkKnightMovie = updatedResponse.data!.find((m: IMovie) => m.imdbId === 'tt0468569');
 
@@ -325,12 +341,16 @@ describe('ScraperEngine Integration Test', () => {
         await engine.scrapePage(1);
 
         // Verify no duplicates
-        const response = await movieRepository.findAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'lastUpdated',
-          sortOrder: 'desc',
-        });
+        const response = await movieRepository.findAll(
+          {
+            page: 1,
+            limit: 10,
+            sortBy: 'lastUpdated',
+            sortOrder: 'desc',
+          },
+          {},
+          [],
+        );
         const shawshank = response.data!.find((m: IMovie) => m.imdbId === 'tt0111161');
 
         expect(shawshank!.torrents.length).toBe(2); // Still 2, not 4
@@ -355,12 +375,16 @@ describe('ScraperEngine Integration Test', () => {
         await engine.scrapePage(1);
 
         // Verify no movies were saved
-        const response = await movieRepository.findAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'lastUpdated',
-          sortOrder: 'desc',
-        });
+        const response = await movieRepository.findAll(
+          {
+            page: 1,
+            limit: 10,
+            sortBy: 'lastUpdated',
+            sortOrder: 'desc',
+          },
+          {},
+          [],
+        );
         expect(response.pagination.total).toBe(0);
       }
     });

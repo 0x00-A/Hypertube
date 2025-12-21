@@ -1,10 +1,10 @@
 import request from 'supertest';
-import { createApp } from '../../src/app';
-import { MovieInteractionModel } from '../../src/models/MovieInteraction';
-import { MovieModel } from '../../src/models/Movie';
-import { UserModel } from '../../src/models/User';
+import { createApp } from '../../../src/app';
+import { MovieInteractionModel } from '../../../src/models/MovieInteraction';
+import { MovieModel } from '../../../src/models/Movie';
+import { UserModel } from '../../../src/models/User';
 import mongoose, { Types } from 'mongoose';
-import { IMovie } from '../../src/interfaces/movie.interface';
+import { IMovie } from '../../../src/interfaces/movie.interface';
 
 describe('MovieInteraction API Integration Tests', () => {
   const app = createApp();
@@ -15,7 +15,7 @@ describe('MovieInteraction API Integration Tests', () => {
 
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
-    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+    const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;

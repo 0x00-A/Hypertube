@@ -1,7 +1,7 @@
 import request from 'supertest';
-import { createApp } from '../../src/app';
+import { createApp } from '../../../src/app';
 import { Types } from 'mongoose';
-import { UserModel } from '../../src/models/User';
+import { UserModel } from '../../../src/models/User';
 
 describe('Movies API - New Endpoints (Integration)', () => {
   const app = createApp();
@@ -9,7 +9,7 @@ describe('Movies API - New Endpoints (Integration)', () => {
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
-    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+    const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;

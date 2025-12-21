@@ -220,10 +220,6 @@ export class MovieService {
     }
   }
 
-  /**
-   * Read the curated CSV and return the ordered list. If movies exist locally they are enriched
-   * with user state flags and DB data; otherwise a lightweight record from the CSV is returned.
-   */
   async getCuratedList(
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions,
@@ -238,6 +234,49 @@ export class MovieService {
   async getGenres(): Promise<string[]> {
     const genres = await this._movieRepository.getDistinctGenres();
     return (genres || []).filter(Boolean).sort();
+  }
+
+  async getHomepageSlider(): Promise<IMovie[]> {
+    try {
+      const sliderLimit = 6;
+      // const trendingUrl = `${env.TMDB_BASE_API_URL}/trending/movie/week`;
+      const results = await this.getTrending({ page: 1 });
+
+      const tmdbMovies = (results.data || []).slice(0, sliderLimit);
+
+      const excludeFields = [
+        'torrents',
+        'cast',
+        'downloadStatus',
+        'lastWatched',
+        'userRatings',
+        'metadataSource',
+      ];
+
+      const completedMovies: IMovie[] = [];
+
+      for (const m of tmdbMovies) {
+        const tmdbId = m.tmdbId;
+
+        let movieDoc = await this._movieRepository.findByTmdbId(tmdbId, excludeFields);
+
+        if (!movieDoc) {
+          await this.completeMovieData(tmdbId);
+          movieDoc = await this._movieRepository.findByTmdbId(tmdbId, excludeFields);
+        }
+
+        if (movieDoc) {
+          completedMovies.push(movieDoc.toObject() as IMovie);
+        }
+      }
+
+      return completedMovies;
+    } catch (error: unknown) {
+      logger.error(
+        `[MovieService] Error fetching homepage slider movies: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new BadGatewayError();
+    }
   }
 
   async addToWatchlist(userId: Types.ObjectId, tmdbId: number) {
