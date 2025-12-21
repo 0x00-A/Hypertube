@@ -12,6 +12,15 @@ export class MovieRepository {
   async findAll(
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions = {},
+    excludeFields: string[] = [
+      'torrents',
+      'cast',
+      'trailer',
+      'downloadStatus',
+      'lastWatched',
+      'userRatings',
+      'metadataSource',
+    ],
   ): Promise<IPaginatedResponse<IMovie>> {
     const page = paginationOptions.page || 1;
     const limit = paginationOptions.limit || 10;
@@ -22,6 +31,10 @@ export class MovieRepository {
 
     // Build filter query
     const filter: FilterQuery<IMovieDocument> = {};
+
+    if (filterOptions.topRanked) {
+      filter.topRank = { $ne: null };
+    }
 
     if (filterOptions.search) {
       const sanitizedSearch = filterOptions.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -43,9 +56,12 @@ export class MovieRepository {
       filter.year = filterOptions.year;
     }
 
+    const selectStr = excludeFields.length ? excludeFields.map((f) => `-${f}`).join(' ') : '';
+
     // Execute queries
     const [data, total] = await Promise.all([
       MovieModel.find(filter)
+        .select(selectStr)
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
@@ -87,8 +103,9 @@ export class MovieRepository {
     return MovieModel.findOne({ imdbId: imdbId }).exec();
   }
 
-  async findByTmdbId(tmdbId: number): Promise<IMovieDocument | null> {
-    return MovieModel.findOne({ tmdbId: tmdbId }).exec();
+  async findByTmdbId(tmdbId: number, excludeFields: string[] = []): Promise<IMovieDocument | null> {
+    const selectStr = excludeFields.length ? excludeFields.map((f) => `-${f}`).join(' ') : '';
+    return MovieModel.findOne({ tmdbId: tmdbId }).select(selectStr).exec();
   }
 
   async findByTmdbIds(tmdbIds: number[]): Promise<IMovieDocument[]> {
@@ -106,5 +123,20 @@ export class MovieRepository {
     updateData: Partial<IMovie>,
   ): Promise<IMovieDocument | null> {
     return MovieModel.findOneAndUpdate({ tmdbId }, updateData, { new: true });
+  }
+
+  async findRandom(): Promise<IMovieDocument | null> {
+    const count = await MovieModel.countDocuments({ topRank: { $ne: null } });
+    if (count === 0) return null;
+    const randomIndex = Math.floor(Math.random() * count);
+    const randomMovie = await MovieModel.findOne({ topRank: { $ne: null } })
+      .skip(randomIndex)
+      .exec();
+    return randomMovie;
+  }
+
+  async getDistinctGenres(): Promise<string[]> {
+    const genres = await MovieModel.distinct('genres').exec();
+    return genres as string[];
   }
 }

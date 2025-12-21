@@ -62,6 +62,21 @@ export class MovieController {
     res.json(response);
   });
 
+  getRandomMovie = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    const movie = await this._movieService.getRandom(userId);
+
+    if (!movie) {
+      throw new NotFoundError('No movie found');
+    }
+
+    const response: IResponse<IMovie> = {
+      data: movie,
+      message: 'Random movie fetched successfully.',
+    };
+    res.json(response);
+  });
+
   getMovieByTmdbId = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?._id;
     const { tmdbId } = req.validated?.params as { tmdbId: number };
@@ -96,19 +111,27 @@ export class MovieController {
     res.json(response);
   });
 
-  getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { page } = req.validated?.query as { page?: number };
+  getHomepageSlider = asyncHandler(async (req: Request, res: Response) => {
+    const movies = await this._movieService.getHomepageSlider();
 
-    if (!userId) {
-      throw new NotFoundError('User not found');
-    }
+    const response: IResponse<IMovie[]> = {
+      data: movies,
+      message: 'Homepage slider movies fetched successfully.',
+    };
+
+    res.json(response);
+  });
+
+  getRecommendedMovies = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!._id;
+    const { page } = req.validated?.query as { page?: number };
+    const { tmdbId } = (req.validated?.params ?? {}) as { tmdbId?: number | undefined };
 
     const paginationOptions: Partial<IPaginationOptions> = {
       page: page || 1,
     };
 
-    const result = await this._movieService.getRecommended(paginationOptions, userId);
+    const result = await this._movieService.getRecommended(paginationOptions, tmdbId, userId);
 
     const response: IPaginatedResponse<ITmdbListMovie> = {
       ...result,
@@ -116,6 +139,11 @@ export class MovieController {
     };
 
     res.json(response);
+  });
+
+  getGenres = asyncHandler(async (req: Request, res: Response) => {
+    const genres = await this._movieService.getGenres();
+    res.json({ data: genres, message: 'Genres fetched successfully.' });
   });
 
   getPopularMovies = asyncHandler(async (req: Request, res: Response) => {
@@ -178,5 +206,37 @@ export class MovieController {
       message: 'Movie added to watchlist.',
     };
     res.status(201).json(response);
+  });
+
+  getCuratedMovies = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+    const query = req.validated?.query as Partial<IPaginationOptions & MovieFilterOptions>;
+
+    const paginationOptions: IPaginationOptions = {
+      page: query.page || 1,
+      limit: query.limit || 20,
+      sortBy: query.sortBy || 'topRank',
+      sortOrder: query.sortOrder || 'asc',
+    };
+    const filterOptions: MovieFilterOptions = {
+      search: query.search,
+      genre: query.genre,
+      minRating: query.minRating,
+      year: query.year,
+      topRanked: true,
+    };
+
+    const results = await this._movieService.getCuratedList(
+      paginationOptions,
+      filterOptions,
+      userId,
+    );
+
+    const response: IPaginatedResponse<IMovie> = {
+      ...results,
+      message: 'Curated movies fetched successfully.',
+    };
+
+    res.json(response);
   });
 }

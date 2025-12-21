@@ -986,15 +986,14 @@ paths:
     get:
       summary: Get a single movie by ID
       description: |
-        Returns a single movie by its MongoDB ObjectId. Supports **optional authentication**.
+        Returns a single movie by its MongoDB ObjectId. Requires authentication.
 
         - **Authenticated users**: Includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
-        - **Unauthenticated users**: Includes these fields with default values (`false`, `null`).
+        - **Unauthenticated users**: This endpoint requires authentication and will return a 401 when called without valid credentials.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: path
           name: id
@@ -1293,12 +1292,11 @@ paths:
       summary: Get movie details by TMDB ID (fetches and stores if not local)
       description: |
         Fetches a movie by TMDB ID. If not in local database, fetches metadata and creates it.
-        Supports **optional authentication** - authenticated users receive personalized state flags.
+        Requires authentication - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: path
           name: tmdbId
@@ -1309,6 +1307,26 @@ paths:
       responses:
         '200':
           description: Movie details found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Movie'
+
+  /api/v1/movies/random:
+    get:
+      summary: Get a random curated movie
+      description: |
+        Returns a random movie from the curated top-ranked list (seeded from `scripts/movies.csv`). Requires authentication.
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Random movie fetched successfully
           content:
             application/json:
               schema:
@@ -1437,14 +1455,135 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: success
                   data:
                     $ref: '#/components/schemas/MovieInteraction'
                   message:
                     type: string
                     example: Movie added to watchlist.
+  /api/v1/movies/recommended/{tmdbId}:
+    get:
+      summary: Get recommended movies for a specific TMDB movie (TMDB-based)
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Paginated list of recommended movies (external)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrendingMovieItem'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 1000
+                      totalPages:
+                        type: integer
+                        example: 50
+                      limit:
+                        type: integer
+                        example: 20
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+        '502':
+          description: Failed to fetch recommendations from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/movies/genres:
+    get:
+      summary: Get list of available genres from local DB
+      tags:
+        - Movies
+      security:
+        - {}
+      responses:
+        '200':
+          description: Array of genre strings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+              example:
+                data: ['Action', 'Drama', 'Comedy']
+                message: Genres fetched successfully.
+                properties:
+                  status:
+                    type: string
+                    example: success
+
+  /api/v1/movies/slider:
+    get:
+      summary: Get 6 trending movies for homepage slider
+      description: >-
+        Fetches the first 6 trending movies from TMDB and enriches them with local
+        metadata when available. Heavy fields (torrents, cast, downloadStatus,
+        lastWatched, userRatings, metadataSource) are excluded from the response
+        to keep the payload light for the homepage slider.
+      tags:
+        - Movies
+      security:
+        - {}
+      responses:
+        '200':
+          description: Array of up to 6 local `Movie` objects (heavy fields excluded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+                  message:
+                    type: string
+              example:
+                data: []
+                message: Homepage slider movies fetched successfully.
+        '502':
+          description: Failed to fetch trending movies from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Not authenticated
           content:
@@ -1683,6 +1822,14 @@ components:
             The authenticated user's rating for this movie (1-10 scale).
             Always `null` for unauthenticated users or if the user hasn't rated the movie.
           example: null
+        topRank:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: |
+            Numeric position in the curated top-ranked list (seeded from `scripts/movies.csv`).
+            `null` when not part of the list.
+          example: 1
 
     Torrent:
       type: object
@@ -1841,6 +1988,13 @@ components:
             The authenticated user's rating for this movie (1-10 scale).
             Only present when `isLocal` is `true`. Always `null` for unauthenticated users.
           example: null
+        topRank:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: |
+            Numeric position in the curated top-ranked list (seeded from `scripts/movies.csv`). Only present when `isLocal` is `true`.
+          example: 1
 
     MovieInteraction:
       type: object

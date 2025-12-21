@@ -65,6 +65,8 @@ const movieSchema = new Schema(
     isWatched: { type: Boolean, default: false },
     inWatchlist: { type: Boolean, default: false },
     userRating: { type: Number, min: 1, max: 10, default: null },
+    // Numeric rank for curated top-ranked movies (seeded). null = not ranked
+    topRank: { type: Number, min: 1, default: null },
   },
   { versionKey: false },
 );

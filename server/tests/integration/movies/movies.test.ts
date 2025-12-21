@@ -1,11 +1,11 @@
 import request from 'supertest';
-import { createApp } from '../../src/app';
+import { createApp } from '../../../src/app';
 
-import { MovieModel } from '../../src/models/Movie';
+import { MovieModel } from '../../../src/models/Movie';
 import mongoose from 'mongoose';
-import { IMovie } from '../../src/interfaces/movie.interface';
+import { IMovie } from '../../../src/interfaces/movie.interface';
 import { Types } from 'mongoose';
-import { UserModel } from '../../src/models/User';
+import { UserModel } from '../../../src/models/User';
 
 afterEach(async () => {
   // Ensure no leftover movies between tests
@@ -20,7 +20,7 @@ describe('Movies API Integration Tests', () => {
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
-    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+    const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;

@@ -39,6 +39,11 @@ export interface ITmdbListMovie {
   isWatched?: boolean;
   inWatchlist?: boolean;
   userRating?: number | null;
+  /**
+   * Numeric rank for curated top-ranked movies seeded from `scripts/movies.csv`.
+   * This represents the position in the curated list. `null` when not part of the list.
+   */
+  topRank?: number | null;
 }
 
 export interface ITorrent {
@@ -87,6 +92,7 @@ export interface IMovie {
   isWatched?: boolean;
   inWatchlist?: boolean;
   userRating?: number | null;
+  topRank?: number | null;
 }
 
 export interface IScrapedMovie {

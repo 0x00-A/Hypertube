@@ -1,13 +1,13 @@
 import request from 'supertest';
-import { createApp } from '../../src/app';
+import { createApp } from '../../../src/app';
 import mongoose from 'mongoose';
 import { Types } from 'mongoose';
 // Removed per-file MongoMemoryServer usage
-import { scraperEngine } from '../../src/services/scraper/ScraperEngine';
-import { MovieRepository } from '../../src/repositories/movie.repository';
-import { BaseProvider } from '../../src/services/scraper/providers/BaseProvider';
-import { IScrapedMovie } from '../../src/interfaces/movie.interface';
-import { UserModel } from '../../src/models/User';
+import { scraperEngine } from '../../../src/services/scraper/ScraperEngine';
+import { MovieRepository } from '../../../src/repositories/movie.repository';
+import { BaseProvider } from '../../../src/services/scraper/providers/BaseProvider';
+import { IScrapedMovie } from '../../../src/interfaces/movie.interface';
+import { UserModel } from '../../../src/models/User';
 
 // Mock provider for search endpoint
 class MockYtsProvider extends BaseProvider {
@@ -37,7 +37,7 @@ describe('Movie Search API', () => {
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
-    const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
+    const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
     const unique = Math.random().toString(36).substring(2, 10) + Date.now();
     const testUsername = `testuser_${unique}`;

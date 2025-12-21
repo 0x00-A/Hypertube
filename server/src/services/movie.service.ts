@@ -55,6 +55,11 @@ export class MovieService {
     return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
   }
 
+  async getRandom(userId?: string | undefined): Promise<IMovie | null> {
+    const movie = await this._movieRepository.findRandom();
+    return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
+  }
+
   async getByTmdbId(tmdbId: number, userId?: string | undefined): Promise<IMovie | null> {
     let movie = await this._movieRepository.findByTmdbId(tmdbId);
     if (!movie) {
@@ -104,20 +109,46 @@ export class MovieService {
 
   async getRecommended(
     paginationOptions: Partial<IPaginationOptions>,
-    userId: string,
+    tmdbId: number | undefined,
+    userId: string | undefined,
   ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
-      // Temporary hardcoded recommended movies until user preferences are implemented
       const hardcodedTmdbIds = [
         550, // Fight Club
         680, // Pulp Fiction
         278, // The Shawshank Redemption
         238, // The Godfather
+        424, // Schindler's List
+        240, // The Godfather: Part II
+        13, // Forrest Gump
+        155, // The Dark Knight
+        497, // The Green Mile
+        122, // The Lord of the Rings: The Return of the King
+        603, // The Matrix
+        769, // Goodfellas
+        274, // The Silence of the Lambs
+        27205, // Inception
+        11, // Star Wars: Episode IV - A New Hope
+        1893, // The Empire Strikes Back
+        1891, // Return of the Jedi
+        157336, // Interstellar
+        24428, // The Avengers
+        99861, // Avengers: Endgame
+        299534, // Avengers: Infinity War
+        497698, // Black Widow
+        634649, // Spider-Man: No Way Home
       ];
 
-      const recommendedUrl = `${env.TMDB_BASE_API_URL}/movie/${
-        hardcodedTmdbIds[Math.floor(Math.random() * hardcodedTmdbIds.length)]
-      }/recommendations`;
+      const lastWatchedTmdbId = await this._movieInteractionRepository.getLastWatchedMovieTmdbId(
+        new Types.ObjectId(userId),
+      );
+
+      const movieId =
+        tmdbId ||
+        lastWatchedTmdbId ||
+        hardcodedTmdbIds[Math.floor(Math.random() * hardcodedTmdbIds.length)];
+
+      const recommendedUrl = `${env.TMDB_BASE_API_URL}/movie/${movieId}/recommendations`;
 
       const results = await axios.get<ITmdbTrendingResponse>(recommendedUrl, {
         headers: {
@@ -182,6 +213,65 @@ export class MovieService {
     } catch (error: unknown) {
       logger.error(
         `[MovieService] Error fetching popular movies: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new BadGatewayError();
+    }
+  }
+
+  async getCuratedList(
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+    userId?: string | undefined,
+  ): Promise<IPaginatedResponse<IMovie>> {
+    const result = await this._movieRepository.findAll(paginationOptions, filterOptions);
+
+    result.data = (await this.addUserMovieState(userId, result.data, true)) as IMovie[];
+    return result;
+  }
+
+  async getGenres(): Promise<string[]> {
+    const genres = await this._movieRepository.getDistinctGenres();
+    return (genres || []).filter(Boolean).sort();
+  }
+
+  async getHomepageSlider(): Promise<IMovie[]> {
+    try {
+      const sliderLimit = 6;
+      // const trendingUrl = `${env.TMDB_BASE_API_URL}/trending/movie/week`;
+      const results = await this.getTrending({ page: 1 });
+
+      const tmdbMovies = (results.data || []).slice(0, sliderLimit);
+
+      const excludeFields = [
+        'torrents',
+        'cast',
+        'downloadStatus',
+        'lastWatched',
+        'userRatings',
+        'metadataSource',
+      ];
+
+      const completedMovies: IMovie[] = [];
+
+      for (const m of tmdbMovies) {
+        const tmdbId = m.tmdbId;
+
+        let movieDoc = await this._movieRepository.findByTmdbId(tmdbId, excludeFields);
+
+        if (!movieDoc) {
+          await this.completeMovieData(tmdbId);
+          movieDoc = await this._movieRepository.findByTmdbId(tmdbId, excludeFields);
+        }
+
+        if (movieDoc) {
+          completedMovies.push(movieDoc.toObject() as IMovie);
+        }
+      }
+
+      return completedMovies;
+    } catch (error: unknown) {
+      logger.error(
+        `[MovieService] Error fetching homepage slider movies: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new BadGatewayError();
     }
@@ -283,7 +373,7 @@ export class MovieService {
   async searchExternal(
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions,
-    userId: string | undefined,
+    userId?: string | undefined,
   ) {
     let results = await this.searchDatabase(paginationOptions, filterOptions);
 
@@ -326,7 +416,7 @@ export class MovieService {
 
     return tmdbMovies.map((m: ITmdbTrendingMovie) => {
       const isLocal = localTmdbIds.has(m.id);
-      let localMovie = {};
+      let localMovie: IMovie | undefined = undefined;
 
       if (isLocal) {
         localMovie = (localMoviesWithState as IMovie[]).find((lm) => lm.tmdbId === m.id) as IMovie;
@@ -345,9 +435,10 @@ export class MovieService {
           backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
         },
         isLocal,
-        inWatchlist: isLocal ? (localMovie as IMovie).inWatchlist : false,
-        isWatched: isLocal ? (localMovie as IMovie).isWatched : false,
-        userRating: isLocal ? (localMovie as IMovie).userRating : null,
+        inWatchlist: isLocal && localMovie ? (localMovie as IMovie).inWatchlist : false,
+        isWatched: isLocal && localMovie ? (localMovie as IMovie).isWatched : false,
+        userRating: isLocal && localMovie ? (localMovie as IMovie).userRating : null,
+        topRank: isLocal && localMovie ? ((localMovie as IMovie).topRank ?? null) : null,
       };
     });
   }

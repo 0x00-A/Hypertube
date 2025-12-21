@@ -15,6 +15,7 @@ export interface MovieFilterOptions extends BaseFilterOptions {
   genre?: string;
   minRating?: number;
   year?: number;
+  topRanked?: boolean;
 }
 
 // export interface YTSFilterOptions extends BaseFilterOptions {

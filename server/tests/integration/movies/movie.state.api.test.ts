@@ -469,25 +469,25 @@ describe('Movie State Flags API (Optional Auth)', () => {
       expect(res.body.data[0].userRating).toBeNull();
     });
 
-    it('should work for GET /movies/:id without auth', async () => {
-      const movie = await MovieModel.create({
-        imdbId: 'tt0111161',
-        tmdbId: 278,
-        title: 'The Shawshank Redemption',
-        year: 1994,
-        images: { thumbnail: '', poster: '', backdrop: '' },
-        torrents: [],
-        downloadStatus: 'not_downloaded',
-        lastUpdated: new Date(),
-      });
+    // it('should work for GET /movies/:id without auth', async () => {
+    //   const movie = await MovieModel.create({
+    //     imdbId: 'tt0111161',
+    //     tmdbId: 278,
+    //     title: 'The Shawshank Redemption',
+    //     year: 1994,
+    //     images: { thumbnail: '', poster: '', backdrop: '' },
+    //     torrents: [],
+    //     downloadStatus: 'not_downloaded',
+    //     lastUpdated: new Date(),
+    //   });
 
-      const res = await request(app).get(`/api/v1/movies/${movie._id}`);
+    //   const res = await request(app).get(`/api/v1/movies/${movie._id}`);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data.isWatched).toBe(false);
-      expect(res.body.data.inWatchlist).toBe(false);
-      expect(res.body.data.userRating).toBeNull();
-    });
+    //   expect(res.status).toBe(200);
+    //   expect(res.body.data.isWatched).toBe(false);
+    //   expect(res.body.data.inWatchlist).toBe(false);
+    //   expect(res.body.data.userRating).toBeNull();
+    // });
 
     it('should treat invalid token as unauthenticated', async () => {
       await MovieModel.create({

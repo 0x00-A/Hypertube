@@ -7,6 +7,7 @@ import {
   MovieSearchQuerySchema,
   TmdbIdParamSchema,
   MoviePageQuerySchema,
+  RecommendedTmdbSchema,
 } from '../../validators/movie.schema';
 import { auth, optionalAuth } from '../../middleware/auth';
 
@@ -27,12 +28,26 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getTrendingMovies.bind(movieController),
   );
 
+  router.get('/slider', optionalAuth, movieController.getHomepageSlider.bind(movieController));
+
+  // Curated list from scripts/movies.csv (supports optional auth)
+  router.get(
+    '/curated',
+    optionalAuth,
+    validate(MovieListQuerySchema),
+    movieController.getCuratedMovies.bind(movieController),
+  );
+
+  router.get('/random', auth, movieController.getRandomMovie.bind(movieController));
+
   router.get(
     '/popular',
     optionalAuth,
     validate(MoviePageQuerySchema),
     movieController.getPopularMovies.bind(movieController),
   );
+
+  router.get('/genres', optionalAuth, movieController.getGenres.bind(movieController));
 
   router.get(
     '/search',
@@ -43,7 +58,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/tmdb/:tmdbId',
-    optionalAuth,
+    auth,
     validate(TmdbIdParamSchema),
     movieController.getMovieByTmdbId.bind(movieController),
   );
@@ -52,6 +67,13 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     '/recommended',
     auth,
     validate(MoviePageQuerySchema),
+    movieController.getRecommendedMovies.bind(movieController),
+  );
+
+  router.get(
+    '/recommended/:tmdbId',
+    auth,
+    validate(RecommendedTmdbSchema),
     movieController.getRecommendedMovies.bind(movieController),
   );
 
@@ -64,7 +86,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/:id',
-    optionalAuth,
+    auth,
     validate(MovieIdParamSchema),
     movieController.getMovie.bind(movieController),
   );
