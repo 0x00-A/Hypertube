@@ -232,8 +232,8 @@ export class MovieController {
       userId,
     );
 
-    const response: IResponse<unknown[]> = {
-      ...results,
+    const response: IResponse<IPaginatedResponse<IMovie>> = {
+      data: results,
       message: 'Curated movies fetched successfully.',
     };
 
