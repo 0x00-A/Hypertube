@@ -126,7 +126,7 @@ export class MovieService {
         122, // The Lord of the Rings: The Return of the King
         603, // The Matrix
         769, // Goodfellas
-        424, // The Silence of the Lambs
+        274, // The Silence of the Lambs
         27205, // Inception
         11, // Star Wars: Episode IV - A New Hope
         1893, // The Empire Strikes Back
