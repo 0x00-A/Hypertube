@@ -583,11 +583,87 @@ paths:
                 type: string
                 example: accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/
 
-  /api/v1/profile/me:
+  /api/v1/users:
+    get:
+      summary: List all users with pagination
+      tags:
+        - Users
+      description: Returns a paginated list of all active users. Email, password, and OAuth fields are never exposed. No authentication required.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 1
+          description: Page number for pagination (max 10000)
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of users per page (max 100)
+          example: 10
+      responses:
+        '200':
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+                  total:
+                    type: integer
+                    example: 150
+                  totalPages:
+                    type: integer
+                    example: 15
+        '400':
+          description: Invalid query parameters (negative values, non-numeric, exceeding limits)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation Error
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                          example: query.page
+                        message:
+                          type: string
+                          example: Page must be a positive number
+
+  /api/v1/users/me:
     get:
       summary: Get current authenticated user's profile
       tags:
-        - User Profile
+        - Users
       security:
         - bearerAuth: []
       description: Returns the authenticated user's profile information including email. Requires valid JWT token in cookie.
@@ -634,24 +710,32 @@ paths:
                     type: string
                     example: User not found
 
-  /api/v1/profile/{username}:
+  /api/v1/users/{identifier}:
     get:
-      summary: Get public user profile by username
+      summary: Get user profile by username or MongoDB ID
       tags:
-        - User Profile
-      description: Returns public profile information for any user. Email is only exposed when viewing your own profile. No authentication required.
+        - Users
+      description: |
+        Returns public profile information for any user. Automatically detects whether the identifier is a username or MongoDB ObjectId (24 hex characters).
+        Email, password, and OAuth fields are never exposed in public profiles. No authentication required.
       parameters:
-        - name: username
+        - name: identifier
           in: path
           required: true
           schema:
             type: string
             minLength: 3
-          description: Username of the user to retrieve (case-insensitive)
-          example: johndoe
+          description: Username (3+ characters) or MongoDB ObjectId (24 hex characters)
+          examples:
+            username:
+              value: johndoe
+              summary: Search by username
+            objectId:
+              value: 507f1f77bcf86cd799439011
+              summary: Search by MongoDB ID
       responses:
         '200':
-          description: User profile information (email excluded unless viewing own profile)
+          description: User profile information (email excluded)
           content:
             application/json:
               schema:
@@ -666,7 +750,7 @@ paths:
                       user:
                         $ref: '#/components/schemas/User'
         '400':
-          description: Validation error (username too short or invalid format)
+          description: Validation error (identifier too short or invalid format)
           content:
             application/json:
               schema:
@@ -677,7 +761,7 @@ paths:
                     example: fail
                   message:
                     type: string
-                    example: Validation failed
+                    example: Validation Error
                   validationErrors:
                     type: array
                     items:
@@ -685,10 +769,10 @@ paths:
                       properties:
                         path:
                           type: string
-                          example: username
+                          example: params.identifier
                         message:
                           type: string
-                          example: String must contain at least 3 character(s)
+                          example: Identifier must be at least 3 characters long
         '404':
           description: User not found
           content:
@@ -701,7 +785,7 @@ paths:
                     example: fail
                   message:
                     type: string
-                    example: User with username "nonexistent" not found
+                    example: User not found
 
   /api/v1/movies:
     get:

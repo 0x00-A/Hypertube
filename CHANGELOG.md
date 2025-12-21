@@ -70,6 +70,9 @@
 - OpenAPI/Swagger documentation for authentication, email verification, password reset, and OAuth endpoints
 - User endpoints with privacy controls and flexible lookup
   - GET /api/v1/users/ - List all users with pagination (page, limit parameters)
+    - Query parameter validation: page (1-10000), limit (1-100)
+    - Protection against negative values, non-numeric input, and decimal numbers
+    - Service-layer defensive guards prevent negative MongoDB skip values
   - GET /api/v1/users/me - Get authenticated user's own profile (includes email)
   - GET /api/v1/users/:identifier - Get user by username OR MongoDB ID
   - Smart identifier detection: automatically detects MongoDB ObjectId format (24 hex chars) vs username
@@ -80,14 +83,15 @@
   - Password and OAuth fields never exposed in any endpoint
   - Public access: no authentication required for viewing user lists or profiles
   - Pagination support with metadata (page, limit, total, totalPages)
-- Comprehensive user endpoint integration tests (41 tests)
-  - GET /users/ endpoint: 7 tests (pagination, privacy, public access)
+- Comprehensive user endpoint tests (53 integration + 9 unit = 62 tests)
+  - GET /users/ endpoint: 19 tests (pagination, validation, privacy, public access)
+    - 12 validation tests for query parameters (negative, zero, max limits, decimals, non-numeric)
   - GET /users/me endpoint: 6 tests (authentication, token validation, email exposure)
   - GET /users/:identifier endpoint: 19 tests (username lookup, ID lookup, validation)
   - Privacy enforcement: 3 tests (email, password, oauth field hiding)
   - Response format consistency: 3 tests
   - Edge cases: 4 tests (concurrent requests, special characters, whitespace)
-  - Full coverage of all user endpoints with success, error, and security scenarios
+  - Unit tests: 9 tests for service-layer defensive guards (negative/zero/decimal handling)
 - MongoDB integration with Mongoose ODM
 - Repository-Service-Controller architecture pattern
 - Input validation using Zod schemas
@@ -114,5 +118,10 @@
   - Prevents email bombing attacks where attackers spam password reset requests
   - Email-based rate limiting (not IP-based) for accurate protection
   - Consistent error responses to prevent timing attacks
+- Comprehensive input validation with strict constraints
+  - Pagination parameters validated: max page 10000, max limit 100
+  - Regex validation ensures true integers (rejects decimals, negatives)
+  - Service-layer defensive programming (Math.max, Math.floor) as secondary protection
+  - Defense in depth: validation layer + service guards prevent edge cases
 
 ## [0.1.0] - 2025-09-15
