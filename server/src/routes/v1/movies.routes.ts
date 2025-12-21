@@ -7,6 +7,7 @@ import {
   MovieSearchQuerySchema,
   TmdbIdParamSchema,
   MoviePageQuerySchema,
+  RecommendedTmdbSchema,
 } from '../../validators/movie.schema';
 import { auth, optionalAuth } from '../../middleware/auth';
 
@@ -65,6 +66,13 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getRecommendedMovies.bind(movieController),
   );
 
+  router.get(
+    '/recommended/:tmdbId',
+    auth,
+    validate(RecommendedTmdbSchema),
+    movieController.getRecommendedMovies.bind(movieController),
+  );
+
   router.post(
     '/watchlist/:tmdbId',
     auth,
@@ -74,7 +82,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/:id',
-    auth,
+    optionalAuth,
     validate(MovieIdParamSchema),
     movieController.getMovie.bind(movieController),
   );

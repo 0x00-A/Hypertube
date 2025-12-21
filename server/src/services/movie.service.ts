@@ -109,20 +109,45 @@ export class MovieService {
 
   async getRecommended(
     paginationOptions: Partial<IPaginationOptions>,
+    tmdbId: number | undefined,
     userId: Types.ObjectId,
   ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
-      // Temporary hardcoded recommended movies until user preferences are implemented
       const hardcodedTmdbIds = [
         550, // Fight Club
         680, // Pulp Fiction
         278, // The Shawshank Redemption
         238, // The Godfather
+        424, // Schindler's List
+        240, // The Godfather: Part II
+        13, // Forrest Gump
+        155, // The Dark Knight
+        497, // The Green Mile
+        122, // The Lord of the Rings: The Return of the King
+        603, // The Matrix
+        769, // Goodfellas
+        424, // The Silence of the Lambs
+        27205, // Inception
+        11, // Star Wars: Episode IV - A New Hope
+        1893, // The Empire Strikes Back
+        1891, // Return of the Jedi
+        157336, // Interstellar
+        24428, // The Avengers
+        99861, // Avengers: Endgame
+        299534, // Avengers: Infinity War
+        497698, // Black Widow
+        634649, // Spider-Man: No Way Home
       ];
 
-      const recommendedUrl = `${env.TMDB_BASE_API_URL}/movie/${
-        hardcodedTmdbIds[Math.floor(Math.random() * hardcodedTmdbIds.length)]
-      }/recommendations`;
+      const lastWatchedTmdbId =
+        await this._movieInteractionRepository.getLastWatchedMovieTmdbId(userId);
+
+      const movieId =
+        tmdbId ||
+        lastWatchedTmdbId ||
+        hardcodedTmdbIds[Math.floor(Math.random() * hardcodedTmdbIds.length)];
+
+      const recommendedUrl = `${env.TMDB_BASE_API_URL}/movie/${movieId}/recommendations`;
 
       const results = await axios.get<ITmdbTrendingResponse>(recommendedUrl, {
         headers: {

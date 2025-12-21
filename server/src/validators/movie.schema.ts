@@ -99,3 +99,8 @@ export const MoviePageQuerySchema = z.object({
       .default(1),
   }),
 });
+
+export const RecommendedTmdbSchema = z.object({
+  params: TmdbIdParamSchema.shape.params,
+  query: MoviePageQuerySchema.shape.query,
+});
