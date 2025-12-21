@@ -27,6 +27,16 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getTrendingMovies.bind(movieController),
   );
 
+  // Curated list from scripts/movies.csv (supports optional auth)
+  router.get(
+    '/curated',
+    optionalAuth,
+    validate(MovieListQuerySchema),
+    movieController.getCuratedMovies.bind(movieController),
+  );
+
+  router.get('/random', auth, movieController.getRandomMovie.bind(movieController));
+
   router.get(
     '/popular',
     optionalAuth,
@@ -43,7 +53,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/tmdb/:tmdbId',
-    optionalAuth,
+    auth,
     validate(TmdbIdParamSchema),
     movieController.getMovieByTmdbId.bind(movieController),
   );
@@ -64,7 +74,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/:id',
-    optionalAuth,
+    auth,
     validate(MovieIdParamSchema),
     movieController.getMovie.bind(movieController),
   );

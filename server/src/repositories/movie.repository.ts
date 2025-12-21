@@ -23,6 +23,10 @@ export class MovieRepository {
     // Build filter query
     const filter: FilterQuery<IMovieDocument> = {};
 
+    if (filterOptions.topRanked) {
+      filter.topRank = { $ne: null };
+    }
+
     if (filterOptions.search) {
       const sanitizedSearch = filterOptions.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -106,5 +110,15 @@ export class MovieRepository {
     updateData: Partial<IMovie>,
   ): Promise<IMovieDocument | null> {
     return MovieModel.findOneAndUpdate({ tmdbId }, updateData, { new: true });
+  }
+
+  async findRandom(): Promise<IMovieDocument | null> {
+    const count = await MovieModel.countDocuments({ topRank: { $ne: null } });
+    if (count === 0) return null;
+    const randomIndex = Math.floor(Math.random() * count);
+    const randomMovie = await MovieModel.findOne({ topRank: { $ne: null } })
+      .skip(randomIndex)
+      .exec();
+    return randomMovie;
   }
 }

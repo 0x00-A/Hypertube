@@ -108,11 +108,12 @@ These endpoints work without authentication but provide enhanced data when a val
 
 ## State Flag Definitions
 
-| Field         | Type             | Description                                                         | Default (Unauthenticated) |
-| ------------- | ---------------- | ------------------------------------------------------------------- | ------------------------- |
-| `isWatched`   | `boolean`        | `true` if user completed watching this movie (watchProgress >= 90%) | `false`                   |
-| `inWatchlist` | `boolean`        | `true` if user added this movie to their watchlist                  | `false`                   |
-| `userRating`  | `number \| null` | User's rating for this movie (1-10 scale), or `null` if not rated   | `null`                    |
+| Field         | Type              | Description                                                                                                                        | Default (Unauthenticated) |
+| ------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `isWatched`   | `boolean`         | `true` if user completed watching this movie (watchProgress >= 90%)                                                                | `false`                   |
+| `inWatchlist` | `boolean`         | `true` if user added this movie to their watchlist                                                                                 | `false`                   |
+| `userRating`  | `number \| null`  | User's rating for this movie (1-10 scale), or `null` if not rated                                                                  | `null`                    |
+| `topRank`     | `integer \| null` | Numeric position in the curated top-ranked list (seeded from `scripts/movies.csv`). Use this to determine order in featured lists. | `null`                    |
 
 ---
 

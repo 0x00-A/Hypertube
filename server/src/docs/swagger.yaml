@@ -986,15 +986,14 @@ paths:
     get:
       summary: Get a single movie by ID
       description: |
-        Returns a single movie by its MongoDB ObjectId. Supports **optional authentication**.
+        Returns a single movie by its MongoDB ObjectId. Requires authentication.
 
         - **Authenticated users**: Includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
-        - **Unauthenticated users**: Includes these fields with default values (`false`, `null`).
+        - **Unauthenticated users**: This endpoint requires authentication and will return a 401 when called without valid credentials.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: path
           name: id
@@ -1293,12 +1292,11 @@ paths:
       summary: Get movie details by TMDB ID (fetches and stores if not local)
       description: |
         Fetches a movie by TMDB ID. If not in local database, fetches metadata and creates it.
-        Supports **optional authentication** - authenticated users receive personalized state flags.
+        Requires authentication - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: path
           name: tmdbId
@@ -1309,6 +1307,26 @@ paths:
       responses:
         '200':
           description: Movie details found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Movie'
+
+  /api/v1/movies/random:
+    get:
+      summary: Get a random curated movie
+      description: |
+        Returns a random movie from the curated top-ranked list (seeded from `scripts/movies.csv`). Requires authentication.
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Random movie fetched successfully
           content:
             application/json:
               schema:
@@ -1683,6 +1701,14 @@ components:
             The authenticated user's rating for this movie (1-10 scale).
             Always `null` for unauthenticated users or if the user hasn't rated the movie.
           example: null
+        topRank:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: |
+            Numeric position in the curated top-ranked list (seeded from `scripts/movies.csv`).
+            `null` when not part of the list.
+          example: 1
 
     Torrent:
       type: object
@@ -1841,6 +1867,13 @@ components:
             The authenticated user's rating for this movie (1-10 scale).
             Only present when `isLocal` is `true`. Always `null` for unauthenticated users.
           example: null
+        topRank:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: |
+            Numeric position in the curated top-ranked list (seeded from `scripts/movies.csv`). Only present when `isLocal` is `true`.
+          example: 1
 
     MovieInteraction:
       type: object

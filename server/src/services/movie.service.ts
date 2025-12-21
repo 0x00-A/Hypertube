@@ -55,6 +55,11 @@ export class MovieService {
     return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
   }
 
+  async getRandom(userId?: string | undefined): Promise<IMovie | null> {
+    const movie = await this._movieRepository.findRandom();
+    return (await this.addUserMovieState(userId, movie?.toObject(), false)) as IMovie;
+  }
+
   async getByTmdbId(tmdbId: number, userId?: string | undefined): Promise<IMovie | null> {
     let movie = await this._movieRepository.findByTmdbId(tmdbId);
     if (!movie) {
@@ -104,7 +109,7 @@ export class MovieService {
 
   async getRecommended(
     paginationOptions: Partial<IPaginationOptions>,
-    userId: string,
+    userId: Types.ObjectId,
   ): Promise<IPaginatedResponse<ITmdbListMovie>> {
     try {
       // Temporary hardcoded recommended movies until user preferences are implemented
@@ -129,7 +134,10 @@ export class MovieService {
         },
       });
 
-      const normalized = await this.normalizeTmdbMoviesWithLocalData(results.data.results, userId);
+      const normalized = await this.normalizeTmdbMoviesWithLocalData(
+        results.data.results,
+        userId.toString(),
+      );
 
       return {
         data: normalized,
@@ -185,6 +193,21 @@ export class MovieService {
       );
       throw new BadGatewayError();
     }
+  }
+
+  /**
+   * Read the curated CSV and return the ordered list. If movies exist locally they are enriched
+   * with user state flags and DB data; otherwise a lightweight record from the CSV is returned.
+   */
+  async getCuratedList(
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+    userId?: string | undefined,
+  ) {
+    const result = await this._movieRepository.findAll(paginationOptions, filterOptions);
+
+    result.data = (await this.addUserMovieState(userId, result.data, true)) as IMovie[];
+    return result;
   }
 
   async addToWatchlist(userId: Types.ObjectId, tmdbId: number) {
@@ -283,7 +306,7 @@ export class MovieService {
   async searchExternal(
     paginationOptions: IPaginationOptions,
     filterOptions: MovieFilterOptions,
-    userId: string | undefined,
+    userId?: string | undefined,
   ) {
     let results = await this.searchDatabase(paginationOptions, filterOptions);
 
@@ -326,7 +349,7 @@ export class MovieService {
 
     return tmdbMovies.map((m: ITmdbTrendingMovie) => {
       const isLocal = localTmdbIds.has(m.id);
-      let localMovie = {};
+      let localMovie: IMovie | undefined = undefined;
 
       if (isLocal) {
         localMovie = (localMoviesWithState as IMovie[]).find((lm) => lm.tmdbId === m.id) as IMovie;
@@ -345,9 +368,10 @@ export class MovieService {
           backdrop: m.backdrop_path ? `${env.TMDB_IMAGE_BASE_URL}/original${m.backdrop_path}` : '',
         },
         isLocal,
-        inWatchlist: isLocal ? (localMovie as IMovie).inWatchlist : false,
-        isWatched: isLocal ? (localMovie as IMovie).isWatched : false,
-        userRating: isLocal ? (localMovie as IMovie).userRating : null,
+        inWatchlist: isLocal && localMovie ? (localMovie as IMovie).inWatchlist : false,
+        isWatched: isLocal && localMovie ? (localMovie as IMovie).isWatched : false,
+        userRating: isLocal && localMovie ? (localMovie as IMovie).userRating : null,
+        topRank: isLocal && localMovie ? ((localMovie as IMovie).topRank ?? null) : null,
       };
     });
   }

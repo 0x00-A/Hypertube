@@ -9,8 +9,8 @@ export const MovieListQuerySchema = z.object({
       .transform(Number)
       .pipe(z.number().int().min(1).max(100))
       .default(20),
-    sortOrder: z.enum(['asc', 'desc']).default('desc'),
-    sortBy: z.enum(['lastUpdated', 'rating', 'year', 'title']).default('lastUpdated'),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    sortBy: z.enum(['lastUpdated', 'rating', 'year', 'title']).optional(),
     search: z.string().max(255).trim().optional(),
     genre: z.string().max(100).trim().optional(),
     minRating: z

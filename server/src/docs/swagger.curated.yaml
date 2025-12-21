@@ -1,0 +1,90 @@
+paths:
+  /api/v1/movies/curated:
+    get:
+      summary: Get curated movie list (seeded from scripts/movies.csv)
+      description: |
+        Returns a curated list of movies seeded from the repository's `scripts/movies.csv` file.
+        Supports optional authentication — authenticated users will see personalized flags (`isWatched`, `inWatchlist`, `userRating`, `topRank`) for local movies.
+      tags:
+        - Movies
+      security:
+        - cookieAuth: []
+        - {}
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of items to return
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [topRank, rating, year]
+          description: Sort order for curated list (default = topRank)
+      responses:
+        '200':
+          description: Paginated curated movie list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movie'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 200
+                      totalPages:
+                        type: integer
+                        example: 10
+                      limit:
+                        type: integer
+                        example: 20
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+              example:
+                data:
+                  - imdbId: tt0111161
+                    title: The Shawshank Redemption
+                    year: 1994
+                    rating: 9.3
+                    images:
+                      thumbnail: https://image.tmdb.org/t/p/w200/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg
+                    isLocal: true
+                    topRank: 1
+                    isWatched: false
+                    inWatchlist: false
+                pagination:
+                  page: 1
+                  total: 50
+                  totalPages: 3
+                  limit: 20
+        '400':
+          description: Validation error for query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
