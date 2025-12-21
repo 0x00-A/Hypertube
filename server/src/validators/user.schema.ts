@@ -37,16 +37,3 @@ export const GetUserSchema = z.object({
       .min(3, 'Identifier must be at least 3 characters long')
   }),
 });
-
-// Legacy schemas kept for backward compatibility
-export const GetUserByUsernameSchema = z.object({
-  params: z.object({
-    username: z.string().trim().min(3, 'Username must be at least 3 characters long'),
-  }),
-});
-
-export const GetUserByIdSchema = z.object({
-  params: z.object({
-    id: z.string().trim().length(24, 'Invalid user ID format'),
-  }),
-});

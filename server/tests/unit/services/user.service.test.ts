@@ -3,15 +3,17 @@ import { UserRepository } from '../../../src/repositories/user.repository';
 
 describe('UserService.list', () => {
   let userService: UserService;
-  let mockRepository: jest.Mocked<UserRepository>;
+  let mockRepository: jest.Mocked<Pick<UserRepository, 'findAll' | 'countDocuments'>>;
 
   beforeEach(() => {
+    // Create a type-safe mock with only the methods needed for these tests
     mockRepository = {
       findAll: jest.fn(),
       countDocuments: jest.fn(),
-    } as unknown as jest.Mocked<UserRepository>;
+    };
 
-    userService = new UserService(mockRepository);
+    // Cast to UserRepository for dependency injection (acceptable for unit tests)
+    userService = new UserService(mockRepository as unknown as UserRepository);
   });
 
   it('should handle negative page by defaulting to 1', async () => {

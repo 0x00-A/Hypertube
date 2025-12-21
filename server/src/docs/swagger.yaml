@@ -665,7 +665,7 @@ paths:
       tags:
         - Users
       security:
-        - cookieAuth: []
+        - bearerAuth: []
       description: Returns the authenticated user's profile information including email. Requires valid JWT token in cookie.
       responses:
         '200':
