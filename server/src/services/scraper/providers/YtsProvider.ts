@@ -86,6 +86,7 @@ export class YtsProvider extends BaseProvider {
       title: m.title,
       year: m.year,
       slug: m.slug,
+      rating: m.rating,
 
       torrents: (m.torrents ?? []).map((t) => ({
         url: t.url,

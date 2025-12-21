@@ -14,13 +14,20 @@ const mockMovieRepository = {
   upsert: jest.fn(),
 };
 const mockScraperEngine = {} as ScraperEngine;
+const mockMovieInteractionRepository = {
+  findByUserAndMovies: jest.fn(),
+};
 
 describe('MovieService.completeMovieData', () => {
   let movieService: MovieService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    movieService = new MovieService(mockMovieRepository as any, mockScraperEngine);
+    movieService = new MovieService(
+      mockMovieRepository as any,
+      mockScraperEngine,
+      mockMovieInteractionRepository as any,
+    );
   });
 
   it('should return null if no imdbId is found', async () => {

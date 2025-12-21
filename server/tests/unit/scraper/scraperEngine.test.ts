@@ -28,6 +28,7 @@ describe('ScraperEngine (unit)', () => {
       title: 'Partial Title',
       year: 2023,
       slug: 'partial-title',
+      rating: 7.5,
       torrents: [
         {
           url: 'magnet:?xt=urn:btih:test',
@@ -88,6 +89,7 @@ describe('ScraperEngine (unit)', () => {
       title: 'Existing Movie',
       year: 2020,
       slug: 'existing-movie',
+      rating: 6.5,
       torrents: [
         {
           url: 'magnet:?xt=urn:btih:newhash',

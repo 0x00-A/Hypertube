@@ -20,6 +20,7 @@ class MockYtsProvider extends BaseProvider {
         title: 'The Shawshank Redemption',
         year: 1994,
         slug: 'the-shawshank-redemption-1994',
+        rating: 9.3,
         torrents: [
           {
             url: 'magnet:?xt=urn:btih:mock1',
@@ -52,6 +53,7 @@ class MockYtsProvider extends BaseProvider {
         title: 'The Dark Knight',
         year: 2008,
         slug: 'the-dark-knight-2008',
+        rating: 9.0,
         torrents: [
           {
             url: 'magnet:?xt=urn:btih:mock3',
@@ -345,6 +347,7 @@ describe('ScraperEngine Integration Test', () => {
             title: 'Invalid Movie',
             year: 2023,
             slug: 'invalid-movie',
+            rating: 5.0,
             torrents: [],
           } as IScrapedMovie,
         ]);
