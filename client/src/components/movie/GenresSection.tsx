@@ -4,9 +4,10 @@ import { MovieCard } from './MovieCard';
 import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
-export interface MovieCarouselProps {
-  title: string;
-  movies: (IMovie | ITrendingMovie | IRecommendedMovie)[];
+export interface GenresSectionProps {
+  movies: IMovie[];
+  selectedGenre: string;
+  onGenreChange: (genre: string) => void;
   onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   onViewAll?: () => void;
@@ -14,15 +15,23 @@ export interface MovieCarouselProps {
   className?: string;
 }
 
-export const MovieCarousel = ({
-  title,
+const GENRES = [
+  'Comedy',
+  'Drama',
+  'Action',
+  'Animation',
+];
+
+export const GenresSection = ({
   movies,
+  selectedGenre,
+  onGenreChange,
   onMovieClick,
   onWatchlistToggle,
   onViewAll,
   isLoading = false,
   className,
-}: MovieCarouselProps) => {
+}: GenresSectionProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -32,7 +41,6 @@ export const MovieCarousel = ({
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
     setCanScrollLeft(scrollLeft > 0);
-    // Add a small threshold (1px) to account for rounding errors
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
   };
 
@@ -44,17 +52,16 @@ export const MovieCarousel = ({
     const scrollLeft = container.scrollLeft;
     const scrollWidth = container.scrollWidth;
 
-    // Calculate card width based on viewport
-    const gap = 8; // 2 * 4px (gap-2 in Tailwind)
+    const gap = 8;
     let cardsVisible = 1;
     
-    if (window.innerWidth >= 1280) { // xl
+    if (window.innerWidth >= 1280) {
       cardsVisible = 5;
-    } else if (window.innerWidth >= 1024) { // lg
+    } else if (window.innerWidth >= 1024) {
       cardsVisible = 4;
-    } else if (window.innerWidth >= 768) { // md
+    } else if (window.innerWidth >= 768) {
       cardsVisible = 3;
-    } else if (window.innerWidth >= 640) { // sm
+    } else if (window.innerWidth >= 640) {
       cardsVisible = 2;
     }
 
@@ -66,7 +73,6 @@ export const MovieCarousel = ({
     if (direction === 'left') {
       targetScroll = Math.max(0, scrollLeft - scrollAmount);
     } else {
-      // When scrolling right, make sure we don't go past the last card
       const maxScroll = scrollWidth - containerWidth;
       targetScroll = Math.min(maxScroll, scrollLeft + scrollAmount);
     }
@@ -95,8 +101,9 @@ export const MovieCarousel = ({
 
   return (
     <div className={clsx('relative w-full', className)}>
+      {/* Header with title and View All button */}
       <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h2 className="text-white text-2xl sm:text-3xl font-bold">{title}</h2>
+        <h2 className="text-white text-2xl sm:text-3xl font-bold">Genres</h2>
         {onViewAll && (
           <button
             onClick={onViewAll}
@@ -108,6 +115,25 @@ export const MovieCarousel = ({
         )}
       </div>
 
+      {/* Genre Pills */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {GENRES.map((genre) => (
+          <button
+            key={genre}
+            onClick={() => onGenreChange(genre)}
+            className={clsx(
+              'px-4 py-2 rounded-full text-sm font-medium transition-all duration-300',
+              selectedGenre === genre
+                ? 'bg-primary text-black'
+                : 'text-text-secondary hover:text-white'
+            )}
+          >
+            {genre}
+          </button>
+        ))}
+      </div>
+
+      {/* Movies Carousel */}
       <div className="relative group">
         {canScrollLeft && (
           <button
@@ -169,7 +195,7 @@ export const MovieCarousel = ({
           ) : (
             // Movie cards
             movies.map((movie) => {
-              const key = 'imdbId' in movie ? movie.imdbId : `tmdb-${movie.tmdbId}`;
+              const key = movie._id || movie.imdbId;
               return (
                 <div key={key}>
                   <MovieCard

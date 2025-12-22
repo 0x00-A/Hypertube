@@ -55,7 +55,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
+    <div className="flex h-screen w-full overflow-hidden bg-black">
       {/* Left Side - Movie Slideshow */}
       <div className="hidden lg:block lg:w-[60%]">
         <MovieSlideshow />
@@ -135,7 +135,7 @@ export default function Login() {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-bg-primary px-4 text-text-secondary">Continue With</span>
+                <span className="bg-black px-4 text-text-secondary">Continue With</span>
               </div>
             </div>
 

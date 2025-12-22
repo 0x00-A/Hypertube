@@ -1,28 +1,24 @@
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
-import { MovieCard } from './MovieCard';
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
+import { LastWatchingCard } from './LastWatchingSection';
+import type { IMovie, IWatchProgress } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
-export interface MovieCarouselProps {
+export interface LastWatchingCarouselProps {
   title: string;
-  movies: (IMovie | ITrendingMovie | IRecommendedMovie)[];
-  onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
-  onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
+  progressList: IWatchProgress[];
+  onPlayClick?: (movie: IMovie) => void;
   onViewAll?: () => void;
-  isLoading?: boolean;
   className?: string;
 }
 
-export const MovieCarousel = ({
+export const LastWatchingCarousel = ({
   title,
-  movies,
-  onMovieClick,
-  onWatchlistToggle,
+  progressList,
+  onPlayClick,
   onViewAll,
-  isLoading = false,
   className,
-}: MovieCarouselProps) => {
+}: LastWatchingCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -32,46 +28,19 @@ export const MovieCarousel = ({
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
     setCanScrollLeft(scrollLeft > 0);
-    // Add a small threshold (1px) to account for rounding errors
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
   };
 
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return;
 
-    const container = scrollContainerRef.current;
-    const containerWidth = container.clientWidth;
-    const scrollLeft = container.scrollLeft;
-    const scrollWidth = container.scrollWidth;
+    const scrollAmount = scrollContainerRef.current.clientWidth;
+    const targetScroll =
+      direction === 'left'
+        ? scrollContainerRef.current.scrollLeft - scrollAmount
+        : scrollContainerRef.current.scrollLeft + scrollAmount;
 
-    // Calculate card width based on viewport
-    const gap = 8; // 2 * 4px (gap-2 in Tailwind)
-    let cardsVisible = 1;
-    
-    if (window.innerWidth >= 1280) { // xl
-      cardsVisible = 5;
-    } else if (window.innerWidth >= 1024) { // lg
-      cardsVisible = 4;
-    } else if (window.innerWidth >= 768) { // md
-      cardsVisible = 3;
-    } else if (window.innerWidth >= 640) { // sm
-      cardsVisible = 2;
-    }
-
-    const cardWidth = (containerWidth - (gap * (cardsVisible - 1))) / cardsVisible;
-    const scrollAmount = cardWidth + gap;
-
-    let targetScroll: number;
-
-    if (direction === 'left') {
-      targetScroll = Math.max(0, scrollLeft - scrollAmount);
-    } else {
-      // When scrolling right, make sure we don't go past the last card
-      const maxScroll = scrollWidth - containerWidth;
-      targetScroll = Math.min(maxScroll, scrollLeft + scrollAmount);
-    }
-
-    container.scrollTo({
+    scrollContainerRef.current.scrollTo({
       left: targetScroll,
       behavior: 'smooth',
     });
@@ -85,7 +54,7 @@ export const MovieCarousel = ({
 
     container.addEventListener('scroll', checkScrollPosition);
     return () => container.removeEventListener('scroll', checkScrollPosition);
-  }, [movies]);
+  }, [progressList]);
 
   useEffect(() => {
     const handleResize = () => checkScrollPosition();
@@ -149,38 +118,17 @@ export const MovieCarousel = ({
 
         <div
           ref={scrollContainerRef}
-          className="grid grid-flow-col auto-cols-[100%] sm:auto-cols-[calc(50%-4px)] md:auto-cols-[calc(33.333%-5.33px)] lg:auto-cols-[calc(25%-6px)] xl:auto-cols-[calc(20%-6.4px)] gap-2 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.333%-11px)] lg:auto-cols-[calc(25%-12px)] xl:auto-cols-[calc(20%-13px)] gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {isLoading ? (
-            // Loading skeleton
-            Array.from({ length: 5 }).map((_, index) => (
-              <div key={`skeleton-${index}`} className="animate-pulse">
-                <div className="bg-border rounded-xl p-2">
-                  <div className="bg-bg-secondary rounded-lg aspect-2/3 w-full" />
-                </div>
-              </div>
-            ))
-          ) : movies.length === 0 ? (
-            // Empty state
-            <div className="col-span-full text-center py-12">
-              <p className="text-text-muted text-lg">No movies available</p>
+          {progressList.map((progress) => (
+            <div key={progress.movie._id || progress.movie.imdbId}>
+              <LastWatchingCard
+                progress={progress}
+                onPlayClick={onPlayClick}
+              />
             </div>
-          ) : (
-            // Movie cards
-            movies.map((movie) => {
-              const key = 'imdbId' in movie ? movie.imdbId : `tmdb-${movie.tmdbId}`;
-              return (
-                <div key={key}>
-                  <MovieCard
-                    movie={movie}
-                    onMovieClick={onMovieClick}
-                    onWatchlistToggle={onWatchlistToggle}
-                  />
-                </div>
-              );
-            })
-          )}
+          ))}
         </div>
       </div>
 

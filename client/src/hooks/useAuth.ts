@@ -58,8 +58,10 @@ export const useInitializeAuth = () => {
   useEffect(() => {
     if (!isInitialized) {
       if (data) {
+        console.log('✅ Auth initialized with user:', data);
         dispatch(initializeAuth(data));
       } else if (error) {
+        console.log('❌ Auth initialized without user (not logged in)');
         dispatch(initializeAuth(null));
       }
     }
@@ -79,17 +81,26 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => authService.login(credentials),
-    onSuccess: (response) => {
-      // Update Redux state
-      dispatch(setUser(response.user));
-      
-      // Cache user data in React Query
-      queryClient.setQueryData(queryKeys.auth.currentUser(), response.user);
-      
+    onSuccess: async () => {
       toast.success('Login successful!');
       
-      // Navigate to home page
-      navigate('/');
+      // Fetch user data from /profile/me after successful login
+      try {
+        const userData = await authService.getCurrentUser();
+        console.log('✅ User data fetched after login:', userData);
+        
+        // Update Redux state
+        dispatch(setUser(userData));
+        
+        // Cache user data in React Query
+        queryClient.setQueryData(queryKeys.auth.currentUser(), userData);
+        
+        // Navigate to home page
+        navigate('/');
+      } catch (error) {
+        console.error('❌ Failed to fetch user data:', error);
+        toast.error('Failed to fetch user data. Please try again.');
+      }
     },
     onError: (error: AuthError) => {
       toast.error(error.message || 'Login failed. Please try again.');
@@ -107,7 +118,7 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: (data: RegisterData) => authService.register(data),
     onSuccess: () => {
-      toast.success('Registration successful! Please login to continue.');
+      toast.success('Registration successful! Please check your email to verify your account.');
       
       // Navigate to login page
       navigate('/auth/login');
@@ -130,22 +141,24 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
+      console.log('✅ Logout successful');
+      
       // Clear Redux state
       dispatch(clearUser());
       
       // Clear all React Query cache
       queryClient.clear();
       
-      // Navigate to login page
-      navigate('/auth/login');
+      // Navigate to browse page (public page)
+      navigate('/browse');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Logout failed:', error);
+      
       // Even if logout fails on server, clear local state
       dispatch(clearUser());
       queryClient.clear();
-      navigate('/auth/login');
-      
-      toast.error('Logout failed, but you have been logged out locally.');
+      navigate('/browse');
     },
   });
 };

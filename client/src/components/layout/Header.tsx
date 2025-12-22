@@ -1,32 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, Film, Menu, X, SlidersHorizontal, Compass, Library, Star, Clock } from 'lucide-react';
+import { Search, Bell, Film, Menu, X, SlidersHorizontal, Compass, Library, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthState } from '../../hooks/useAuth';
 import ProfileDropdown from './ProfileDropdown';
 
 const navLinks = [
   { label: 'Browse', path: '/browse', icon: Compass },
+  { label: 'Movies', path: '/movies', icon: Film },
   { label: 'Library', path: '/library', icon: Library },
-  { label: 'Watchlist', path: '/watchlist', icon: Star },
   { label: 'History', path: '/history', icon: Clock },
 ];
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const { isAuthenticated, user } = useAuthState();
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
+  const profileTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileProfileTriggerRef = useRef<HTMLButtonElement>(null);
 
   // Close mobile menu and search on route change
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobileMenuOpen(false);
     setIsSearchExpanded(false);
+    setIsProfileDropdownOpen(false);
+    setIsMobileProfileOpen(false);
   }, [pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -55,42 +60,42 @@ export default function Header() {
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : user?.username?.[0]?.toUpperCase() || 'U';
 
-  const username = user?.username || user?.email?.split('@')[0] || 'User';
+  const username = user?.username || 'User';
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-bg-primary border-b border-border z-50">
       {/* Main Header Row */}
-      <div className="h-[70px] max-w-[1920px] mx-auto px-4 md:px-6 flex items-center justify-between gap-3 md:gap-6">
+      <div className="h-14 max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
         {/* LEFT SECTION - Mobile Menu + Logo + Desktop Navigation */}
-        <div className="flex items-center gap-3 md:gap-6 shrink-0">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
           {/* Mobile Menu Toggle */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden w-10 h-10 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+            className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
-            {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
           {/* Logo */}
           <Link to="/browse" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-8 h-8 md:w-9 md:h-9 bg-primary rounded flex items-center justify-center group-hover:bg-primary-light transition-colors">
-              <Film className="w-4 h-4 md:w-5 md:h-5 text-black" />
+            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center group-hover:bg-primary-light transition-colors">
+              <Film className="w-4 h-4 text-black" />
             </div>
-            <span className="text-lg md:text-xl font-bold text-text-primary hidden sm:block">
+            <span className="text-lg font-bold text-text-primary hidden sm:block">
               St.Movie
             </span>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-4 lg:gap-6">
+          <nav className="hidden md:flex items-center gap-3 lg:gap-5">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
                   clsx(
-                    'relative px-1 py-2 text-sm lg:text-base font-medium transition-colors duration-200 whitespace-nowrap',
+                    'relative px-1 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap',
                     isActive
                       ? 'text-primary'
                       : 'text-text-secondary hover:text-text-primary'
@@ -121,7 +126,7 @@ export default function Header() {
               placeholder="Search the movies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full pl-10 pr-10 py-2 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             <button
@@ -136,7 +141,7 @@ export default function Header() {
         </form>
 
         {/* RIGHT SECTION - Mobile Search Icon + Actions */}
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Mobile Search Toggle */}
           <button
             onClick={toggleSearch}
@@ -161,6 +166,7 @@ export default function Header() {
           {isAuthenticated ? (
             <div className="relative hidden md:block">
               <button
+                ref={profileTriggerRef}
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 className="w-9 h-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
                 aria-label="User menu"
@@ -172,6 +178,7 @@ export default function Header() {
                 onClose={() => setIsProfileDropdownOpen(false)}
                 userInitials={userInitials}
                 username={username}
+                triggerRef={profileTriggerRef}
               />
             </div>
           ) : (
@@ -179,13 +186,13 @@ export default function Header() {
               {/* Mobile + Desktop Login/SignUp Buttons */}
               <Link
                 to="/auth/login"
-                className="px-4 py-2 text-sm font-medium text-text-primary border border-border rounded-lg hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
+                className="px-3 py-1.5 text-sm font-medium text-text-primary border border-border rounded-lg hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
               >
                 Login
               </Link>
               <Link
                 to="/auth/register"
-                className="px-5 py-2 text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary-light transition-colors whitespace-nowrap"
+                className="px-4 py-1.5 text-sm font-medium text-black bg-primary rounded-lg hover:bg-primary-light transition-colors whitespace-nowrap"
               >
                 Sign Up
               </Link>
@@ -194,13 +201,23 @@ export default function Header() {
 
           {/* Mobile Profile Avatar - Only show when authenticated */}
           {isAuthenticated && (
-            <button
-              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              className="md:hidden w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
-              aria-label="User menu"
-            >
-              <span className="text-xs font-bold text-black">{userInitials}</span>
-            </button>
+            <div className="relative md:hidden">
+              <button
+                ref={mobileProfileTriggerRef}
+                onClick={() => setIsMobileProfileOpen(!isMobileProfileOpen)}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
+                aria-label="User menu"
+              >
+                <span className="text-xs font-bold text-black">{userInitials}</span>
+              </button>
+              <ProfileDropdown
+                isOpen={isMobileProfileOpen}
+                onClose={() => setIsMobileProfileOpen(false)}
+                userInitials={userInitials}
+                username={username}
+                triggerRef={mobileProfileTriggerRef}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -208,7 +225,7 @@ export default function Header() {
       {/* Mobile Search Expanded Row - INLINE */}
       {isSearchExpanded && (
         <div className="md:hidden border-t border-border bg-bg-primary animate-in slide-in-from-top-2 duration-200">
-          <div className="max-w-[1920px] mx-auto px-4 py-3">
+          <div className="max-w-7xl mx-auto px-4 py-3">
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <input
@@ -237,7 +254,7 @@ export default function Header() {
       {/* Mobile Menu Expanded Row - INLINE with Icons */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-bg-secondary/50 backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
-          <div className="max-w-[1920px] mx-auto px-4 py-4">
+          <div className="max-w-7xl mx-auto px-4 py-4">
             <nav className="grid grid-cols-2 gap-3">
               {navLinks.map((link) => {
                 const Icon = link.icon;
@@ -283,18 +300,6 @@ export default function Header() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Mobile Profile Dropdown - Position below avatar */}
-      {isAuthenticated && (
-        <div className="md:hidden">
-          <ProfileDropdown
-            isOpen={isProfileDropdownOpen}
-            onClose={() => setIsProfileDropdownOpen(false)}
-            userInitials={userInitials}
-            username={username}
-          />
         </div>
       )}
     </header>

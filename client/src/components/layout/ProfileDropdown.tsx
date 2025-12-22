@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { User, UserPen } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 
@@ -9,11 +9,11 @@ interface ProfileDropdownProps {
   onClose: () => void;
   userInitials: string;
   username?: string;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export default function ProfileDropdown({ isOpen, onClose, userInitials, username }: ProfileDropdownProps) {
+export default function ProfileDropdown({ isOpen, onClose, userInitials, username, triggerRef }: ProfileDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const logoutMutation = useLogout();
 
   // Close dropdown when clicking outside
@@ -21,21 +21,27 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+
+      // If clicking the trigger button, let the trigger handle the toggle
+      if (triggerRef.current && triggerRef.current.contains(target)) {
+        return;
+      }
+
+      // Don't close if clicking on a link inside the dropdown (let navigation happen)
+      // actually, we will handle closing on link click manually to be safe
+
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         onClose();
       }
     };
 
-    // Small delay to prevent immediate closing when clicking profile button
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 100);
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, triggerRef]);
 
   // Close on escape key
   useEffect(() => {
@@ -53,12 +59,14 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      // Close dropdown immediately to provide feedback
       onClose();
-      navigate('/browse');
+      await logoutMutation.mutateAsync();
       toast.success('Logged out successfully');
-    } catch {
-      toast.error('Failed to logout');
+    } catch (error: unknown) {
+      console.error('Logout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to logout';
+      toast.error(errorMessage);
     }
   };
 
@@ -67,51 +75,54 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-[calc(100%+8px)] w-56 bg-bg-tertiary rounded-lg border border-border shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+      className="absolute right-0 top-[calc(100%+8px)] w-56 bg-black rounded-xl border border-border shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
     >
       {/* User Info Section */}
-      <div className="px-4 py-3 border-b border-border">
+      <div className="px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-black">{userInitials}</span>
+          <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary-dark flex items-center justify-center shrink-0">
+            <span className="text-base font-bold text-black">{userInitials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary truncate">
+            <p className="text-base font-semibold text-white truncate">
               {username || 'User'}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Divider */}
+      <div className="border-t border-border/50" />
+
       {/* Menu Items */}
       <div className="py-2">
         <Link
           to="/profile"
           onClick={onClose}
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card transition-colors"
+          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         >
-          <User className="w-4 h-4" />
-          <span>View Profile</span>
+          <User className="w-5 h-5" />
+          <span>View profile</span>
         </Link>
 
         <Link
-          to="/settings"
+          to="/user/edit"
           onClick={onClose}
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card transition-colors"
+          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         >
-          <Settings className="w-4 h-4" />
-          <span>Settings</span>
+          <UserPen className="w-5 h-5" />
+          <span>Edit Profile</span>
         </Link>
+      </div>
 
-        <div className="my-1.5 border-t border-border" />
-
+      {/* Logout Button */}
+      <div className="px-4 pb-4 pt-2">
         <button
           onClick={handleLogout}
           disabled={logoutMutation.isPending}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-accent-red hover:text-accent-red/90 hover:bg-bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-full bg-primary hover:bg-primary-light py-2.5 text-sm font-semibold text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="w-4 h-4" />
-          <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
+          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
         </button>
       </div>
     </div>

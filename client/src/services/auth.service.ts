@@ -41,7 +41,8 @@ export const authService = {
    * Get current authenticated user
    */
   getCurrentUser: async (): Promise<User> => {
-    return httpClient.get<User>('/auth/me');
+    const response = await httpClient.get<{ status: string; data: { user: User } }>('/users/me');
+    return response.data.user;
   },
 
   /**
@@ -76,7 +77,7 @@ export const authService = {
    * Verify email with token
    */
   verifyEmail: async (token: string): Promise<MessageResponse> => {
-    return httpClient.post<MessageResponse>(`/auth/verify-email/${token}`);
+    return httpClient.post<MessageResponse>('/auth/verify-email', { token });
   },
 
   /**

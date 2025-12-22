@@ -44,16 +44,16 @@ export class ScraperScheduler {
       })
     ).pagination.total;
 
-    if (movieCount < 50) {
+    if (movieCount < 500) {
       logger.info('Server Startup: Triggering initial quick scrape...');
-      this.safeScrape(1, 2).catch((err) => logger.error({ err }, 'Startup scrape failed'));
+      this.safeScrape(1, 100).catch((err) => logger.error({ err }, 'Startup scrape failed'));
     }
   }
 
   private scheduleNightlyScrape(): void {
     this._cronTask = cron.schedule('0 3 * * *', async () => {
       logger.info('Cron Job: Starting nightly deep scrape...');
-      await this.safeScrape(1, 50);
+      await this.safeScrape(1, 5);
     });
 
     logger.info('Nightly scrape scheduled for 03:00 AM');

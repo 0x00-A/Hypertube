@@ -1,1 +1,1 @@
-export { heroMovies, lastWatchingMovies, recommendedMovies, trendingMovies } from './mockMovies';
+export { lastWatchingMovies } from './mockMovies';
