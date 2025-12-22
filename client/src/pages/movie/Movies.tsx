@@ -4,6 +4,7 @@ import { FilterBar, MovieCard, MovieCardSkeleton } from '../../components/movie'
 import { useFilteredMovies } from '../../hooks/useFilteredMovies';
 import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
+import { determineIsLocal, getMovieIdentifier } from '../../utils/movieHelpers';
 import { useEffect, useRef } from 'react';
 import { useAppDispatch } from '../../redux/hooks';
 import { setGenre } from '../../redux/slices/movieFiltersSlice';
@@ -29,8 +30,13 @@ export default function Movies() {
 
   const handleMovieClick = (movie: IMovie | ITrendingMovie | IRecommendedMovie) => {
     // Navigate to movie detail page
-    const id = 'imdbId' in movie ? movie.imdbId : movie.tmdbId;
-    navigate(`/movies/${id}`);
+    try {
+      const id = getMovieIdentifier(movie);
+      const isLocal = determineIsLocal(movie);
+      navigate(`/movies/${id}`, { state: { isLocal } });
+    } catch (error) {
+      console.error('Failed to navigate:', error);
+    }
   };
 
   const handleWatchlistToggle = () => {

@@ -5,16 +5,19 @@ import { clsx } from 'clsx';
 import { useAuthState } from '../../hooks/useAuth';
 import MoviePreviewModal from './MoviePreviewModal';
 
+import { useNavigate } from 'react-router-dom';
+import { determineIsLocal, getMovieIdentifier } from '../../utils/movieHelpers';
+
 export const MovieCard = ({
   movie,
   onMovieClick,
   onWatchlistToggle,
-  isInWatchlist = false,
   className,
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isAuthenticated } = useAuthState();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleCardClick = () => {
     // If user is not authenticated, show preview modal
@@ -23,8 +26,20 @@ export const MovieCard = ({
       return;
     }
 
-    // Otherwise, call the parent's onMovieClick handler
-    onMovieClick?.(movie);
+    // Call parent handler if provided
+    if (onMovieClick) {
+      onMovieClick(movie);
+      return;
+    }
+
+    // Default navigation behavior if no handler provided
+    try {
+      const id = getMovieIdentifier(movie);
+      const isLocal = determineIsLocal(movie);
+      navigate(`/movies/${id}`, { state: { isLocal } });
+    } catch (error) {
+      console.error('Failed to navigate to movie details:', error);
+    }
   };
 
   const handleWatchlistClick = (e: React.MouseEvent) => {
@@ -59,6 +74,7 @@ export const MovieCard = ({
         className={clsx(
           'relative cursor-pointer rounded-xl bg-border p-2 shadow-lg transition-all duration-500',
           'hover:shadow-2xl hover:z-10 w-full h-full flex flex-col',
+          movie.isWatched && 'border-2 border-green-500',
           className
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -91,7 +107,7 @@ export const MovieCard = ({
               <Heart
                 className={clsx(
                   'w-5 h-5 transition-colors',
-                  isInWatchlist
+                  movie.inWatchlist
                     ? 'fill-red-500 text-red-500'
                     : 'text-white/80 hover:text-white'
                 )}

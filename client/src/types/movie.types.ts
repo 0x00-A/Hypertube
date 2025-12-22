@@ -1,3 +1,15 @@
+export interface ICastMember {
+  id: number;
+  name: string;
+  character: string;
+  profilePath: string | null;
+  order: number;
+}
+
+export interface IMovieDetails extends IMovie {
+  cast?: ICastMember[];
+}
+
 export interface IMovie {
   _id?: string;
   imdbId: string;
@@ -7,6 +19,7 @@ export interface IMovie {
   rating?: number;
   duration?: number;
   synopsis?: string;
+  overview?: string;
   genres?: string[];
   originalLanguage?: string;
   trailer?: string;
@@ -15,6 +28,9 @@ export interface IMovie {
     poster?: string;
     backdrop?: string;
   };
+  isWatched?: boolean;
+  inWatchlist?: boolean;
+  userRating?: number | null;
 }
 
 export interface ITrendingMovie {
@@ -30,6 +46,9 @@ export interface ITrendingMovie {
     backdrop?: string;
   };
   isLocal: boolean;
+  isWatched?: boolean;
+  inWatchlist?: boolean;
+  userRating?: number | null;
 }
 
 export interface IRecommendedMovie {
@@ -45,6 +64,9 @@ export interface IRecommendedMovie {
     backdrop?: string;
   };
   isLocal: boolean;
+  isWatched?: boolean;
+  inWatchlist?: boolean;
+  userRating?: number | null;
 }
 
 export interface IMoviesResponse {
@@ -60,6 +82,11 @@ export interface ITrendingMoviesResponse {
 export interface IRecommendedMoviesResponse {
   data: IRecommendedMovie[];
   pagination: IPagination;
+}
+
+export interface IMovieDetailsResponse {
+  data: IMovieDetails;
+  message?: string;
 }
 
 export interface IPagination {
@@ -84,7 +111,6 @@ export type MovieCardProps = {
   movie: IMovie | ITrendingMovie | IRecommendedMovie;
   onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
-  isInWatchlist?: boolean;
   className?: string;
 };
 

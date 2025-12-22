@@ -24,7 +24,7 @@ import NotFound from './pages/notFound/NotFound';
 
 function NavigationSetup() {
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     setNavigate(navigate);
   }, [navigate]);
@@ -74,12 +74,11 @@ function App() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/library" element={<Library />} />
             <Route path="/movies" element={<Movies />} />
+            <Route path="/movies/:id" element={<MovieDetails />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/movies" element={<Movies />}>
-              <Route path=":id" element={<MovieDetails />} />
-            </Route>
+            <Route path="/movies/" element={<Movies />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/user/edit" element={<EditProfile />} />
             <Route path="*" element={<NotFound />} />

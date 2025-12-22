@@ -3,6 +3,8 @@ import type {
   ITrendingMoviesResponse,
   IRecommendedMoviesResponse,
   IMoviesResponse,
+  IMovieDetails,
+  IMovieDetailsResponse,
 } from '../types/movie.types';
 import type { IMovieFilters } from '../types/movieFilter.types';
 
@@ -12,6 +14,18 @@ import type { IMovieFilters } from '../types/movieFilter.types';
 
 class MovieService {
   private readonly BASE_PATH = '/movies';
+
+  /**
+   * Get movie details - handles both local and TMDB movies
+   */
+  async getMovieDetails(id: string, isLocal: boolean = true): Promise<IMovieDetails> {
+    const endpoint = isLocal
+      ? `${this.BASE_PATH}/${id}`
+      : `${this.BASE_PATH}/tmdb/${id}`;
+
+    const response = await httpClient.get<IMovieDetailsResponse>(endpoint);
+    return response.data;
+  }
 
   /**
    * Get trending movies from TMDB API
@@ -70,7 +84,7 @@ class MovieService {
    */
   async getAllMovies(filters?: IMovieFilters): Promise<IMoviesResponse> {
     const params: Record<string, string | number> = {};
-    
+
     if (filters) {
       if (filters.sortBy) params.sortBy = filters.sortBy;
       if (filters.sortOrder) params.sortOrder = filters.sortOrder;
