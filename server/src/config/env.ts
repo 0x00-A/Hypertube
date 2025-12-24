@@ -16,6 +16,15 @@ export const env = cleanEnv(process.env, {
   TMDB_API_ACCESS_TOKEN: str(),
   OMDB_API_KEY: str(),
 
+  OPEN_SUBTITLES_API_URL: str({ default: 'https://api.opensubtitles.com/api/v1' }),
+  OPEN_SUBTITLES_API_KEY: str({ default: '' }),
+  OPEN_SUBTITLES_USERNAME: str({ default: '' }),
+  OPEN_SUBTITLES_PASSWORD: str({ default: '' }),
+  OPEN_SUBTITLES_USER_AGENT: str({ default: 'hypertube v1.0' }),
+
+  // Enable running subtitle service unit tests (guarded in test files)
+  RUN_SUBTITLE_SERVICE_TESTS: bool({ default: false }),
+
   JWT_ACCESS_SECRET: str(),
   JWT_REFRESH_SECRET: str(),
   JWT_ACCESS_EXPIRES_IN: str({ default: '1h' }),

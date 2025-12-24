@@ -22,6 +22,8 @@ const userSchema = new Schema({
     _id: false,
     select: false,
   },
+
+  language: { type: String, default: 'en' },
 });
 
 export const UserModel = model<IUserDocument, IUserModel>('User', userSchema);

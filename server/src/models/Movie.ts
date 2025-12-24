@@ -28,6 +28,25 @@ const castSchema = new Schema(
   { _id: false },
 );
 
+const subtitleSchema = new Schema(
+  {
+    id: { type: String },
+    fileId: { type: Number },
+    fileName: { type: String },
+    language: { type: String, required: true },
+    label: { type: String, required: true },
+    forHash: { type: String, required: true }, // torrent hash this subtitle is linked to
+    forQuality: { type: String, required: true }, // torrent quality (e.g., '720p', '1080p')
+    url: { type: String },
+    localPath: { type: String },
+    provider: { type: String },
+    isDefault: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date },
+  },
+  { _id: false },
+);
+
 const movieSchema = new Schema(
   {
     // Normalized Data (The generic UI data)
@@ -67,6 +86,12 @@ const movieSchema = new Schema(
     userRating: { type: Number, min: 1, max: 10, default: null },
     // Numeric rank for curated top-ranked movies (seeded). null = not ranked
     topRank: { type: Number, min: 1, default: null },
+    // subtitles stored as: { 'en': [...], 'es': [...] }
+    subtitles: {
+      type: Map,
+      of: [subtitleSchema],
+      default: () => ({}),
+    },
   },
   { versionKey: false },
 );

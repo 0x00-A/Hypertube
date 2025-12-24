@@ -15,4 +15,6 @@ export interface IUser {
   avatarUrl?: string;
   createdAt?: Date;
   oauth?: IOAuth;
+
+  language?: string;
 }
