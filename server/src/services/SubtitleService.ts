@@ -62,6 +62,35 @@ export class SubtitleService {
     );
   }
 
+  /**
+   * Ensures that subtitles exist for a given movie, language, and torrent.
+   *
+   * This method is typically invoked before starting playback for a specific torrent
+   * (identified by its hash and quality). It checks whether a subtitle associated
+   * with the given torrent and language is already stored on the movie document.
+   * If not, it searches OpenSubtitles using the movie's IMDb ID, selects the most
+   * appropriate subtitle for the provided torrent, downloads and processes it, and
+   * then persists the subtitle metadata on the movie.
+   *
+   * If a matching subtitle already exists for the torrent, this method is a no-op
+   * aside from logging. If no suitable subtitle can be found, it logs a warning
+   * and returns without throwing.
+   *
+   * @param imdbId - IMDb identifier of the movie for which subtitles should be ensured.
+   * @param language - BCP 47 language code (for example, `"en"` or `"fr"`) specifying
+   * the subtitle language to search for.
+   * @param torrent - Torrent metadata (including hash and quality) that the subtitle
+   * should be associated with.
+   *
+   * @returns A promise that resolves when subtitle availability has been ensured for
+   * the given movie/torrent combination. The promise does not resolve with a value.
+   *
+   * @throws {Error} If the movie with the given {@link imdbId} cannot be found in the
+   * underlying repository.
+   * @throws {Error} Propagates lower-level errors that may occur while communicating
+   * with OpenSubtitles, downloading or processing subtitle files (network failures,
+   * invalid responses, decompression issues, or filesystem write errors).
+   */
   async ensureForMovie(imdbId: string, language: string, torrent: ITorrent): Promise<void> {
     const movie = await this._movieRepository.findByImdbId(imdbId);
     if (!movie) throw new Error('Movie not found');
