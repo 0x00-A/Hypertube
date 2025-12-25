@@ -37,9 +37,9 @@ const MovieRating: React.FC<MovieRatingProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/10 backdrop-blur-sm">
             <div
-                className="relative w-full sm:max-w-lg bg-[#1a1a1a] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                className="relative w-full sm:max-w-lg bg-bg-primary rounded-t-3xl sm:rounded-3xl shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button */}
