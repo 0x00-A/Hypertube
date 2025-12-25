@@ -28,6 +28,11 @@ export interface MoviesState {
     hasNextPage: boolean;
     selectedGenre: string;
   };
+  slider: {
+    data: IMovie[];
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 // ============================================================================
@@ -56,6 +61,11 @@ const initialState: MoviesState = {
     page: 1,
     hasNextPage: false,
     selectedGenre: 'Drama',
+  },
+  slider: {
+    data: [],
+    isLoading: false,
+    error: null,
   },
 };
 
@@ -129,6 +139,23 @@ const moviesSlice = createSlice({
       state.genres = initialState.genres;
     },
 
+    // Slider Movies Actions
+    setSliderLoading: (state, action: PayloadAction<boolean>) => {
+      state.slider.isLoading = action.payload;
+    },
+    setSliderMovies: (state, action: PayloadAction<IMovie[]>) => {
+      state.slider.data = action.payload;
+      state.slider.isLoading = false;
+      state.slider.error = null;
+    },
+    setSliderError: (state, action: PayloadAction<string>) => {
+      state.slider.error = action.payload;
+      state.slider.isLoading = false;
+    },
+    clearSliderMovies: (state) => {
+      state.slider = initialState.slider;
+    },
+
     // Reset all movies state
     resetMovies: () => initialState,
   },
@@ -152,6 +179,10 @@ export const {
   setGenreError,
   setSelectedGenre,
   clearGenreMovies,
+  setSliderLoading,
+  setSliderMovies,
+  setSliderError,
+  clearSliderMovies,
   resetMovies,
 } = moviesSlice.actions;
 

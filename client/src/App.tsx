@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
 import { AuthProvider } from './components/auth/AuthProvider';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Pages
 import Login from './pages/auth/Login';
@@ -36,6 +37,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <NavigationSetup />
         <Toaster
           position="bottom-right"

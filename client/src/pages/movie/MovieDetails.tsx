@@ -3,7 +3,9 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Play, Heart, Share2, Star, Calendar, Clock, Languages } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
+import { useUserRating } from '../../hooks/useUserRating';
 import { formatRuntime } from '../../utils/movieHelpers';
+import { MovieRating } from '../../components/movie';
 import type { ICastMember } from '../../types/movie.types';
 
 export default function MovieDetails() {
@@ -11,19 +13,19 @@ export default function MovieDetails() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // If we don't know if it's local (e.g. direct link), we might default to local or try both?
-    // For now, rely on passed state or assume local if ID looks like ObjectId (24 hex chars)?
-    // But let's stick to the plan: passed state. 
-    // If no state (refresh), we might need logic.
-    // Simple logic: if id is numeric -> tmdb (isLocal=false). if string/hex -> local.
     const derivedIsLocal = location.state?.isLocal ?? (id && !/^\d+$/.test(id));
 
     const { data: movie, isLoading, error } = useMovieDetails({
         id: id!,
-        isLocal: derivedIsLocal
+        isTmdbMovie: !derivedIsLocal
     });
 
+    const { data: currentRating } = useUserRating(id!);
+
+
     const [activeTab, setActiveTab] = useState<'info' | 'similar' | 'reviews'>('info');
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+
 
     if (isLoading) {
         return (
@@ -59,8 +61,8 @@ export default function MovieDetails() {
                 <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
 
                     {/* Cutouts for Ticket Effect */}
-                    <div className="hidden md:block absolute top-[0px] left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
-                    <div className="hidden md:block absolute bottom-[0px] left-[35%] -translate-x-1/2 translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
+                    <div className="hidden md:block absolute top-0 left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
+                    <div className="hidden md:block absolute bottom-0 left-[35%] -translate-x-1/2 translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
 
                     {/* Dashed Line */}
                     <div className="hidden md:block absolute top-9 bottom-9 left-[35%] -translate-x-1/2 border-l-2 border-dashed border-white/30 z-30" />
@@ -86,7 +88,7 @@ export default function MovieDetails() {
                                 className="w-full h-full object-cover"
                             />
                             {/* Gradient Overlay for Text Readability */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#000] via-[#000]/80 to-[#000]/40" />
+                            <div className="absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/40" />
                         </div>
 
                         {/* Content */}
@@ -112,13 +114,24 @@ export default function MovieDetails() {
                                     </span>
                                 ))}
                                 {movie.rating && (
-                                    <div className="flex items-center gap-2 ml-2">
-                                        <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
-                                        <span className="bg-[#F5C518] text-black text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded">IMDb</span>
+                                    <div className="flex items-center gap-3 ml-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
+                                            <span className="bg-[#F5C518] text-black text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded">IMDb</span>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setIsRatingModalOpen(true)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 text-white hover:bg-white/10 text-xs md:text-sm transition-all active:scale-95 backdrop-blur-sm group"
+                                        >
+                                            <Star className={clsx("w-3.5 h-3.5 transition-colors", currentRating ? "fill-primary text-primary" : "text-white/60 group-hover:text-white")} />
+                                            <span className="font-bold">
+                                                {currentRating ? `${currentRating}/10` : 'Rate'}
+                                            </span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
-
                             <p className="text-gray-300 text-sm md:text-lg leading-relaxed max-w-2xl mb-6 md:mb-8 line-clamp-4 font-light">
                                 {movie.synopsis || movie.overview}
                             </p>
@@ -143,6 +156,14 @@ export default function MovieDetails() {
                         </div>
                     </div>
                 </div>
+
+                <MovieRating
+                    isOpen={isRatingModalOpen}
+                    onClose={() => setIsRatingModalOpen(false)}
+                    currentRating={currentRating}
+                    movieId={id!}
+                    movieTitle={movie.title}
+                />
 
                 {/* Tabs Section */}
                 <div className="mt-12">

@@ -7,8 +7,6 @@ import { clsx } from 'clsx';
 export interface MovieCarouselProps {
   title: string;
   movies: (IMovie | ITrendingMovie | IRecommendedMovie)[];
-  onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
-  onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   onViewAll?: () => void;
   isLoading?: boolean;
   className?: string;
@@ -17,8 +15,6 @@ export interface MovieCarouselProps {
 export const MovieCarousel = ({
   title,
   movies,
-  onMovieClick,
-  onWatchlistToggle,
   onViewAll,
   isLoading = false,
   className,
@@ -47,7 +43,7 @@ export const MovieCarousel = ({
     // Calculate card width based on viewport
     const gap = 8; // 2 * 4px (gap-2 in Tailwind)
     let cardsVisible = 1;
-    
+
     if (window.innerWidth >= 1280) { // xl
       cardsVisible = 5;
     } else if (window.innerWidth >= 1024) { // lg
@@ -174,8 +170,6 @@ export const MovieCarousel = ({
                 <div key={key}>
                   <MovieCard
                     movie={movie}
-                    onMovieClick={onMovieClick}
-                    onWatchlistToggle={onWatchlistToggle}
                   />
                 </div>
               );

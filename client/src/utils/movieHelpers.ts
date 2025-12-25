@@ -3,11 +3,11 @@ import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../types/movie.t
 /**
  * Determine if movie is stored locally
  */
-export const determineIsLocal = (
+export const determineIsTmdbMovie = (
     movie: IMovie | ITrendingMovie | IRecommendedMovie
 ): boolean => {
-    if ('_id' in movie && movie._id) return true;
-    if ('isLocal' in movie) return movie.isLocal;
+    if ('_id' in movie && movie._id) return false;
+    if ('tmdbId' in movie && movie.tmdbId) return true;
     return false;
 };
 
@@ -19,7 +19,6 @@ export const getMovieIdentifier = (
 ): string => {
     if ('_id' in movie && movie._id) return movie._id;
     if ('tmdbId' in movie && movie.tmdbId) return movie.tmdbId.toString();
-    if ('imdbId' in movie) return movie.imdbId;
     throw new Error('No valid identifier');
 };
 

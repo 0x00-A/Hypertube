@@ -1,3 +1,8 @@
+export interface IResponse<T> {
+  data: T;
+  message?: string;
+}
+
 export interface ICastMember {
   id: number;
   name: string;
@@ -34,6 +39,7 @@ export interface IMovie {
 }
 
 export interface ITrendingMovie {
+  _id?: string;
   tmdbId: number;
   title: string;
   year: number;
@@ -52,6 +58,7 @@ export interface ITrendingMovie {
 }
 
 export interface IRecommendedMovie {
+  _id?: string;
   tmdbId: number;
   title: string;
   year: number;
@@ -109,13 +116,11 @@ export interface IWatchProgress {
 
 export type MovieCardProps = {
   movie: IMovie | ITrendingMovie | IRecommendedMovie;
-  onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
-  onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   className?: string;
 };
 
 export type HeroSliderProps = {
-  movies: ITrendingMovie[];
+  movies: IMovie[];
   autoPlayInterval?: number;
   className?: string;
 };

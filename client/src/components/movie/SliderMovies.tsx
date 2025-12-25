@@ -23,21 +23,22 @@ export const SliderMovies = ({
     }
   }, [movies, autoPlayInterval]);
 
-  const formatRating = (rating: string) => {
-    return rating || 'N/A';
+  const formatRating = (rating?: number | string) => {
+    if (!rating) return 'N/A';
+    return typeof rating === 'string' ? rating : rating.toFixed(1);
   };
 
   const handleWatchClick = () => {
     if (currentMovie) {
-      navigate(`/movies/${currentMovie.tmdbId}`);
+      const id = currentMovie.imdbId
+      navigate(`/movies/${id}`, { state: { isLocal: true } });
     }
   };
 
   const handleTrailerClick = () => {
-    // Trailer functionality will be implemented later
-    // For now, just navigate to the movie page
     if (currentMovie) {
-      navigate(`/movies/${currentMovie.tmdbId}`);
+      const id = currentMovie.imdbId;
+      navigate(`/movies/${id}`, { state: { isLocal: true } });
     }
   };
 
@@ -47,14 +48,14 @@ export const SliderMovies = ({
       <div className={clsx('relative w-full h-full overflow-hidden rounded-xl bg-bg-secondary', className)}>
         {/* Skeleton Background */}
         <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary via-bg-tertiary to-bg-secondary animate-pulse" />
-        
+
         {/* Skeleton Card */}
         <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto z-10">
           <div className="max-w-sm md:max-w-md lg:max-w-lg">
             <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-5 lg:p-6 shadow-2xl border border-white/10">
               {/* Skeleton Title */}
               <div className="h-8 md:h-10 bg-white/20 rounded-md mb-3 animate-pulse w-3/4" />
-              
+
               {/* Skeleton Meta Info */}
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-5 w-12 bg-white/20 rounded animate-pulse" />
@@ -62,13 +63,13 @@ export const SliderMovies = ({
                 <div className="h-5 w-8 bg-white/20 rounded animate-pulse" />
                 <div className="h-5 w-20 bg-white/20 rounded animate-pulse" />
               </div>
-              
+
               {/* Skeleton Overview */}
               <div className="space-y-2 mb-4">
                 <div className="h-4 bg-white/20 rounded animate-pulse w-full" />
                 <div className="h-4 bg-white/20 rounded animate-pulse w-5/6" />
               </div>
-              
+
               {/* Skeleton Buttons */}
               <div className="flex items-center gap-2">
                 <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse" />
@@ -86,7 +87,7 @@ export const SliderMovies = ({
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src={currentMovie.images.backdrop || currentMovie.images.thumbnail || '/images/movies/placeholder.jpg'}
+          src={currentMovie.images.backdrop || currentMovie.images.poster || currentMovie.images.thumbnail || '/images/movies/placeholder.jpg'}
           alt={currentMovie.title}
           className="w-full h-full object-cover"
         />
@@ -147,9 +148,9 @@ export const SliderMovies = ({
             </div>
 
             {/* Overview - Compact */}
-            {currentMovie.overview && (
+            {(currentMovie.overview || currentMovie.synopsis) && (
               <p className="text-text-secondary text-xs md:text-sm leading-relaxed line-clamp-2 mb-3 max-w-prose">
-                {currentMovie.overview}
+                {currentMovie.overview || currentMovie.synopsis}
               </p>
             )}
 

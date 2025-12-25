@@ -48,6 +48,7 @@ export const queryKeys = {
     list: (filters: Record<string, unknown>) => [...queryKeys.movies.lists(), filters] as const,
     details: () => [...queryKeys.movies.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.movies.details(), id] as const,
+    recommended: (tmdbId?: number) => ['movies', 'recommended', tmdbId] as const,
   },
   comments: {
     all: ['comments'] as const,

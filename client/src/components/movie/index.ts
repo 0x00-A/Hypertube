@@ -7,4 +7,6 @@ export { LastWatchingCard, LastWatchingSection } from './LastWatchingSection';
 export { LastWatchingCarousel } from './LastWatchingCarousel';
 export { GenresSection } from './GenresSection';
 export { FilterBar } from './FilterBar';
+export { MovieDetailsSkeleton } from './MovieDetailsSkeleton';
 export { default as MoviePreviewModal } from './MoviePreviewModal';
+export { default as MovieRating } from './MovieRating';

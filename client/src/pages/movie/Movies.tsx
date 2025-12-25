@@ -1,10 +1,8 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { FilterBar, MovieCard, MovieCardSkeleton } from '../../components/movie';
 import { useFilteredMovies } from '../../hooks/useFilteredMovies';
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
-import { determineIsLocal, getMovieIdentifier } from '../../utils/movieHelpers';
 import { useEffect, useRef } from 'react';
 import { useAppDispatch } from '../../redux/hooks';
 import { setGenre } from '../../redux/slices/movieFiltersSlice';
@@ -14,7 +12,6 @@ import { setGenre } from '../../redux/slices/movieFiltersSlice';
 // ============================================================================
 
 export default function Movies() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const { movies, isLoading, error, hasNextPage, loadMore } = useFilteredMovies();
@@ -27,17 +24,6 @@ export default function Movies() {
       dispatch(setGenre(genreParam));
     }
   }, [searchParams, dispatch]);
-
-  const handleMovieClick = (movie: IMovie | ITrendingMovie | IRecommendedMovie) => {
-    // Navigate to movie detail page
-    try {
-      const id = getMovieIdentifier(movie);
-      const isLocal = determineIsLocal(movie);
-      navigate(`/movies/${id}`, { state: { isLocal } });
-    } catch (error) {
-      console.error('Failed to navigate:', error);
-    }
-  };
 
   const handleWatchlistToggle = () => {
     // Watchlist toggle functionality will be implemented
@@ -122,7 +108,6 @@ export default function Movies() {
                 <MovieCard
                   key={movie._id || movie.imdbId}
                   movie={movie}
-                  onMovieClick={handleMovieClick}
                   onWatchlistToggle={handleWatchlistToggle}
                 />
               ))}

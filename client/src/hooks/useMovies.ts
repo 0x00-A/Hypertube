@@ -11,6 +11,9 @@ import {
   setGenreMovies,
   setGenreError,
   setSelectedGenre,
+  setSliderLoading,
+  setSliderMovies,
+  setSliderError,
 } from '../redux/slices/moviesSlice';
 import { movieService } from '../services/movie.service';
 
@@ -34,7 +37,7 @@ export const useFetchTrendingMovies = (page: number = 1) => {
     try {
       dispatch(setTrendingLoading(true));
       const response = await movieService.getTrendingMovies(page);
-      
+
       dispatch(setTrendingMovies({
         data: response.data,
         page: response.pagination.page,
@@ -73,7 +76,7 @@ export const useFetchRecommendedMovies = (page: number = 1) => {
     try {
       dispatch(setRecommendedLoading(true));
       const response = await movieService.getRecommendedMovies(page);
-      
+
       dispatch(setRecommendedMovies({
         data: response.data,
         page: response.pagination.page,
@@ -101,16 +104,51 @@ export const useFetchRecommendedMovies = (page: number = 1) => {
 };
 
 // ============================================================================
+// Fetch Slider Movies Hook
+// ============================================================================
+
+export const useFetchSliderMovies = () => {
+  const dispatch = useAppDispatch();
+  const { slider } = useMoviesState();
+
+  const fetchSlider = useCallback(async () => {
+    try {
+      dispatch(setSliderLoading(true));
+      const response = await movieService.getSliderMovies();
+      dispatch(setSliderMovies(response));
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch slider movies';
+      dispatch(setSliderError(errorMessage));
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (slider.data.length === 0) {
+      fetchSlider();
+    }
+  }, [slider.data.length, fetchSlider]);
+
+  return {
+    movies: slider.data,
+    isLoading: slider.isLoading,
+    error: slider.error,
+    refetch: fetchSlider,
+  };
+};
+
+// ============================================================================
 // Combined Movies Hook (for convenience)
 // ============================================================================
 
 export const useMovies = () => {
   const trendingData = useFetchTrendingMovies();
   const recommendedData = useFetchRecommendedMovies();
+  const sliderData = useFetchSliderMovies();
 
   return {
     trending: trendingData,
     recommended: recommendedData,
+    slider: sliderData,
   };
 };
 
@@ -126,7 +164,7 @@ export const useFetchGenreMovies = (page: number = 1) => {
     try {
       dispatch(setGenreLoading(true));
       const response = await movieService.getMoviesByGenre(genres.selectedGenre, page);
-      
+
       dispatch(setGenreMovies({
         data: response.data,
         page: response.pagination.page,
