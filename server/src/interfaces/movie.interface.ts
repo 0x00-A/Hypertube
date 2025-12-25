@@ -66,6 +66,22 @@ export interface ICast {
   profilePath?: string;
 }
 
+export interface ISubtitle {
+  id?: string; // internal DB id or provider subtitle id
+  fileId?: number; // OpenSubtitles file_id
+  fileName?: string; // original filename from provider (e.g., "Inception.2010.BluRay.720p.x264.YIFY")
+  language: string; // 'en', 'fr', etc.
+  label: string; // 'English', 'French'
+  forHash: string; // torrent hash this subtitle is linked to
+  forQuality: string; // torrent quality this subtitle is linked to (e.g., '720p', '1080p')
+  url?: string; // backend URL to the .vtt file (after conversion/storage)
+  localPath?: string; // filesystem path if stored locally
+  provider?: string; // 'opensubtitles' | 'user'
+  isDefault?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface IMovie {
   imdbId: string;
   tmdbId: number;
@@ -93,6 +109,7 @@ export interface IMovie {
   inWatchlist?: boolean;
   userRating?: number | null;
   topRank?: number | null;
+  subtitles?: Map<string, ISubtitle[]>; // keyed by language: { 'en': [...], 'es': [...] }
 }
 
 export interface IScrapedMovie {

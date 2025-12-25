@@ -5,7 +5,7 @@ import {
   MovieFilterOptions,
   IPaginatedResponse,
 } from '../core/interfaces/IPagination';
-import { IMovie } from '../interfaces/movie.interface';
+import { IMovie, ISubtitle } from '../interfaces/movie.interface';
 import { FilterQuery } from 'mongoose';
 
 export class MovieRepository {
@@ -138,5 +138,27 @@ export class MovieRepository {
   async getDistinctGenres(): Promise<string[]> {
     const genres = await MovieModel.distinct('genres').exec();
     return genres as string[];
+  }
+
+  async addSubtitleToMovie(
+    imdbId: string,
+    language: string,
+    subtitle: ISubtitle,
+  ): Promise<IMovieDocument | null> {
+    const movie = await this.findByImdbId(imdbId);
+    if (!movie) return null;
+
+    if (!movie.subtitles) {
+      movie.subtitles = new Map();
+    }
+
+    const existingSubs = movie.subtitles.get(language) || [];
+
+    existingSubs.push(subtitle);
+
+    movie.subtitles.set(language, existingSubs);
+
+    await movie.save();
+    return movie;
   }
 }
