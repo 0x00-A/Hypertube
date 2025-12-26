@@ -38,56 +38,8 @@ export interface IMovie {
   userRating?: number | null;
 }
 
-export interface ITrendingMovie {
-  _id?: string;
-  tmdbId: number;
-  title: string;
-  year: number;
-  rating: string;
-  originalLanguage: string;
-  overview?: string;
-  genres?: string[];
-  images: {
-    thumbnail: string;
-    backdrop?: string;
-  };
-  isLocal: boolean;
-  isWatched?: boolean;
-  inWatchlist?: boolean;
-  userRating?: number | null;
-}
-
-export interface IRecommendedMovie {
-  _id?: string;
-  tmdbId: number;
-  title: string;
-  year: number;
-  rating: string;
-  originalLanguage: string;
-  overview?: string;
-  genres?: string[];
-  images: {
-    thumbnail: string;
-    backdrop?: string;
-  };
-  isLocal: boolean;
-  isWatched?: boolean;
-  inWatchlist?: boolean;
-  userRating?: number | null;
-}
-
 export interface IMoviesResponse {
   data: IMovie[];
-  pagination: IPagination;
-}
-
-export interface ITrendingMoviesResponse {
-  data: ITrendingMovie[];
-  pagination: IPagination;
-}
-
-export interface IRecommendedMoviesResponse {
-  data: IRecommendedMovie[];
   pagination: IPagination;
 }
 
@@ -115,7 +67,7 @@ export interface IWatchProgress {
 
 
 export type MovieCardProps = {
-  movie: IMovie | ITrendingMovie | IRecommendedMovie;
+  movie: IMovie;
   className?: string;
 };
 

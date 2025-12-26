@@ -20,12 +20,12 @@ export default function MovieDetails() {
         isTmdbMovie: !derivedIsLocal
     });
 
-    const { data: currentRating } = useUserRating(id!);
-
-
+    
+    
     const [activeTab, setActiveTab] = useState<'info' | 'similar' | 'reviews'>('info');
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-
+    
+    const { data: currentRating } = useUserRating(movie?._id ?? '');
 
     if (isLoading) {
         return (
@@ -161,7 +161,7 @@ export default function MovieDetails() {
                     isOpen={isRatingModalOpen}
                     onClose={() => setIsRatingModalOpen(false)}
                     currentRating={currentRating}
-                    movieId={id!}
+                    movieId={movie._id!}
                     movieTitle={movie.title}
                 />
 

@@ -1,7 +1,5 @@
 import { httpClient } from './http';
 import type {
-  ITrendingMoviesResponse,
-  IRecommendedMoviesResponse,
   IMoviesResponse,
   IMovie,
   IMovieDetails,
@@ -31,8 +29,8 @@ class MovieService {
   /**
    * Get trending movies from TMDB API
    */
-  async getTrendingMovies(page: number = 1): Promise<ITrendingMoviesResponse> {
-    const response = await httpClient.get<ITrendingMoviesResponse>(
+  async getTrendingMovies(page: number = 1): Promise<IMoviesResponse> {
+    const response = await httpClient.get<IMoviesResponse>(
       `${this.BASE_PATH}/trending`,
       {
         params: { page },
@@ -54,12 +52,12 @@ class MovieService {
   /**
    * Get recommended movies - handles both general recommendations and specific ones based on tmdbId
    */
-  async getRecommendedMovies(page: number = 1, tmdbId?: number): Promise<IRecommendedMoviesResponse> {
+  async getRecommendedMovies(page: number = 1, tmdbId?: number): Promise<IMoviesResponse> {
     const endpoint = tmdbId
       ? `${this.BASE_PATH}/recommended/${tmdbId}`
       : `${this.BASE_PATH}/recommended`;
 
-    const response = await httpClient.get<IRecommendedMoviesResponse>(
+    const response = await httpClient.get<IMoviesResponse>(
       endpoint,
       {
         params: { page },

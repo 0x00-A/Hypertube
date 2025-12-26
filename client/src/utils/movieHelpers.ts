@@ -1,10 +1,10 @@
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../types/movie.types';
+import type { IMovie } from '../types/movie.types';
 
 /**
  * Determine if movie is stored locally
  */
 export const determineIsTmdbMovie = (
-    movie: IMovie | ITrendingMovie | IRecommendedMovie
+    movie: IMovie
 ): boolean => {
     if ('_id' in movie && movie._id) return false;
     if ('tmdbId' in movie && movie.tmdbId) return true;
@@ -15,7 +15,7 @@ export const determineIsTmdbMovie = (
  * Get correct ID for navigation
  */
 export const getMovieIdentifier = (
-    movie: IMovie | ITrendingMovie | IRecommendedMovie
+    movie: IMovie
 ): string => {
     if ('_id' in movie && movie._id) return movie._id;
     if ('tmdbId' in movie && movie.tmdbId) return movie.tmdbId.toString();

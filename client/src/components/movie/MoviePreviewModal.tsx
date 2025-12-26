@@ -1,12 +1,12 @@
 import { X, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
+import type { IMovie } from '../../types/movie.types';
 
 interface MoviePreviewModalProps {
     isOpen: boolean;
     onClose: () => void;
-    movie: IMovie | ITrendingMovie | IRecommendedMovie | null;
+    movie: IMovie| null;
 }
 
 export default function MoviePreviewModal({ isOpen, onClose, movie }: MoviePreviewModalProps) {

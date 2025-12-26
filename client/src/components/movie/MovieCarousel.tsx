@@ -1,12 +1,12 @@
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { MovieCard } from './MovieCard';
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
+import type { IMovie} from '../../types/movie.types';
 import { clsx } from 'clsx';
 
 export interface MovieCarouselProps {
   title: string;
-  movies: (IMovie | ITrendingMovie | IRecommendedMovie)[];
+  movies: IMovie[];
   onViewAll?: () => void;
   isLoading?: boolean;
   className?: string;

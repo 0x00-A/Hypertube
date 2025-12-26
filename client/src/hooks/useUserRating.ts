@@ -6,7 +6,7 @@ export const useUserRating = (movieId: string) => {
     return useQuery({
         queryKey: [...queryKeys.movies.all, 'user-rating', movieId],
         queryFn: async () => {
-            const data = await movieInteractionService.getUserRating(movieId);
+            const data = await movieInteractionService.getUserRating(movieId!);
             return data.rating;
         },
         enabled: !!movieId,

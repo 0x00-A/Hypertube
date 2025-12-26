@@ -288,23 +288,6 @@ export default function Header() {
               })}
             </nav>
 
-            {/* Mobile Profile Links - Only show when authenticated */}
-            {isAuthenticated && (
-              <div className="mt-3 pt-3 border-t border-border space-y-1">
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  Settings
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       )}
