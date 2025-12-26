@@ -52,7 +52,6 @@ export const queryKeys = {
   },
   comments: {
     all: ['comments'] as const,
-    lists: () => [...queryKeys.comments.all, 'list'] as const,
-    list: (movieId: string) => [...queryKeys.comments.lists(), movieId] as const,
+    byMovie: (tmdbId: number) => [...queryKeys.comments.all, 'movie', tmdbId] as const,
   },
 } as const;

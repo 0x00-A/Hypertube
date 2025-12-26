@@ -7,6 +7,7 @@ import { useUserRating } from '../../hooks/useUserRating';
 import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
 import { MovieRating, MovieCarousel } from '../../components/movie';
+import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
 
 export default function MovieDetails() {
@@ -34,7 +35,7 @@ export default function MovieDetails() {
 
     // IntersectionObserver to update active tab based on scroll position
     useEffect(() => {
-        const sections = ['information', 'more-like-this', 'reviews'];
+        const sections = ['information', 'more-like-this', 'comments'];
         const observers: IntersectionObserver[] = [];
 
         sections.forEach((sectionId) => {
@@ -209,7 +210,7 @@ export default function MovieDetails() {
                         {[
                             { id: 'information', label: 'Information' },
                             { id: 'more-like-this', label: 'More Like This' },
-                            { id: 'reviews', label: 'Reviews' }
+                            { id: 'comments', label: 'Comments' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -354,12 +355,9 @@ export default function MovieDetails() {
                     />
                 </section>
 
-                {/* Reviews Section */}
-                <section id="reviews" className="scroll-mt-20 py-12">
-                    <h3 className="text-white text-2xl sm:text-3xl font-bold mb-6">Reviews</h3>
-                    <div className="text-center py-12 text-text-secondary">
-                        <p>Reviews implementation coming soon...</p>
-                    </div>
+                {/* Comments Section */}
+                <section id="comments" className="scroll-mt-20 py-12">
+                    {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
                 </section>
             </div>
         </div>
