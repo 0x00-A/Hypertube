@@ -69,6 +69,7 @@ export interface IWatchProgress {
 export type MovieCardProps = {
   movie: IMovie;
   className?: string;
+  onWatchlistToggle?: () => void;
 };
 
 export type HeroSliderProps = {

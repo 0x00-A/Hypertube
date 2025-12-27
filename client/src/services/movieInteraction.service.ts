@@ -9,7 +9,7 @@ class MovieInteractionService {
      * @param movieId The local movie ID (ObjectId)
      * @param rating Rating value (1-10)
      */
-    async rateMovie(movieId: string, rating: number): Promise<IResponse<{ rating: number }>> {
+    async rateMovie(movieId: string, rating: number): Promise<{ rating: number }> {
         const response = await httpClient.post<IResponse<{ rating: number }>>(
             `${this.BASE_PATH}/movies/${movieId}/rating`,
             { rating }

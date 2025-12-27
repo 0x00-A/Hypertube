@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { MovieCard } from './MovieCard';
-import type { IMovie} from '../../types/movie.types';
+import type { IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
 export interface MovieCarouselProps {
@@ -165,7 +165,7 @@ export const MovieCarousel = ({
           ) : (
             // Movie cards
             movies.map((movie) => {
-              const key = 'imdbId' in movie ? movie.imdbId : `tmdb-${movie.tmdbId}`;
+              const key = movie._id || movie.imdbId;
               return (
                 <div key={key}>
                   <MovieCard

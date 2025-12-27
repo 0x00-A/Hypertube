@@ -11,6 +11,7 @@ import { determineIsTmdbMovie, getMovieIdentifier } from '../../utils/movieHelpe
 export const MovieCard = ({
   movie,
   className,
+  onWatchlistToggle,
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isAuthenticated } = useAuthState();
@@ -18,13 +19,13 @@ export const MovieCard = ({
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    
+
     // If user is not authenticated, show preview modal
     if (!isAuthenticated) {
       setIsModalOpen(true);
       return;
     }
-    
+
     // Default navigation behavior
     try {
       const id = getMovieIdentifier(movie);
@@ -38,6 +39,7 @@ export const MovieCard = ({
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     // implement watchlist toggle
+    if (onWatchlistToggle) onWatchlistToggle();
   };
 
   const formatRating = (rating?: number | string) => {
