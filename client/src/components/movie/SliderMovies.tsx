@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { HeroSliderProps } from '../../types/movie.types';
 import { clsx } from 'clsx';
+import TrailerModal from './TrailerModal';
 
 export const SliderMovies = ({
   movies,
@@ -9,19 +10,21 @@ export const SliderMovies = ({
   className,
 }: HeroSliderProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [activeTrailer, setActiveTrailer] = useState<{ url: string; title: string } | null>(null);
   const navigate = useNavigate();
 
   const currentMovie = movies[currentIndex];
 
   useEffect(() => {
-    if (movies && movies.length > 0) {
+    // Only auto-play if the trailer modal is NOT open
+    if (movies && movies.length > 0 && !activeTrailer) {
       const interval = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % movies.length);
       }, autoPlayInterval);
 
       return () => clearInterval(interval);
     }
-  }, [movies, autoPlayInterval]);
+  }, [movies, autoPlayInterval, activeTrailer]);
 
   const formatRating = (rating?: number | string) => {
     if (!rating) return 'N/A';
@@ -36,9 +39,13 @@ export const SliderMovies = ({
   };
 
   const handleTrailerClick = () => {
-    if (currentMovie) {
-      const id = currentMovie.imdbId;
-      navigate(`/movies/${id}`, { state: { isLocal: true } });
+    if (currentMovie && currentMovie.trailer) {
+      // Set the active trailer data, which "freezes" the modal content
+      // regardless of what happens to currentIndex in the background
+      setActiveTrailer({
+        url: currentMovie.trailer,
+        title: currentMovie.title
+      });
     }
   };
 
@@ -96,16 +103,16 @@ export const SliderMovies = ({
       </div>
 
       {/* Glassmorphism Card - Compact Version */}
-      <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto z-10">
-        <div className="max-w-sm md:max-w-md lg:max-w-lg transition-all duration-300">
-          <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-5 lg:p-6 shadow-2xl border border-white/10">
+      <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-auto z-10">
+        <div className="max-w-sm md:max-w-xl lg:max-w-3xl transition-all duration-300">
+          <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-6 lg:p-8 shadow-2xl border border-white/10">
             {/* Movie Title */}
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight mb-2">
+            <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-white leading-tight mb-3">
               {currentMovie.title}
             </h1>
 
             {/* IMDb Badge + Rating + Language + Genres */}
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               {/* IMDb Badge */}
               <div className="bg-yellow-400 px-1.5 py-0.5 rounded">
                 <span className="text-black font-bold text-xs">IMDb</span>
@@ -149,29 +156,40 @@ export const SliderMovies = ({
 
             {/* Overview - Compact */}
             {(currentMovie.overview || currentMovie.synopsis) && (
-              <p className="text-text-secondary text-xs md:text-sm leading-relaxed line-clamp-2 mb-3 max-w-prose">
+              <p className="text-text-secondary text-sm md:text-base lg:text-lg leading-relaxed line-clamp-2 md:line-clamp-3 mb-4 md:mb-5 max-w-prose">
                 {currentMovie.overview || currentMovie.synopsis}
               </p>
             )}
 
             {/* Action Buttons - Compact */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:gap-3">
               <button
                 onClick={handleWatchClick}
-                className="bg-primary hover:bg-primary-light text-black font-bold px-4 py-1.5 md:px-5 md:py-2 rounded-lg transition-all duration-200 shadow-lg text-xs md:text-sm"
+                className="bg-primary hover:bg-primary-light text-black font-bold px-5 py-2 md:px-6 md:py-2.5 lg:px-8 lg:py-3 rounded-lg transition-all duration-200 shadow-lg text-sm md:text-base lg:text-lg"
               >
                 WATCH
               </button>
-              <button
-                onClick={handleTrailerClick}
-                className="bg-bg-tertiary hover:bg-border-light border border-border text-text-secondary hover:text-white font-bold px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all duration-200 text-xs md:text-sm"
-              >
-                Trailer
-              </button>
+              {currentMovie.trailer && (
+                <button
+                  onClick={handleTrailerClick}
+                  className="bg-bg-tertiary hover:bg-border-light border border-border text-text-secondary hover:text-white font-bold px-4 py-2 md:px-5 md:py-2.5 lg:px-6 lg:py-3 rounded-lg transition-all duration-200 text-sm md:text-base lg:text-lg"
+                >
+                  Trailer
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {activeTrailer && (
+        <TrailerModal
+          isOpen={true}
+          onClose={() => setActiveTrailer(null)}
+          trailerUrl={activeTrailer.url}
+          title={activeTrailer.title}
+        />
+      )}
     </div>
   );
 };

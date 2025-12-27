@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pencil, Trash2, Flag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Pencil, Trash2, Flag, MoreVertical } from 'lucide-react';
 import type { IComment } from '../../types/comment.types';
 import { useUpdateComment } from '../../hooks/useUpdateComment';
 import { useDeleteComment } from '../../hooks/useDeleteComment';
@@ -13,11 +13,25 @@ interface CommentCardProps {
 export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content);
+    const [showMenu, setShowMenu] = useState(false);
     const { user } = useAuthState();
     const updateMutation = useUpdateComment();
     const deleteMutation = useDeleteComment();
 
+    const [isDeletingState, setIsDeletingState] = useState(false);
+
     const isOwner = user?._id === comment.user._id;
+
+    // Click outside handler
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showMenu && !(event.target as Element).closest('.comment-menu-container')) {
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showMenu]);
 
     const handleEdit = () => {
         if (editContent.trim() && editContent !== comment.content) {
@@ -31,9 +45,7 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
     };
 
     const handleDelete = () => {
-        if (window.confirm('Are you sure you want to delete this comment?')) {
-            deleteMutation.mutate({ id: comment._id, tmdbId });
-        }
+        deleteMutation.mutate({ id: comment._id, tmdbId });
     };
 
     const handleCancel = () => {
@@ -56,7 +68,7 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
 
     return (
         <div className="bg-card border border-white/10 rounded-xl p-4 sm:p-6">
-            <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
@@ -76,43 +88,64 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-white font-semibold text-sm sm:text-base">
-                                {comment.user.username}
-                            </span>
-                            <span className="text-text-secondary text-xs sm:text-sm">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-semibold text-base">
+                            {comment.user.username}
+                        </span>
+
+                        <div className="flex items-center gap-3">
+                            <span className="text-text-secondary text-sm">
                                 {getRelativeTime(comment.createdAt)}
                             </span>
-                        </div>
 
-                        <div className="flex items-center gap-1 sm:gap-2">
-                            {isOwner && !isEditing && (
-                                <>
+                            {/* Menu Trigger */}
+                            {(isOwner || !isOwner) && !isDeletingState && !isEditing && (
+                                <div className="relative comment-menu-container">
                                     <button
-                                        onClick={() => setIsEditing(true)}
-                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
-                                        title="Edit comment"
+                                        onClick={() => setShowMenu(!showMenu)}
+                                        className="text-text-secondary hover:text-white transition-colors p-1"
                                     >
-                                        <Pencil className="w-4 h-4" />
+                                        <MoreVertical className="w-4 h-4" />
                                     </button>
-                                    <button
-                                        onClick={handleDelete}
-                                        disabled={deleteMutation.isPending}
-                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 text-text-secondary hover:text-red-500 transition-colors disabled:opacity-50"
-                                        title="Delete comment"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </>
-                            )}
-                            {!isOwner && (
-                                <button
-                                    className="p-1.5 sm:p-2 rounded-lg hover:bg-white/5 text-text-secondary hover:text-primary transition-colors"
-                                    title="Report comment"
-                                >
-                                    <Flag className="w-4 h-4" />
-                                </button>
+
+                                    {/* Dropdown Menu */}
+                                    {showMenu && (
+                                        <div className="absolute right-0 top-full mt-1 w-32 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+                                            {isOwner ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsEditing(true);
+                                                            setShowMenu(false);
+                                                        }}
+                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-white/5 hover:text-white transition-colors text-left"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsDeletingState(true);
+                                                            setShowMenu(false);
+                                                        }}
+                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-white/5 hover:text-red-500 transition-colors text-left"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                        Delete
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setShowMenu(false)}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-white/5 hover:text-white transition-colors text-left"
+                                                >
+                                                    <Flag className="w-3.5 h-3.5" />
+                                                    Report
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -138,6 +171,26 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
                                     onClick={handleCancel}
                                     disabled={updateMutation.isPending}
                                     className="px-4 py-2 bg-white/5 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50 text-sm"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : isDeletingState ? (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                            <p className="text-sm text-red-200 mb-3">Are you sure you want to delete this comment?</p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleteMutation.isPending}
+                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors disabled:opacity-50"
+                                >
+                                    {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                </button>
+                                <button
+                                    onClick={() => setIsDeletingState(false)}
+                                    disabled={deleteMutation.isPending}
+                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-md transition-colors disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>

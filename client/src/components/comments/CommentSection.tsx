@@ -30,6 +30,7 @@ export const CommentSection = ({ tmdbId }: CommentSectionProps) => {
 
     return (
         <div className="space-y-6">
+            <h2 className="text-white text-2xl sm:text-3xl font-bold">Comments</h2>
             {/* Comment Form */}
             <CommentForm tmdbId={tmdbId} />
 

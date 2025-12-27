@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Play, Heart, Share2, Star, Calendar, Clock, Languages } from 'lucide-react';
+import { Play, Heart, Share2, Star, Calendar, Clock, Languages, PlayCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
 import { useUserRating } from '../../hooks/useUserRating';
 import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
 import { MovieRating, MovieCarousel } from '../../components/movie';
+import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
 
@@ -30,6 +31,7 @@ export default function MovieDetails() {
 
     const [activeTab, setActiveTab] = useState<string>('information');
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
     const { data: currentRating } = useUserRating(movie?._id ?? '');
 
@@ -180,9 +182,15 @@ export default function MovieDetails() {
                                     <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
                                     Play
                                 </button>
-                                <button className="px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl border border-white/20 text-white hover:bg-white/10 font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm">
-                                    Watch Trailer
-                                </button>
+                                {movie.trailer && (
+                                    <button
+                                        onClick={() => setIsTrailerOpen(true)}
+                                        className="flex items-center gap-2 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl border border-white/20 text-white hover:bg-white/10 font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm"
+                                    >
+                                        <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
+                                        Watch Trailer
+                                    </button>
+                                )}
                                 <div className="flex items-center gap-2 md:gap-3">
                                     <button className="p-2.5 md:p-3.5 rounded-xl hover:bg-white/10 text-white transition-colors border border-white/20 backdrop-blur-sm group">
                                         <Heart className={clsx("w-4 h-4 md:w-5 md:h-5 transition-colors group-hover:text-red-500", movie.inWatchlist ? "fill-red-500 text-red-500" : "")} />
@@ -202,6 +210,13 @@ export default function MovieDetails() {
                     currentRating={currentRating}
                     movieId={movie._id!}
                     movieTitle={movie.title}
+                />
+
+                <TrailerModal
+                    isOpen={isTrailerOpen}
+                    onClose={() => setIsTrailerOpen(false)}
+                    trailerUrl={movie.trailer}
+                    title={movie.title}
                 />
 
                 {/* Sticky Navigation */}
@@ -243,8 +258,8 @@ export default function MovieDetails() {
 
                 {/* Information Section */}
                 <section id="information" className="scroll-mt-20 py-12">
-                    <div className="space-y-12">
-                        <h3 className="text-white text-2xl sm:text-3xl font-bold mb-6">Information</h3>
+                    <div className="space-y-6">
+                        <h2 className="text-white text-2xl sm:text-3xl font-bold">Information</h2>
 
                         {/* Info Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-24 gap-y-8">

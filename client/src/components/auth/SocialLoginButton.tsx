@@ -11,9 +11,9 @@ const providerConfig = {
   google: {
     name: 'Google',
     icon: (
-      <img 
-        src="/images/logos/Google_Favicon_2025.svg" 
-        alt="Google" 
+      <img
+        src="/images/logos/Google_Favicon_2025.svg"
+        alt="Google"
         className="h-6 w-6"
       />
     ),
@@ -23,9 +23,9 @@ const providerConfig = {
   intra42: {
     name: '42',
     icon: (
-      <img 
-        src="/images/logos/42_Logo.svg" 
-        alt="42" 
+      <img
+        src="/images/logos/42_Logo.svg"
+        alt="42"
         className="h-6 w-6 invert"
       />
     ),
@@ -50,6 +50,7 @@ export default function SocialLoginButton({
         config.bgColor,
         config.textColor,
         'focus:ring-primary',
+        'disabled:opacity-50 disabled:cursor-not-allowed',
         className
       )}
       {...props}
