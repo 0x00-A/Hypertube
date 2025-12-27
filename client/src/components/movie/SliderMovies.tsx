@@ -34,7 +34,7 @@ export const SliderMovies = ({
   const handleWatchClick = () => {
     if (currentMovie) {
       const id = currentMovie.imdbId
-      navigate(`/movies/${id}`, { state: { isLocal: true } });
+      navigate(`/movies/${id}`, { state: { isTmdbMovie: true } });
     }
   };
 

@@ -15,7 +15,7 @@ export default function Browse() {
   const genreData = useFetchGenreMovies();
 
   const handlePlayClick = (movie: IMovie) => {
-    navigate(`/watch/${movie.imdbId}`); 
+    navigate(`/watch/${movie.imdbId}`);
   };
 
   const handleViewAllLastWatching = () => {

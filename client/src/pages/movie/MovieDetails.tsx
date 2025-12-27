@@ -10,17 +10,19 @@ import { MovieRating, MovieCarousel } from '../../components/movie';
 import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
+import { MovieDetailsSkeleton } from '../../components/movie/MovieDetailsSkeleton';
+
 
 export default function MovieDetails() {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();
 
-    const derivedIsLocal = location.state?.isLocal ?? (id && !/^\d+$/.test(id));
+    const isTmdbMovie = location.state?.isTmdbMovie ?? (id && !/^\d+$/.test(id));
 
     const { data: movie, isLoading, error } = useMovieDetails({
         id: id!,
-        isTmdbMovie: !derivedIsLocal
+        isTmdbMovie
     });
 
     const { data: recommendedMoviesData, isLoading: isLoadingRecommended } = useRecommendedMovies({
@@ -68,12 +70,9 @@ export default function MovieDetails() {
     }, [movie]); // Re-run when movie data changes
 
 
+
     if (isLoading) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-        );
+        return <MovieDetailsSkeleton />;
     }
 
     if (error || !movie) {
@@ -129,7 +128,7 @@ export default function MovieDetails() {
                                 className="w-full h-full object-cover"
                             />
                             {/* Gradient Overlay for Text Readability */}
-                            <div className="absolute inset-0 bg-linear-to-r from-black via-black/80 to-black/40" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
                         </div>
 
                         {/* Content */}
@@ -182,7 +181,7 @@ export default function MovieDetails() {
                                     <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
                                     Play
                                 </button>
-                                {movie.trailer && (
+                                {movie.trailer && (movie.trailer.startsWith('http') || movie.trailer.startsWith('//')) && (
                                     <button
                                         onClick={() => setIsTrailerOpen(true)}
                                         className="flex items-center gap-2 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl border border-white/20 text-white hover:bg-white/10 font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm"

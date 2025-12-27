@@ -165,7 +165,7 @@ export const MovieCarousel = ({
           ) : (
             // Movie cards
             movies.map((movie) => {
-              const key = movie._id || movie.imdbId;
+              const key = movie._id || movie.imdbId || movie.tmdbId;
               return (
                 <div key={key}>
                   <MovieCard

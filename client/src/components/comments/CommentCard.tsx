@@ -4,6 +4,7 @@ import type { IComment } from '../../types/comment.types';
 import { useUpdateComment } from '../../hooks/useUpdateComment';
 import { useDeleteComment } from '../../hooks/useDeleteComment';
 import { useAuthState } from '../../hooks/useAuth';
+import { MAX_COMMENT_LENGTH } from '../../utils/constants';
 
 interface CommentCardProps {
     comment: IComment;
@@ -99,7 +100,7 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
                             </span>
 
                             {/* Menu Trigger */}
-                            {(isOwner || !isOwner) && !isDeletingState && !isEditing && (
+                            {!isDeletingState && !isEditing && (
                                 <div className="relative comment-menu-container">
                                     <button
                                         onClick={() => setShowMenu(!showMenu)}
@@ -155,7 +156,7 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                maxLength={500}
+                                maxLength={MAX_COMMENT_LENGTH}
                                 className="w-full bg-background border border-primary/30 rounded-lg px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary resize-none"
                                 rows={3}
                             />

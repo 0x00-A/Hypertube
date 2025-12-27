@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useCreateComment } from '../../hooks/useCreateComment';
+import { MAX_COMMENT_LENGTH } from '../../utils/constants';
 
 interface CommentFormProps {
     tmdbId: number;
@@ -23,7 +24,7 @@ export const CommentForm = ({ tmdbId }: CommentFormProps) => {
         }
     };
 
-    const remainingChars = 500 - content.length;
+    const remainingChars = MAX_COMMENT_LENGTH - content.length;
 
     return (
         <form onSubmit={handleSubmit} className="bg-card border border-white/10 rounded-xl p-4 sm:p-6">
@@ -37,7 +38,8 @@ export const CommentForm = ({ tmdbId }: CommentFormProps) => {
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="Share your thoughts..."
-                        maxLength={500}
+                        maxLength={MAX_COMMENT_LENGTH}
+                        aria-label="Comment content"
                         className="w-full bg-background border border-primary/30 rounded-lg px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary resize-none min-h-[120px]"
                         disabled={createMutation.isPending}
                     />
@@ -49,13 +51,13 @@ export const CommentForm = ({ tmdbId }: CommentFormProps) => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
                         <span className={clsx(remainingChars < 0 && 'text-red-500')}>
-                            {content.length}/500
+                            {content.length}/{MAX_COMMENT_LENGTH}
                         </span>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={createMutation.isPending || !content.trim() || content.length > 500}
+                        disabled={createMutation.isPending || !content.trim() || content.length > MAX_COMMENT_LENGTH}
                         className={clsx(
                             'flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all',
                             'bg-primary text-black hover:bg-primary/90',

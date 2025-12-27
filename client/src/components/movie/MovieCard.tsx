@@ -7,6 +7,7 @@ import MoviePreviewModal from './MoviePreviewModal';
 
 import { useNavigate } from 'react-router-dom';
 import { determineIsTmdbMovie, getMovieIdentifier } from '../../utils/movieHelpers';
+import toast from 'react-hot-toast';
 
 export const MovieCard = ({
   movie,
@@ -31,8 +32,8 @@ export const MovieCard = ({
       const id = getMovieIdentifier(movie);
       const isTmdbMovie = determineIsTmdbMovie(movie);
       navigate(`/movies/${id}`, { state: { isTmdbMovie } });
-    } catch (error) {
-      console.error('Failed to navigate to movie details:', error);
+    } catch {
+      toast.error('Failed to navigate to movie details');
     }
   };
 
