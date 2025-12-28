@@ -25,10 +25,6 @@ export default function Movies() {
     }
   }, [searchParams, dispatch]);
 
-  const handleWatchlistToggle = () => {
-    // Watchlist toggle functionality will be implemented
-  };
-
   // Infinite scroll implementation
   useEffect(() => {
     if (!loadMoreRef.current || isLoading || !hasNextPage) return;
@@ -108,7 +104,6 @@ export default function Movies() {
                 <MovieCard
                   key={movie._id || movie.imdbId}
                   movie={movie}
-                  onWatchlistToggle={handleWatchlistToggle}
                 />
               ))}
             </div>

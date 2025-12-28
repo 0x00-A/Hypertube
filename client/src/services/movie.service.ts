@@ -4,6 +4,7 @@ import type {
   IMovie,
   IMovieDetails,
   IMovieDetailsResponse,
+  IResponse,
 } from '../types/movie.types';
 import type { IMovieFilters } from '../types/movieFilter.types';
 
@@ -110,6 +111,47 @@ class MovieService {
 
     const response = await httpClient.get<IMoviesResponse>(
       `${this.BASE_PATH}`,
+      { params }
+    );
+    return response;
+  }
+  /**
+   * Add movie to watchlist - handles both local and TMDB movies
+   */
+  async addToWatchlist(id: string | number, isTmdbMovie: boolean = true): Promise<IMovie> {
+    const endpoint = isTmdbMovie
+      ? `${this.BASE_PATH}/watchlist/${id}`
+      : `/interactions/movies/${id}/watchlist`;
+
+    const response = await httpClient.post<IResponse<IMovie>>(endpoint);
+    return response.data;
+  }
+
+  /**
+   * Remove movie from watchlist by Movie ID (MongoDB _id)
+   */
+  async removeFromWatchlist(movieId: string): Promise<IResponse<void>> {
+    const response = await httpClient.delete<IResponse<void>>(
+      `/interactions/movies/${movieId}/watchlist`
+    );
+    return response;
+  }
+
+  /**
+   * Get user's watchlist with pagination and filters
+   */
+  async getWatchlist(params: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    search?: string;
+    genre?: string;
+    minRating?: number;
+    year?: number;
+  }): Promise<IMoviesResponse> {
+    const response = await httpClient.get<IMoviesResponse>(
+      '/interactions/watchlist',
       { params }
     );
     return response;
