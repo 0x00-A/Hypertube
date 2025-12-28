@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { ITrendingMovie, IRecommendedMovie, IMovie } from '../../types/movie.types';
+import type { IMovie } from '../../types/movie.types';
 
 // ============================================================================
 // Types
@@ -7,14 +7,14 @@ import type { ITrendingMovie, IRecommendedMovie, IMovie } from '../../types/movi
 
 export interface MoviesState {
   trending: {
-    data: ITrendingMovie[];
+    data: IMovie[];
     isLoading: boolean;
     error: string | null;
     page: number;
     hasNextPage: boolean;
   };
   recommended: {
-    data: IRecommendedMovie[];
+    data: IMovie[];
     isLoading: boolean;
     error: string | null;
     page: number;
@@ -27,6 +27,11 @@ export interface MoviesState {
     page: number;
     hasNextPage: boolean;
     selectedGenre: string;
+  };
+  slider: {
+    data: IMovie[];
+    isLoading: boolean;
+    error: string | null;
   };
 }
 
@@ -57,6 +62,11 @@ const initialState: MoviesState = {
     hasNextPage: false,
     selectedGenre: 'Drama',
   },
+  slider: {
+    data: [],
+    isLoading: false,
+    error: null,
+  },
 };
 
 // ============================================================================
@@ -71,7 +81,7 @@ const moviesSlice = createSlice({
     setTrendingLoading: (state, action: PayloadAction<boolean>) => {
       state.trending.isLoading = action.payload;
     },
-    setTrendingMovies: (state, action: PayloadAction<{ data: ITrendingMovie[]; page: number; hasNextPage: boolean }>) => {
+    setTrendingMovies: (state, action: PayloadAction<{ data: IMovie[]; page: number; hasNextPage: boolean }>) => {
       state.trending.data = action.payload.data;
       state.trending.page = action.payload.page;
       state.trending.hasNextPage = action.payload.hasNextPage;
@@ -90,7 +100,7 @@ const moviesSlice = createSlice({
     setRecommendedLoading: (state, action: PayloadAction<boolean>) => {
       state.recommended.isLoading = action.payload;
     },
-    setRecommendedMovies: (state, action: PayloadAction<{ data: IRecommendedMovie[]; page: number; hasNextPage: boolean }>) => {
+    setRecommendedMovies: (state, action: PayloadAction<{ data: IMovie[]; page: number; hasNextPage: boolean }>) => {
       state.recommended.data = action.payload.data;
       state.recommended.page = action.payload.page;
       state.recommended.hasNextPage = action.payload.hasNextPage;
@@ -129,6 +139,23 @@ const moviesSlice = createSlice({
       state.genres = initialState.genres;
     },
 
+    // Slider Movies Actions
+    setSliderLoading: (state, action: PayloadAction<boolean>) => {
+      state.slider.isLoading = action.payload;
+    },
+    setSliderMovies: (state, action: PayloadAction<IMovie[]>) => {
+      state.slider.data = action.payload;
+      state.slider.isLoading = false;
+      state.slider.error = null;
+    },
+    setSliderError: (state, action: PayloadAction<string>) => {
+      state.slider.error = action.payload;
+      state.slider.isLoading = false;
+    },
+    clearSliderMovies: (state) => {
+      state.slider = initialState.slider;
+    },
+
     // Reset all movies state
     resetMovies: () => initialState,
   },
@@ -152,6 +179,10 @@ export const {
   setGenreError,
   setSelectedGenre,
   clearGenreMovies,
+  setSliderLoading,
+  setSliderMovies,
+  setSliderError,
+  clearSliderMovies,
   resetMovies,
 } = moviesSlice.actions;
 

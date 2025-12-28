@@ -74,17 +74,23 @@ export default function Header() {
             className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
           </button>
 
           {/* Logo */}
-          <Link to="/browse" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center group-hover:bg-primary-light transition-colors">
-              <Film className="w-4 h-4 text-black" />
-            </div>
-            <span className="text-lg font-bold text-text-primary hidden sm:block">
-              St.Movie
-            </span>
+          <Link to="/browse" className="flex items-center shrink-0 group">
+            {/* Desktop Logo */}
+            <img
+              src="/images/logos/leetflixDesktop.svg"
+              alt="Leetflix Logo"
+              className="h-6 w-auto hidden sm:block object-contain"
+            />
+            {/* Mobile Logo */}
+            <img
+              src="/images/logos/leetflixMobile.svg"
+              alt="Leetflix Logo"
+              className="h-6 w-auto sm:hidden object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -282,23 +288,6 @@ export default function Header() {
               })}
             </nav>
 
-            {/* Mobile Profile Links - Only show when authenticated */}
-            {isAuthenticated && (
-              <div className="mt-3 pt-3 border-t border-border space-y-1">
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  Settings
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       )}

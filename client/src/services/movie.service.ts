@@ -1,8 +1,7 @@
 import { httpClient } from './http';
 import type {
-  ITrendingMoviesResponse,
-  IRecommendedMoviesResponse,
   IMoviesResponse,
+  IMovie,
   IMovieDetails,
   IMovieDetailsResponse,
 } from '../types/movie.types';
@@ -18,10 +17,10 @@ class MovieService {
   /**
    * Get movie details - handles both local and TMDB movies
    */
-  async getMovieDetails(id: string, isLocal: boolean = true): Promise<IMovieDetails> {
-    const endpoint = isLocal
-      ? `${this.BASE_PATH}/${id}`
-      : `${this.BASE_PATH}/tmdb/${id}`;
+  async getMovieDetails(id: string, isTmdbMovie: boolean = true): Promise<IMovieDetails> {
+    const endpoint = isTmdbMovie
+      ? `${this.BASE_PATH}/tmdb/${id}`
+      : `${this.BASE_PATH}/${id}`;
 
     const response = await httpClient.get<IMovieDetailsResponse>(endpoint);
     return response.data;
@@ -30,8 +29,8 @@ class MovieService {
   /**
    * Get trending movies from TMDB API
    */
-  async getTrendingMovies(page: number = 1): Promise<ITrendingMoviesResponse> {
-    const response = await httpClient.get<ITrendingMoviesResponse>(
+  async getTrendingMovies(page: number = 1): Promise<IMoviesResponse> {
+    const response = await httpClient.get<IMoviesResponse>(
       `${this.BASE_PATH}/trending`,
       {
         params: { page },
@@ -41,11 +40,25 @@ class MovieService {
   }
 
   /**
-   * Get recommended movies (currently returns recommendations based on hardcoded movies)
+   * Get movies for the hero slider
    */
-  async getRecommendedMovies(page: number = 1): Promise<IRecommendedMoviesResponse> {
-    const response = await httpClient.get<IRecommendedMoviesResponse>(
-      `${this.BASE_PATH}/recommended`,
+  async getSliderMovies(): Promise<IMovie[]> {
+    const response = await httpClient.get<{ data: IMovie[] }>(
+      `${this.BASE_PATH}/slider`
+    );
+    return response.data;
+  }
+
+  /**
+   * Get recommended movies - handles both general recommendations and specific ones based on tmdbId
+   */
+  async getRecommendedMovies(page: number = 1, tmdbId?: number): Promise<IMoviesResponse> {
+    const endpoint = tmdbId
+      ? `${this.BASE_PATH}/recommended/${tmdbId}`
+      : `${this.BASE_PATH}/recommended`;
+
+    const response = await httpClient.get<IMoviesResponse>(
+      endpoint,
       {
         params: { page },
       }

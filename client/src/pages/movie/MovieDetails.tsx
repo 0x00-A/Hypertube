@@ -1,36 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Play, Heart, Share2, Star, Calendar, Clock, Languages } from 'lucide-react';
+import { Play, Heart, Share2, Star, Calendar, Clock, Languages, PlayCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
+import { useUserRating } from '../../hooks/useUserRating';
+import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
+import { MovieRating, MovieCarousel } from '../../components/movie';
+import TrailerModal from '../../components/movie/TrailerModal';
+import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
+import { MovieDetailsSkeleton } from '../../components/movie/MovieDetailsSkeleton';
+
 
 export default function MovieDetails() {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();
 
-    // If we don't know if it's local (e.g. direct link), we might default to local or try both?
-    // For now, rely on passed state or assume local if ID looks like ObjectId (24 hex chars)?
-    // But let's stick to the plan: passed state. 
-    // If no state (refresh), we might need logic.
-    // Simple logic: if id is numeric -> tmdb (isLocal=false). if string/hex -> local.
-    const derivedIsLocal = location.state?.isLocal ?? (id && !/^\d+$/.test(id));
+    const isTmdbMovie = location.state?.isTmdbMovie ?? (id && !/^\d+$/.test(id));
 
     const { data: movie, isLoading, error } = useMovieDetails({
         id: id!,
-        isLocal: derivedIsLocal
+        isTmdbMovie
     });
 
-    const [activeTab, setActiveTab] = useState<'info' | 'similar' | 'reviews'>('info');
+    const { data: recommendedMoviesData, isLoading: isLoadingRecommended } = useRecommendedMovies({
+        tmdbId: movie?.tmdbId,
+        enabled: !!movie?.tmdbId
+    });
+
+
+    const [activeTab, setActiveTab] = useState<string>('information');
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+
+    const { data: currentRating } = useUserRating(movie?._id ?? '');
+
+    // IntersectionObserver to update active tab based on scroll position
+    useEffect(() => {
+        const sections = ['information', 'more-like-this', 'comments'];
+        const observers: IntersectionObserver[] = [];
+
+        sections.forEach((sectionId) => {
+            const element = document.getElementById(sectionId);
+            if (!element) return;
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            setActiveTab(sectionId);
+                        }
+                    });
+                },
+                {
+                    rootMargin: '-100px 0px -66% 0px', // Trigger when section is near top
+                    threshold: 0
+                }
+            );
+
+            observer.observe(element);
+            observers.push(observer);
+        });
+
+        return () => {
+            observers.forEach((observer) => observer.disconnect());
+        };
+    }, [movie]); // Re-run when movie data changes
+
+
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-        );
+        return <MovieDetailsSkeleton />;
     }
 
     if (error || !movie) {
@@ -59,8 +101,8 @@ export default function MovieDetails() {
                 <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
 
                     {/* Cutouts for Ticket Effect */}
-                    <div className="hidden md:block absolute top-[0px] left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
-                    <div className="hidden md:block absolute bottom-[0px] left-[35%] -translate-x-1/2 translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
+                    <div className="hidden md:block absolute top-0 left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
+                    <div className="hidden md:block absolute bottom-0 left-[35%] -translate-x-1/2 translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
 
                     {/* Dashed Line */}
                     <div className="hidden md:block absolute top-9 bottom-9 left-[35%] -translate-x-1/2 border-l-2 border-dashed border-white/30 z-30" />
@@ -86,7 +128,7 @@ export default function MovieDetails() {
                                 className="w-full h-full object-cover"
                             />
                             {/* Gradient Overlay for Text Readability */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#000] via-[#000]/80 to-[#000]/40" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
                         </div>
 
                         {/* Content */}
@@ -112,13 +154,24 @@ export default function MovieDetails() {
                                     </span>
                                 ))}
                                 {movie.rating && (
-                                    <div className="flex items-center gap-2 ml-2">
-                                        <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
-                                        <span className="bg-[#F5C518] text-black text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded">IMDb</span>
+                                    <div className="flex items-center gap-3 ml-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
+                                            <span className="bg-[#F5C518] text-black text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded">IMDb</span>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setIsRatingModalOpen(true)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 text-white hover:bg-white/10 text-xs md:text-sm transition-all active:scale-95 backdrop-blur-sm group"
+                                        >
+                                            <Star className={clsx("w-3.5 h-3.5 transition-colors", currentRating ? "fill-primary text-primary" : "text-white/60 group-hover:text-white")} />
+                                            <span className="font-bold">
+                                                {currentRating ? `${currentRating}/10` : 'Rate'}
+                                            </span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
-
                             <p className="text-gray-300 text-sm md:text-lg leading-relaxed max-w-2xl mb-6 md:mb-8 line-clamp-4 font-light">
                                 {movie.synopsis || movie.overview}
                             </p>
@@ -128,9 +181,15 @@ export default function MovieDetails() {
                                     <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
                                     Play
                                 </button>
-                                <button className="px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl border border-white/20 text-white hover:bg-white/10 font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm">
-                                    Watch Trailer
-                                </button>
+                                {movie.trailer && (movie.trailer.startsWith('http') || movie.trailer.startsWith('//')) && (
+                                    <button
+                                        onClick={() => setIsTrailerOpen(true)}
+                                        className="flex items-center gap-2 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl border border-white/20 text-white hover:bg-white/10 font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm"
+                                    >
+                                        <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
+                                        Watch Trailer
+                                    </button>
+                                )}
                                 <div className="flex items-center gap-2 md:gap-3">
                                     <button className="p-2.5 md:p-3.5 rounded-xl hover:bg-white/10 text-white transition-colors border border-white/20 backdrop-blur-sm group">
                                         <Heart className={clsx("w-4 h-4 md:w-5 md:h-5 transition-colors group-hover:text-red-500", movie.inWatchlist ? "fill-red-500 text-red-500" : "")} />
@@ -144,149 +203,176 @@ export default function MovieDetails() {
                     </div>
                 </div>
 
-                {/* Tabs Section */}
-                <div className="mt-12">
-                    <div className="border-b border-border">
-                        <div className="flex items-center gap-8">
-                            {['info', 'similar', 'reviews'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab as 'info' | 'similar' | 'reviews')}
-                                    className={clsx(
-                                        "pb-4 text-base font-medium transition-colors relative",
-                                        activeTab === tab ? "text-primary" : "text-text-secondary hover:text-white"
-                                    )}
-                                >
-                                    {tab === 'info' && 'Information'}
-                                    {tab === 'similar' && 'More Like This'}
-                                    {tab === 'reviews' && 'Reviews'}
-                                    {activeTab === tab && (
-                                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
+                <MovieRating
+                    isOpen={isRatingModalOpen}
+                    onClose={() => setIsRatingModalOpen(false)}
+                    currentRating={currentRating}
+                    movieId={movie._id!}
+                    movieTitle={movie.title}
+                />
+
+                <TrailerModal
+                    isOpen={isTrailerOpen}
+                    onClose={() => setIsTrailerOpen(false)}
+                    trailerUrl={movie.trailer}
+                    title={movie.title}
+                />
+
+                {/* Sticky Navigation */}
+                <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border mt-12">
+                    <div className="flex items-center gap-8">
+                        {[
+                            { id: 'information', label: 'Information' },
+                            { id: 'more-like-this', label: 'More Like This' },
+                            { id: 'comments', label: 'Comments' }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    const element = document.getElementById(tab.id);
+                                    if (element) {
+                                        const offset = 80; // Account for sticky header
+                                        const elementPosition = element.getBoundingClientRect().top;
+                                        const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                                        window.scrollTo({
+                                            top: offsetPosition,
+                                            behavior: 'smooth'
+                                        });
+                                    }
+                                }}
+                                className={clsx(
+                                    "pb-4 text-base font-medium transition-colors relative",
+                                    activeTab === tab.id ? "text-primary" : "text-text-secondary hover:text-white"
+                                )}
+                            >
+                                {tab.label}
+                                {activeTab === tab.id && (
+                                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                                )}
+                            </button>
+                        ))}
                     </div>
+                </div>
 
-                    {/* Tab Content */}
-                    <div className="mt-8">
-                        {activeTab === 'info' && (
-                            <div className="space-y-12">
-                                <h3 className="text-2xl text-white font-bold mb-6">Information</h3>
+                {/* Information Section */}
+                <section id="information" className="scroll-mt-20 py-12">
+                    <div className="space-y-6">
+                        <h2 className="text-white text-2xl sm:text-3xl font-bold">Information</h2>
 
-                                {/* Info Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-24 gap-y-8">
-                                    {/* Left Column */}
-                                    <div className="space-y-1">
-                                        <div className="flex items-center justify-between py-4 border-b border-white/10">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-5 h-5 flex items-center justify-center">
-                                                    <span className="text-primary font-bold text-lg">T</span>
-                                                </div>
-                                                <span className="text-white font-medium">Title</span>
-                                            </div>
-                                            <span className="text-text-secondary">{movie.title}</span>
+                        {/* Info Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-24 gap-y-8">
+                            {/* Left Column */}
+                            <div className="space-y-1">
+                                <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-5 h-5 flex items-center justify-center">
+                                            <span className="text-primary font-bold text-lg">T</span>
                                         </div>
-
-                                        {movie.year && (
-                                            <div className="flex items-center justify-between py-4 border-b border-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <Calendar className="w-5 h-5 text-primary" />
-                                                    <span className="text-white font-medium">Similars</span>
-                                                </div>
-                                                <span className="text-text-secondary">{movie.year}</span>
-                                            </div>
-                                        )}
-
-                                        {movie.originalLanguage && (
-                                            <div className="flex items-center justify-between py-4 border-b border-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <Languages className="w-5 h-5 text-primary" />
-                                                    <span className="text-white font-medium">Language</span>
-                                                </div>
-                                                <span className="text-text-secondary uppercase">{movie.originalLanguage}</span>
-                                            </div>
-                                        )}
+                                        <span className="text-white font-medium">Title</span>
                                     </div>
-
-                                    {/* Right Column */}
-                                    <div className="space-y-1">
-                                        {movie.duration && (
-                                            <div className="flex items-center justify-between py-4 border-b border-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <Clock className="w-5 h-5 text-primary" />
-                                                    <span className="text-white font-medium">Runtime</span>
-                                                </div>
-                                                <span className="text-text-secondary">{formatRuntime(movie.duration)}</span>
-                                            </div>
-                                        )}
-
-                                        {movie.rating && (
-                                            <div className="flex items-center justify-between py-4 border-b border-white/10">
-                                                <div className="flex items-center gap-3">
-                                                    <Star className="w-5 h-5 text-primary" />
-                                                    <span className="text-white font-medium">Rating</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-text-secondary">
-                                                        {typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <span className="text-text-secondary">{movie.title}</span>
                                 </div>
 
-                                {/* Cast Section */}
-                                {movie.cast && movie.cast.length > 0 && (
-                                    <div className="mt-12">
-                                        <div className="flex items-center gap-2 mb-6">
-                                            <div className="text-primary">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                                            </div>
-                                            <h3 className="text-xl font-bold text-white">Stars</h3>
+                                {movie.year && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Calendar className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Year</span>
                                         </div>
-                                        <div className="flex overflow-x-auto gap-6 pb-4 custom-scrollbar">
-                                            {movie.cast.slice(0, 10).map((member: ICastMember) => (
-                                                <div key={member.id} className="flex flex-col items-center gap-3 min-w-[100px]">
-                                                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
-                                                        {member.profilePath ? (
-                                                            <img
-                                                                src={`https://image.tmdb.org/t/p/w200${member.profilePath}`}
-                                                                alt={member.name}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full bg-card flex items-center justify-center text-text-muted text-xs">
-                                                                N/A
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-white text-sm font-medium leading-tight mb-1">{member.name}</p>
-                                                        <p className="text-text-secondary text-xs">{member.character}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <span className="text-text-secondary">{movie.year}</span>
+                                    </div>
+                                )}
+
+                                {movie.originalLanguage && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Languages className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Language</span>
+                                        </div>
+                                        <span className="text-text-secondary uppercase">{movie.originalLanguage}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-1">
+                                {movie.duration && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Clock className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Runtime</span>
+                                        </div>
+                                        <span className="text-text-secondary">{formatRuntime(movie.duration)}</span>
+                                    </div>
+                                )}
+
+                                {movie.rating && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Star className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Rating</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-text-secondary">
+                                                {typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}
+                                            </span>
                                         </div>
                                     </div>
                                 )}
                             </div>
-                        )}
+                        </div>
 
-                        {activeTab === 'similar' && (
-                            <div className="text-center py-12 text-text-secondary">
-                                <p>Similar movies implementation coming soon...</p>
-                            </div>
-                        )}
-
-                        {activeTab === 'reviews' && (
-                            <div className="text-center py-12 text-text-secondary">
-                                <p>Reviews implementation coming soon...</p>
+                        {/* Cast Section */}
+                        {movie.cast && movie.cast.length > 0 && (
+                            <div className="mt-12">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <div className="text-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Stars</h3>
+                                </div>
+                                <div className="flex overflow-x-auto gap-6 pb-4 custom-scrollbar">
+                                    {movie.cast.slice(0, 10).map((member: ICastMember) => (
+                                        <div key={member.id} className="flex flex-col items-center gap-3 min-w-[100px]">
+                                            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
+                                                {member.profilePath ? (
+                                                    <img
+                                                        src={`https://image.tmdb.org/t/p/w200${member.profilePath}`}
+                                                        alt={member.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-card flex items-center justify-center text-text-muted text-xs">
+                                                        N/A
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-white text-sm font-medium leading-tight mb-1">{member.name}</p>
+                                                <p className="text-text-secondary text-xs">{member.character}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
-                </div>
+                </section>
+
+                {/* More Like This Section */}
+                <section id="more-like-this" className="scroll-mt-20 py-12">
+                    <MovieCarousel
+                        title="More Like This"
+                        movies={recommendedMoviesData?.data || []}
+                        isLoading={isLoadingRecommended}
+                    />
+                </section>
+
+                {/* Comments Section */}
+                <section id="comments" className="scroll-mt-20 py-12">
+                    {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
+                </section>
             </div>
         </div>
     );

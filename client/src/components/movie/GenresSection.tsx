@@ -1,15 +1,13 @@
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { MovieCard } from './MovieCard';
-import type { IMovie, ITrendingMovie, IRecommendedMovie } from '../../types/movie.types';
+import type { IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
 export interface GenresSectionProps {
   movies: IMovie[];
   selectedGenre: string;
   onGenreChange: (genre: string) => void;
-  onMovieClick?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
-  onWatchlistToggle?: (movie: IMovie | ITrendingMovie | IRecommendedMovie) => void;
   onViewAll?: () => void;
   isLoading?: boolean;
   className?: string;
@@ -26,8 +24,6 @@ export const GenresSection = ({
   movies,
   selectedGenre,
   onGenreChange,
-  onMovieClick,
-  onWatchlistToggle,
   onViewAll,
   isLoading = false,
   className,
@@ -54,7 +50,7 @@ export const GenresSection = ({
 
     const gap = 8;
     let cardsVisible = 1;
-    
+
     if (window.innerWidth >= 1280) {
       cardsVisible = 5;
     } else if (window.innerWidth >= 1024) {
@@ -200,8 +196,6 @@ export const GenresSection = ({
                 <div key={key}>
                   <MovieCard
                     movie={movie}
-                    onMovieClick={onMovieClick}
-                    onWatchlistToggle={onWatchlistToggle}
                   />
                 </div>
               );

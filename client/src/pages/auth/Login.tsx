@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MovieSlideshow from '../../components/auth/MovieSlideshow';
@@ -30,6 +30,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const loginMutation = useLogin();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     register,
@@ -38,6 +40,24 @@ export default function Login() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const error = searchParams.get('error');
+
+    if (status === 'oauth_success') {
+      toast.success('Successfully logged in!');
+      // Clean up query params
+      setSearchParams({});
+      // Redirect to home
+      navigate('/', { replace: true });
+    } else if (error === 'oauth_failed') {
+      toast.error('OAuth authentication failed. Please try again.');
+      // Clean up query params
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, navigate]);
 
   const onSubmit = (data: LoginFormData) => {
     loginMutation.mutate(data, {
@@ -49,9 +69,15 @@ export default function Login() {
     });
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // TODO: Implement OAuth flow
-    toast.success(`${provider} login coming soon`);
+  const handleSocialLogin = (provider: 'google' | 'intra42') => {
+    // Get API base URL from environment
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+
+    // Map provider to backend route
+    const providerRoute = provider === 'intra42' ? '42' : provider;
+
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${API_BASE_URL}/oauth/${providerRoute}`;
   };
 
   return (

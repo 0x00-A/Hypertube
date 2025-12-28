@@ -6,13 +6,13 @@ import { useAuthState } from '../../hooks/useAuth';
 import MoviePreviewModal from './MoviePreviewModal';
 
 import { useNavigate } from 'react-router-dom';
-import { determineIsLocal, getMovieIdentifier } from '../../utils/movieHelpers';
+import { determineIsTmdbMovie, getMovieIdentifier } from '../../utils/movieHelpers';
+import toast from 'react-hot-toast';
 
 export const MovieCard = ({
   movie,
-  onMovieClick,
-  onWatchlistToggle,
   className,
+  onWatchlistToggle,
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isAuthenticated } = useAuthState();
@@ -20,31 +20,27 @@ export const MovieCard = ({
   const navigate = useNavigate();
 
   const handleCardClick = () => {
+
     // If user is not authenticated, show preview modal
     if (!isAuthenticated) {
       setIsModalOpen(true);
       return;
     }
 
-    // Call parent handler if provided
-    if (onMovieClick) {
-      onMovieClick(movie);
-      return;
-    }
-
-    // Default navigation behavior if no handler provided
+    // Default navigation behavior
     try {
       const id = getMovieIdentifier(movie);
-      const isLocal = determineIsLocal(movie);
-      navigate(`/movies/${id}`, { state: { isLocal } });
-    } catch (error) {
-      console.error('Failed to navigate to movie details:', error);
+      const isTmdbMovie = determineIsTmdbMovie(movie);
+      navigate(`/movies/${id}`, { state: { isTmdbMovie } });
+    } catch {
+      toast.error('Failed to navigate to movie details');
     }
   };
 
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onWatchlistToggle?.(movie);
+    // implement watchlist toggle
+    if (onWatchlistToggle) onWatchlistToggle();
   };
 
   const formatRating = (rating?: number | string) => {

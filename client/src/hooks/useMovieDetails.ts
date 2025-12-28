@@ -5,13 +5,13 @@ import type { IMovieDetails } from '../types/movie.types';
 
 interface UseMovieDetailsOptions {
     id: string;
-    isLocal: boolean;
+    isTmdbMovie: boolean;
 }
 
-export const useMovieDetails = ({ id, isLocal }: UseMovieDetailsOptions) => {
+export const useMovieDetails = ({ id, isTmdbMovie }: UseMovieDetailsOptions) => {
     return useQuery<IMovieDetails, Error>({
         queryKey: queryKeys.movies.detail(id),
-        queryFn: () => movieService.getMovieDetails(id, isLocal),
+        queryFn: () => movieService.getMovieDetails(id, isTmdbMovie),
         enabled: !!id,
         staleTime: 10 * 60 * 1000, // 10 minutes
         retry: (failureCount, error) => {

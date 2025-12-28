@@ -1,10 +1,10 @@
-import type { IMovie, IWatchProgress, ITrendingMovie } from '../../types/movie.types';
+import type { IMovie, IWatchProgress } from '../../types/movie.types';
 import { SliderMovies } from './SliderMovies';
 import { LastWatchingSection } from './LastWatchingSection';
 import { clsx } from 'clsx';
 
 interface HeroSectionProps {
-  heroMovies: ITrendingMovie[];
+  sliderMovies: IMovie[];
   lastWatchingList: IWatchProgress[];
   onPlayClick?: (movie: IMovie) => void;
   onViewAllLastWatching?: () => void;
@@ -12,7 +12,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({
-  heroMovies,
+  sliderMovies,
   lastWatchingList,
   onPlayClick,
   onViewAllLastWatching,
@@ -30,7 +30,7 @@ export const HeroSection = ({
         {/* Main Content: SliderMovies */}
         <div className="w-full h-full overflow-hidden rounded-xl">
           <SliderMovies
-            movies={heroMovies}
+            movies={sliderMovies}
             autoPlayInterval={5000}
             className="h-full"
           />
