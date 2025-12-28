@@ -47,6 +47,7 @@ const createFortyTwoProfile = (
   login: string,
   firstName: string,
   lastName: string,
+  image_url: string,
 ): FortyTwoProfile => ({
   id: String(id),
   username: login,
@@ -59,6 +60,7 @@ const createFortyTwoProfile = (
     id,
     email,
     login,
+    image_url,
     first_name: firstName,
     last_name: lastName,
   },
@@ -133,10 +135,12 @@ describe('OAuth Integration Tests', () => {
       expect(user.username).toBe(`john_${unique}`);
       expect(user.firstName).toBe('John');
       expect(user.lastName).toBe('Doe');
+      expect(user.avatarUrl).toBe('https://example.com/photo.jpg');
       // Verify oauth was stored by querying directly
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('google');
       expect(dbUser?.oauth?.id).toBe(`google123_${unique}`);
+      expect(dbUser?.avatarUrl).toBe('https://example.com/photo.jpg');
     });
 
     it('should return existing user if Google account already exists', async () => {
@@ -196,6 +200,23 @@ describe('OAuth Integration Tests', () => {
       const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
 
       expect(user.username).toBe('janesmith'); // Dots are removed by sanitization
+    });
+
+    it('should create user with undefined avatar if Google profile has no picture', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const email = `nophoto_${unique}@example.com`;
+      const mockGoogleProfile = createGoogleProfile({
+        id: `google_nophoto_${unique}`,
+        email,
+        given_name: 'No',
+        family_name: 'Photo',
+      });
+
+      const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
+
+      expect(user.avatarUrl).toBeUndefined();
+      const dbUser = await UserModel.findById(user._id).exec();
+      expect(dbUser?.avatarUrl).toBeUndefined();
     });
 
     it('should throw error if Google profile has no email', async () => {
@@ -260,7 +281,7 @@ describe('OAuth Integration Tests', () => {
       const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       const login = `jdoe_${unique}`;
       const email = `${login}@student.42.fr`;
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe', `https://example.com/avatar_${unique}.jpg`);
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       expect(user).toBeDefined();
       expect(user._id).toBeDefined();
@@ -268,17 +289,19 @@ describe('OAuth Integration Tests', () => {
       expect(user.username).toBe(login);
       expect(user.firstName).toBe('John');
       expect(user.lastName).toBe('Doe');
+      expect(user.avatarUrl).toBe(`https://example.com/avatar_${unique}.jpg`);
       // Verify oauth was stored in database
       const dbUser = await UserModel.findById(user._id).select('+oauth').exec();
       expect(dbUser?.oauth?.provider).toBe('fortytwo');
       expect(dbUser?.oauth?.id).toBe('12345');
+      expect(dbUser?.avatarUrl).toBe(`https://example.com/avatar_${unique}.jpg`);
     });
 
     it('should return existing user if 42 account already exists', async () => {
       const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       const login = `jdoe_${unique}`;
       const email = `${login}@student.42.fr`;
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe', '');
       // Create user first time
       const firstUser = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       // Try to create again with same profile
@@ -299,7 +322,7 @@ describe('OAuth Integration Tests', () => {
         firstName: 'John',
         lastName: 'Doe',
       });
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe');
+      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe', '');
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       expect(user.email).toBe(email);
       expect(user.username).toBe(`johndoe_${unique}`);
@@ -316,6 +339,7 @@ describe('OAuth Integration Tests', () => {
         'jsmith',
         'Jane',
         'Smith',
+        '',
       );
 
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
@@ -330,12 +354,33 @@ describe('OAuth Integration Tests', () => {
         'noname',
         '',
         '',
+        '',
       );
 
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
 
       expect(user.firstName).toBe('User');
       expect(user.lastName).toBe('FortyTwo');
+    });
+
+    it('should create user with undefined avatar if 42 profile has no image_url', async () => {
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const login = `noavatar_${unique}`;
+      const email = `${login}@student.42.fr`;
+      const mockFortyTwoProfile = createFortyTwoProfile(
+        88888,
+        email,
+        login,
+        'No',
+        'Avatar',
+        '',
+      );
+
+      const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
+
+      expect(user.avatarUrl).toBeFalsy(); // Should be empty string or undefined
+      const dbUser = await UserModel.findById(user._id).exec();
+      expect(dbUser?.avatarUrl).toBeFalsy(); // Should be empty string or undefined
     });
 
     it('should generate unique username when 42 login is taken', async () => {
@@ -351,7 +396,8 @@ describe('OAuth Integration Tests', () => {
       // Try to create 42 OAuth user with same login
       const login = `jsmith_${unique}`;
       const email = `${login}@student.42.fr`;
-      const mockFortyTwoProfile = createFortyTwoProfile(67890, email, login, 'Jane', 'Smith');
+      const image_url = `https://example.com/avatar_${unique}.jpg`;
+      const mockFortyTwoProfile = createFortyTwoProfile(67890, email, login, 'Jane', 'Smith', image_url);
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       expect(user.username).toBe(`${login}2`); // Should append number to avoid collision
       expect(user.email).toBe(email);

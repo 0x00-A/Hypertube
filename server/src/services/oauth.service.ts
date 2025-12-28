@@ -38,6 +38,7 @@ export class OAuthService {
                     username: uniqueUsername,
                     firstName: profile._json.given_name || 'User',
                     lastName: profile._json.family_name || 'Google',
+                    avatarUrl: profile._json.picture,
                     password: await this._passwordService.generateOAuthPassword(),
                     isActive: true,
                     oauth: {
@@ -75,6 +76,7 @@ export class OAuthService {
                     username: uniqueUsername,
                     firstName: profile.name.givenName || profile._json.first_name || 'User',
                     lastName: profile.name.familyName || profile._json.last_name || 'FortyTwo',
+                    avatarUrl: profile._json.image_url,
                     password: await this._passwordService.generateOAuthPassword(),
                     isActive: true,
                     oauth: {
