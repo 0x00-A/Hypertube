@@ -1,5 +1,5 @@
 import { Plus, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { MovieCardProps } from '../../types/movie.types';
 import { clsx } from 'clsx';
 import { useAuthState } from '../../hooks/useAuth';
@@ -18,14 +18,6 @@ export const MovieCard = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Local state for optimistic UI updates
-  const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist);
-
-  // Sync local state when prop changes (e.g. after refetch)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsInWatchlist(movie.inWatchlist);
-  }, [movie.inWatchlist]);
 
   const handleCardClick = () => {
 
@@ -57,34 +49,21 @@ export const MovieCard = ({
       return;
     }
 
-    if (!movie) return;
-
     if (movie.inWatchlist) {
-      // Optimistic updatet
-      setIsInWatchlist(!isInWatchlist);
-
-      if (movie._id) {
-        removeFromWatchlist(movie._id, {
-          onError: () => setIsInWatchlist(true) // Revert
-        });
+      const id = movie._id;
+      if (id) {
+        removeFromWatchlist(id);
       } else {
-        toast.error('Cannot remove from watchlist: Missing movie ID');
-        setIsInWatchlist(true); // Revert
+        toast.error('Cannot remove: Missing movie ID');
       }
     } else {
-      // Optimistic update
-      setIsInWatchlist(!isInWatchlist);
-
       const id = movie._id || movie.tmdbId;
       const isTmdbMovie = !movie._id;
 
       if (id) {
-        addToWatchlist({ id: id, isTmdbMovie }, {
-          onError: () => setIsInWatchlist(false) // Revert
-        });
+        addToWatchlist({ id, isTmdbMovie });
       } else {
-        toast.error('Cannot add to watchlist: Missing movie identifier');
-        setIsInWatchlist(false); // Revert
+        toast.error('Cannot add: Missing movie identifier');
       }
     }
   };
@@ -141,13 +120,13 @@ export const MovieCard = ({
             >
               <div className={clsx(
                 "w-8 h-10 transition-colors shadow-lg drop-shadow-md",
-                isInWatchlist ? "text-[#F5C518] fill-[#F5C518]" : "text-black/60 fill-black/60 hover:text-black/80"
+                movie.inWatchlist ? "text-[#F5C518] fill-[#F5C518]" : "text-black/60 fill-black/60 hover:text-black/80"
               )}>
                 <svg width="32" height="40" viewBox="0 0 24 34" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M24 0H0V32L12 24L24 32V0Z" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center -mt-2">
-                  {isInWatchlist ? (
+                  {movie.inWatchlist ? (
                     <Check className="w-4 h-4 text-black stroke-[3]" />
                   ) : (
                     <Plus className="w-4 h-4 text-white group-hover/watchlist:text-white/90 stroke-[3]" />

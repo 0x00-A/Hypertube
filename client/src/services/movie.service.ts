@@ -4,7 +4,7 @@ import type {
   IMovie,
   IMovieDetails,
   IMovieDetailsResponse,
-  IResponse,
+  IMovieInteraction,
 } from '../types/movie.types';
 import type { IMovieFilters } from '../types/movieFilter.types';
 
@@ -115,23 +115,24 @@ class MovieService {
     );
     return response;
   }
+
   /**
    * Add movie to watchlist - handles both local and TMDB movies
    */
-  async addToWatchlist(id: string | number, isTmdbMovie: boolean = true): Promise<IMovie> {
+  async addToWatchlist(id: string | number, isTmdbMovie: boolean = true): Promise<IMovieInteraction> {
     const endpoint = isTmdbMovie
       ? `${this.BASE_PATH}/watchlist/${id}`
       : `/interactions/movies/${id}/watchlist`;
 
-    const response = await httpClient.post<IResponse<IMovie>>(endpoint);
+    const response = await httpClient.post<{ data: IMovieInteraction }>(endpoint);
     return response.data;
   }
 
   /**
    * Remove movie from watchlist by Movie ID (MongoDB _id)
    */
-  async removeFromWatchlist(movieId: string): Promise<IResponse<void>> {
-    const response = await httpClient.delete<IResponse<void>>(
+  async removeFromWatchlist(movieId: string): Promise<{ message?: string }> {
+    const response = await httpClient.delete<{ message?: string }>(
       `/interactions/movies/${movieId}/watchlist`
     );
     return response;
@@ -157,5 +158,6 @@ class MovieService {
     return response;
   }
 }
+
 
 export const movieService = new MovieService();

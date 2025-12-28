@@ -36,14 +36,9 @@ export const LibraryFilterBar = () => {
         dispatch(setSearch(debouncedSearch));
     }, [debouncedSearch, dispatch]);
 
-    // Sync local search with Redux (for reset)
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLocalSearch(filters.search);
-    }, [filters.search]);
-
     const handleReset = () => {
         dispatch(resetFilters());
+        setLocalSearch('');
     };
 
     const hasActiveFilters =

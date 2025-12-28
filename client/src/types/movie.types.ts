@@ -65,6 +65,22 @@ export interface IWatchProgress {
   lastWatchedAt: Date | string;
 }
 
+export interface IMovieInteraction {
+  _id?: string;
+  userId: string;
+  movieId: string;
+  interactionType: 'watched' | 'rated' | 'watchlist' | 'downloaded';
+  lastWatchedPosition?: number;
+  duration?: number;
+  watchProgress?: number;
+  isCompleted?: boolean;
+  rating?: number;
+  watchedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export type MovieCardProps = {
   movie: IMovie;

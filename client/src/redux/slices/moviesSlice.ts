@@ -156,6 +156,21 @@ const moviesSlice = createSlice({
       state.slider = initialState.slider;
     },
 
+    // Update watchlist status for a movie across all lists (Optimistic)
+    updateMovieWatchlist: (state, action: PayloadAction<{ id: string | number; inWatchlist: boolean }>) => {
+      const { id, inWatchlist } = action.payload;
+      const updateItem = (movie: IMovie) => {
+        if (movie._id === id || movie.tmdbId === id) {
+          movie.inWatchlist = inWatchlist;
+        }
+      };
+
+      state.trending.data.forEach(updateItem);
+      state.recommended.data.forEach(updateItem);
+      state.genres.data.forEach(updateItem);
+      state.slider.data.forEach(updateItem);
+    },
+
     // Reset all movies state
     resetMovies: () => initialState,
   },
@@ -183,6 +198,7 @@ export const {
   setSliderMovies,
   setSliderError,
   clearSliderMovies,
+  updateMovieWatchlist,
   resetMovies,
 } = moviesSlice.actions;
 
