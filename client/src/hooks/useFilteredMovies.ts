@@ -45,7 +45,7 @@ export const useFilteredMovies = (): UseFilteredMoviesResult => {
       } else {
         setMovies(response.data);
       }
-      
+
       setPagination(response.pagination);
       setCurrentPage(page);
     } catch (err: unknown) {
