@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 import { useState } from 'react';
 import type { MovieCardProps } from '../../types/movie.types';
 import { clsx } from 'clsx';
@@ -6,18 +6,29 @@ import { useAuthState } from '../../hooks/useAuth';
 import MoviePreviewModal from './MoviePreviewModal';
 
 import { useNavigate } from 'react-router-dom';
-import { determineIsTmdbMovie, getMovieIdentifier } from '../../utils/movieHelpers';
 import toast from 'react-hot-toast';
+import { useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useMovieInteractions';
 
 export const MovieCard = ({
   movie,
   className,
-  onWatchlistToggle,
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isAuthenticated } = useAuthState();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Local state for optimistic UI updates
+  const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist || false);
+  const [currentMovieId, setCurrentMovieId] = useState(movie._id || movie.tmdbId);
+
+  // Sync state when movie changes (different movie loaded)
+  const movieId = movie._id || movie.tmdbId;
+  if (movieId !== currentMovieId) {
+    setIsInWatchlist(movie.inWatchlist || false);
+    setCurrentMovieId(movieId);
+  }
+
 
   const handleCardClick = () => {
 
@@ -29,18 +40,61 @@ export const MovieCard = ({
 
     // Default navigation behavior
     try {
-      const id = getMovieIdentifier(movie);
-      const isTmdbMovie = determineIsTmdbMovie(movie);
+      const id = movie._id || movie.tmdbId;
+      const isTmdbMovie = !movie._id;
       navigate(`/movies/${id}`, { state: { isTmdbMovie } });
     } catch {
       toast.error('Failed to navigate to movie details');
     }
   };
 
+  const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
+  const { mutate: removeFromWatchlist, isPending: isRemoving } = useRemoveFromWatchlist();
+
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // implement watchlist toggle
-    if (onWatchlistToggle) onWatchlistToggle();
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      setIsModalOpen(true);
+      return;
+    }
+
+    const previousState = isInWatchlist;
+
+    if (isInWatchlist) {
+      const id = movie._id;
+      if (id) {
+        // Optimistically update UI
+        setIsInWatchlist(false);
+
+        removeFromWatchlist(id, {
+          onError: () => {
+            // Revert on error
+            setIsInWatchlist(previousState);
+          }
+        });
+      } else {
+        toast.error('Cannot remove: Missing movie ID');
+      }
+    } else {
+      const id = movie._id || movie.tmdbId;
+      const isTmdbMovie = !movie._id;
+
+      if (id) {
+        // Optimistically update UI
+        setIsInWatchlist(true);
+
+        addToWatchlist({ id, isTmdbMovie }, {
+          onError: () => {
+            // Revert on error
+            setIsInWatchlist(previousState);
+          }
+        });
+      } else {
+        toast.error('Cannot add: Missing movie identifier');
+      }
+    }
   };
 
   const formatRating = (rating?: number | string) => {
@@ -87,7 +141,31 @@ export const MovieCard = ({
             )}
           />
 
-          <div className="absolute top-0 left-0 right-0 p-2.5 flex justify-between items-start z-10">
+          <div className="absolute top-0 left-0 z-20">
+            <button
+              onClick={handleWatchlistClick}
+              disabled={isAdding || isRemoving}
+              className="relative group/watchlist disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className={clsx(
+                "w-8 h-10 transition-colors shadow-lg drop-shadow-md",
+                isInWatchlist ? "text-[#F5C518] fill-[#F5C518]" : "text-black/60 fill-black/60 hover:text-black/80"
+              )}>
+                <svg width="32" height="40" viewBox="0 0 24 34" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M24 0H0V32L12 24L24 32V0Z" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center -mt-2">
+                  {isInWatchlist ? (
+                    <Check className="w-4 h-4 text-black stroke-[3]" />
+                  ) : (
+                    <Plus className="w-4 h-4 text-white group-hover/watchlist:text-white/90 stroke-[3]" />
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div className="absolute top-0 right-0 p-2.5 z-10">
             <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10">
               <span className="text-yellow-400 text-sm">★</span>
               <span className="text-white text-sm font-bold">
@@ -95,20 +173,6 @@ export const MovieCard = ({
               </span>
               <span className="text-white/40 text-[10px] font-medium pt-0.5">/10</span>
             </div>
-
-            <button
-              onClick={handleWatchlistClick}
-              className="flex items-center justify-center bg-black/60 backdrop-blur-md  px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
-            >
-              <Heart
-                className={clsx(
-                  'w-5 h-5 transition-colors',
-                  movie.inWatchlist
-                    ? 'fill-red-500 text-red-500'
-                    : 'text-white/80 hover:text-white'
-                )}
-              />
-            </button>
           </div>
 
           <div className={clsx(

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { commentService } from '../services/comment.service';
 import { queryKeys } from '../config/queryClient';
 import type { ICommentsResponse } from '../types/comment.types';
+import type { ApiError } from '../types/api.types';
 
 interface UseMovieCommentsOptions {
     tmdbId?: number;
@@ -20,7 +21,7 @@ export const useMovieComments = ({
     sortOrder = 'desc',
     enabled = true,
 }: UseMovieCommentsOptions = {}) => {
-    return useQuery<ICommentsResponse, Error>({
+    return useQuery<ICommentsResponse, ApiError>({
         queryKey: [...queryKeys.comments.byMovie(tmdbId ?? 0), { page, sortBy, sortOrder }],
         queryFn: () => commentService.getMovieComments(tmdbId!, page, limit, sortBy, sortOrder),
         enabled: enabled && !!tmdbId,

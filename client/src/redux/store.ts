@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import moviesReducer from './slices/moviesSlice';
 import movieFiltersReducer from './slices/movieFiltersSlice';
+import libraryFiltersReducer from './slices/libraryFiltersSlice';
 
 // ============================================================================
 // Store Configuration
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authReducer,
     movies: moviesReducer,
     movieFilters: movieFiltersReducer,
+    libraryFilters: libraryFiltersReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

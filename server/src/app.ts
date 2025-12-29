@@ -2,7 +2,6 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
 import { createMovieInteractionRouter } from './routes/v1/movieInteractions.routes';
@@ -44,18 +43,6 @@ export const createApp = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
   app.use(passport.initialize());
-
-  // Disable rate limiting in test environment to prevent 429 errors
-  if (env.NODE_ENV !== 'test') {
-    app.use(
-      rateLimit({
-        windowMs: 15 * 60 * 1000,
-        limit: 100,
-        standardHeaders: 'draft-8',
-        legacyHeaders: false,
-      }),
-    );
-  }
 
   if (env.isDev) {
     app.use(requestLogger);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, Film, Menu, X, SlidersHorizontal, Compass, Library, Clock } from 'lucide-react';
+import { Search, Film, Menu, X, SlidersHorizontal, Compass, Library, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthState } from '../../hooks/useAuth';
 import ProfileDropdown from './ProfileDropdown';
@@ -156,17 +156,6 @@ export default function Header() {
           >
             {isSearchExpanded ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
           </button>
-
-          {/* Notification Bell - Only show when authenticated */}
-          {isAuthenticated && (
-            <button
-              className="hidden md:flex relative w-9 h-9 items-center justify-center text-text-secondary hover:text-primary transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-red rounded-full"></span>
-            </button>
-          )}
 
           {/* Auth Buttons or Profile */}
           {isAuthenticated ? (

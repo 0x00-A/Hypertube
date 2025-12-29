@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Play, Heart, Share2, Star, Calendar, Clock, Languages, PlayCircle } from 'lucide-react';
+import { Star, Clock, Calendar, Languages, Play, PlayCircle, Plus, Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
 import { useUserRating } from '../../hooks/useUserRating';
@@ -11,9 +11,14 @@ import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
 import { MovieDetailsSkeleton } from '../../components/movie/MovieDetailsSkeleton';
+import { useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useMovieInteractions';
+import toast from 'react-hot-toast';
 
 
 export default function MovieDetails() {
+    // Image loading states
+    const [isPosterLoaded, setIsPosterLoaded] = useState(false);
+    const [isBackdropLoaded, setIsBackdropLoaded] = useState(false);
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();
@@ -36,6 +41,30 @@ export default function MovieDetails() {
     const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
     const { data: currentRating } = useUserRating(movie?._id ?? '');
+    const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
+    const { mutate: removeFromWatchlist, isPending: isRemoving } = useRemoveFromWatchlist();
+
+    const handleWatchlistClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!movie) return;
+
+        if (movie.inWatchlist) {
+            if (movie._id) {
+                removeFromWatchlist(movie._id);
+            } else {
+                toast.error('Cannot remove from watchlist: Missing movie ID');
+            }
+        } else {
+            const id = movie._id || movie.tmdbId;
+            const isTmdbMovie = !movie._id;
+
+            if (id) {
+                addToWatchlist({ id: id, isTmdbMovie });
+            } else {
+                toast.error('Cannot add to watchlist: Missing movie identifier');
+            }
+        }
+    };
 
     // IntersectionObserver to update active tab based on scroll position
     useEffect(() => {
@@ -97,6 +126,25 @@ export default function MovieDetails() {
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                {/* Breadcrumbs */}
+                <div className="flex items-center gap-2 text-sm mb-6">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-text-secondary hover:text-white transition-colors"
+                    >
+                        Home
+                    </button>
+                    <span className="text-text-muted">/</span>
+                    <button
+                        onClick={() => navigate('/movies')}
+                        className="text-text-secondary hover:text-white transition-colors"
+                    >
+                        Movies
+                    </button>
+                    <span className="text-text-muted">/</span>
+                    <span className="text-white">{movie.title}</span>
+                </div>
+
                 {/* Ticket Hero Section */}
                 <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
 
@@ -109,11 +157,19 @@ export default function MovieDetails() {
 
                     {/* Left Side - Poster */}
                     <div className="hidden md:block relative w-[35%] z-20 bg-black">
-                        <div className="h-full w-full">
+                        <div className="h-full w-full relative">
+                            {/* Skeleton loader for poster */}
+                            {!isPosterLoaded && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                            )}
                             <img
                                 src={posterImage}
                                 alt={movie.title}
-                                className="w-full h-full object-cover"
+                                className={clsx(
+                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    isPosterLoaded ? "opacity-100" : "opacity-0"
+                                )}
+                                onLoad={() => setIsPosterLoaded(true)}
                             />
                         </div>
                     </div>
@@ -122,10 +178,18 @@ export default function MovieDetails() {
                     <div className="relative w-full md:w-[65%] flex-1 flex flex-col">
                         {/* Background Image & Overlay */}
                         <div className="absolute inset-0">
+                            {/* Skeleton loader for backdrop */}
+                            {!isBackdropLoaded && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                            )}
                             <img
                                 src={backdropImage}
                                 alt="Backdrop"
-                                className="w-full h-full object-cover"
+                                className={clsx(
+                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    isBackdropLoaded ? "opacity-100" : "opacity-0"
+                                )}
+                                onLoad={() => setIsBackdropLoaded(true)}
                             />
                             {/* Gradient Overlay for Text Readability */}
                             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
@@ -191,11 +255,27 @@ export default function MovieDetails() {
                                     </button>
                                 )}
                                 <div className="flex items-center gap-2 md:gap-3">
-                                    <button className="p-2.5 md:p-3.5 rounded-xl hover:bg-white/10 text-white transition-colors border border-white/20 backdrop-blur-sm group">
-                                        <Heart className={clsx("w-4 h-4 md:w-5 md:h-5 transition-colors group-hover:text-red-500", movie.inWatchlist ? "fill-red-500 text-red-500" : "")} />
-                                    </button>
-                                    <button className="p-2.5 md:p-3.5 rounded-xl hover:bg-white/10 text-white transition-colors border border-white/20 backdrop-blur-sm group">
-                                        <Share2 className="w-4 h-4 md:w-5 md:h-5 transition-colors group-hover:text-primary" />
+                                    <button
+                                        onClick={handleWatchlistClick}
+                                        disabled={isAdding || isRemoving}
+                                        className="flex items-center gap-2 bg-primary text-black hover:bg-primary/90 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm group disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {(isAdding || isRemoving) ? (
+                                            <>
+                                                <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                <span>Loading...</span>
+                                            </>
+                                        ) : movie.inWatchlist ? (
+                                            <>
+                                                <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3]" />
+                                                <span>In Watchlist</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus className="w-4 h-4 md:w-5 md:h-5 stroke-[3]" />
+                                                <span>Add to Watchlist</span>
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>

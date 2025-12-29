@@ -50,6 +50,10 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.movies.details(), id] as const,
     recommended: (tmdbId?: number) => ['movies', 'recommended', tmdbId] as const,
   },
+  watchlist: {
+    all: ['watchlist'] as const,
+    list: (filters: Record<string, unknown>) => [...queryKeys.watchlist.all, filters] as const,
+  },
   comments: {
     all: ['comments'] as const,
     byMovie: (tmdbId: number) => [...queryKeys.comments.all, 'movie', tmdbId] as const,
