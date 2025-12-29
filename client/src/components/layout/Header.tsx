@@ -1,19 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Film, Menu, X, SlidersHorizontal, Compass, Library, Clock } from 'lucide-react';
-import { clsx } from 'clsx';
-import { useAuthState } from '../../hooks/useAuth';
-import ProfileDropdown from './ProfileDropdown';
+import { useState, useEffect, useRef } from "react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import {
+  Search,
+  Film,
+  Menu,
+  X,
+  SlidersHorizontal,
+  Compass,
+  Library,
+  Clock,
+  Sparkles,
+} from "lucide-react";
+import { clsx } from "clsx";
+import { useAuthState } from "../../hooks/useAuth";
+import ProfileDropdown from "./ProfileDropdown";
 
 const navLinks = [
-  { label: 'Browse', path: '/browse', icon: Compass },
-  { label: 'Movies', path: '/movies', icon: Film },
-  { label: 'Library', path: '/library', icon: Library },
-  { label: 'History', path: '/history', icon: Clock },
+  { label: "Browse", path: "/browse", icon: Compass },
+  { label: "Featured", path: "/featured", icon: Sparkles },
+  { label: "Movies", path: "/movies", icon: Film },
+  { label: "Library", path: "/library", icon: Library },
+  { label: "History", path: "/history", icon: Clock },
 ];
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,11 +67,12 @@ export default function Header() {
     setIsSearchExpanded(!isSearchExpanded);
   };
 
-  const userInitials = user?.firstName && user?.lastName
-    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    : user?.username?.[0]?.toUpperCase() || 'U';
+  const userInitials =
+    user?.firstName && user?.lastName
+      ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+      : user?.username?.[0]?.toUpperCase() || "U";
 
-  const username = user?.username || 'User';
+  const username = user?.username || "User";
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-bg-primary border-b border-border z-50">
@@ -72,9 +84,13 @@ export default function Header() {
           <button
             onClick={toggleMobileMenu}
             className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
           >
-            {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+            {isMobileMenuOpen ? (
+              <X className="w-8 h-8" />
+            ) : (
+              <Menu className="w-8 h-8" />
+            )}
           </button>
 
           {/* Logo */}
@@ -101,10 +117,10 @@ export default function Header() {
                 to={link.path}
                 className={({ isActive }) =>
                   clsx(
-                    'relative px-1 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap',
+                    "relative px-1 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap",
                     isActive
-                      ? 'text-primary'
-                      : 'text-text-secondary hover:text-text-primary'
+                      ? "text-primary"
+                      : "text-text-secondary hover:text-text-primary"
                   )
                 }
               >
@@ -152,9 +168,13 @@ export default function Header() {
           <button
             onClick={toggleSearch}
             className="md:hidden w-9 h-9 flex items-center justify-center text-text-secondary hover:text-primary bg-bg-tertiary border border-border rounded-lg hover:border-primary transition-all"
-            aria-label={isSearchExpanded ? 'Close search' : 'Open search'}
+            aria-label={isSearchExpanded ? "Close search" : "Open search"}
           >
-            {isSearchExpanded ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+            {isSearchExpanded ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
           </button>
 
           {/* Auth Buttons or Profile */}
@@ -166,7 +186,9 @@ export default function Header() {
                 className="w-9 h-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
                 aria-label="User menu"
               >
-                <span className="text-sm font-bold text-black">{userInitials}</span>
+                <span className="text-sm font-bold text-black">
+                  {userInitials}
+                </span>
               </button>
               <ProfileDropdown
                 isOpen={isProfileDropdownOpen}
@@ -203,7 +225,9 @@ export default function Header() {
                 className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
                 aria-label="User menu"
               >
-                <span className="text-xs font-bold text-black">{userInitials}</span>
+                <span className="text-xs font-bold text-black">
+                  {userInitials}
+                </span>
               </button>
               <ProfileDropdown
                 isOpen={isMobileProfileOpen}
@@ -259,28 +283,33 @@ export default function Header() {
                     to={link.path}
                     className={({ isActive }) =>
                       clsx(
-                        'flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-xl transition-all duration-200',
+                        "flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-xl transition-all duration-200",
                         isActive
-                          ? 'bg-primary/10 border border-primary text-primary shadow-lg shadow-primary/20'
-                          : 'bg-bg-tertiary border border-border text-text-secondary hover:text-primary hover:border-primary/50 hover:bg-bg-tertiary/80'
+                          ? "bg-primary/10 border border-primary text-primary shadow-lg shadow-primary/20"
+                          : "bg-bg-tertiary border border-border text-text-secondary hover:text-primary hover:border-primary/50 hover:bg-bg-tertiary/80"
                       )
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <Icon className={clsx('w-6 h-6', isActive ? 'text-primary' : 'text-text-secondary')} />
-                        <span className="text-sm font-medium">{link.label}</span>
+                        <Icon
+                          className={clsx(
+                            "w-6 h-6",
+                            isActive ? "text-primary" : "text-text-secondary"
+                          )}
+                        />
+                        <span className="text-sm font-medium">
+                          {link.label}
+                        </span>
                       </>
                     )}
                   </NavLink>
                 );
               })}
             </nav>
-
           </div>
         </div>
       )}
     </header>
   );
 }
-

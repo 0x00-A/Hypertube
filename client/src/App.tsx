@@ -22,6 +22,7 @@ import MovieDetails from './pages/movie/MovieDetails';
 import UserProfile from './pages/user/UserProfile';
 import EditProfile from './pages/user/EditProfile';
 import NotFound from './pages/notFound/NotFound';
+import Featured from './pages/featured/Featured';
 
 function NavigationSetup() {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<Navigate to="/browse" replace />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/featured" element={<Featured />} />
             <Route path="/library" element={<Library />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/movies/:id" element={<MovieDetails />} />

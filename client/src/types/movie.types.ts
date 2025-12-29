@@ -36,6 +36,7 @@ export interface IMovie {
   isWatched?: boolean;
   inWatchlist?: boolean;
   userRating?: number | null;
+  topRank?: number | null;
 }
 
 export interface IMoviesResponse {

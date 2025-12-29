@@ -94,6 +94,52 @@ class MovieService {
   }
 
   /**
+   * Get curated movies (sorted by topRank)
+   */
+  async getCuratedMovies(
+    page: number = 1, 
+    limit: number = 100,
+    filters?: {
+      sort?: 'topRank' | 'rating' | 'year';
+      genre?: string;
+      minRating?: number;
+      year?: number;
+    }
+  ): Promise<IMoviesResponse> {
+    const params: Record<string, string | number> = {
+      page,
+      limit,
+      sort: filters?.sort || 'topRank',
+    };
+
+    if (filters?.genre && filters.genre !== 'All') {
+      params.genre = filters.genre;
+    }
+    if (filters?.minRating && filters.minRating > 0) {
+      params.minRating = filters.minRating;
+    }
+    if (filters?.year && filters.year > 0) {
+      params.year = filters.year;
+    }
+
+    const response = await httpClient.get<IMoviesResponse>(
+      `${this.BASE_PATH}/curated`,
+      { params }
+    );
+    return response;
+  }
+
+  /**
+   * Get all genres
+   */
+  async getGenres(): Promise<string[]> {
+    const response = await httpClient.get<{ data: string[] }>(
+      `${this.BASE_PATH}/genres`
+    );
+    return response.data;
+  }
+
+  /**
    * Get all movies with optional filters
    */
   async getAllMovies(filters?: IMovieFilters): Promise<IMoviesResponse> {
