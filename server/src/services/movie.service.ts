@@ -319,7 +319,7 @@ export class MovieService {
         tmdbId,
         title: metadata.title,
         year: metadata.year,
-        rating: metadata.rating,
+        rating: ytsMovieDetails?.rating ?? metadata.rating,
         duration: metadata.duration,
         synopsis: metadata.synopsis,
         genres: metadata.genres || [],
