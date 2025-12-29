@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { movieInteractionService } from '../services/movieInteraction.service';
 import { queryKeys } from '../config/queryClient';
 import type { IMovieDetails } from '../types/movie.types';
+import type { ApiError } from '../types/api.types';
 import { toast } from 'react-hot-toast';
 
 interface UseMovieRatingOptions {
@@ -12,7 +13,10 @@ export const useMovieRating = ({ movieId }: UseMovieRatingOptions) => {
     const queryClient = useQueryClient();
     const userRatingKey = [...queryKeys.movies.all, 'user-rating', movieId];
 
-    return useMutation({
+    return useMutation<{ rating: number }, ApiError, number, {
+        previousMovieDetails?: IMovieDetails;
+        previousUserRating?: number | null;
+    }>({
         mutationFn: (rating: number) => movieInteractionService.rateMovie(movieId, rating),
 
         // Optimistic Update
@@ -38,14 +42,14 @@ export const useMovieRating = ({ movieId }: UseMovieRatingOptions) => {
         },
 
         // Rolling back on error
-        onError: (_err, _newRating, context) => {
+        onError: (error: ApiError, _newRating, context) => {
             if (context?.previousMovieDetails) {
                 queryClient.setQueryData(queryKeys.movies.detail(movieId), context.previousMovieDetails);
             }
             if (context?.previousUserRating !== undefined) {
                 queryClient.setQueryData(userRatingKey, context.previousUserRating);
             }
-            toast.error('Failed to update rating');
+            toast.error(error.message || 'Failed to update rating');
         },
 
         // Ensure data consistency after settlement

@@ -1,11 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { movieService } from '../services/movie.service';
 import { useAppSelector } from '../redux/hooks';
+import type { ApiError } from '../types/api.types';
+import type { IMoviesResponse } from '../types/movie.types';
 
 export const useWatchlist = () => {
     const filters = useAppSelector((state) => state.libraryFilters);
 
-    return useInfiniteQuery({
+    return useInfiniteQuery<IMoviesResponse, ApiError>({
         queryKey: ['watchlist', filters],
         queryFn: ({ pageParam = 1 }) =>
             movieService.getWatchlist({

@@ -97,7 +97,7 @@ export default function Library() {
                     key={movie._id || movie.imdbId}
                     movie={{ ...movie, inWatchlist: true }}
                   />
-                ))} 
+                ))}
 
                 {/* Skeleton Loading for more pages */}
                 {isFetchingNextPage && (

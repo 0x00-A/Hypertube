@@ -18,6 +18,17 @@ export const MovieCard = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Local state for optimistic UI updates
+  const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist || false);
+  const [currentMovieId, setCurrentMovieId] = useState(movie._id || movie.tmdbId);
+
+  // Sync state when movie changes (different movie loaded)
+  const movieId = movie._id || movie.tmdbId;
+  if (movieId !== currentMovieId) {
+    setIsInWatchlist(movie.inWatchlist || false);
+    setCurrentMovieId(movieId);
+  }
+
 
   const handleCardClick = () => {
 
@@ -49,10 +60,20 @@ export const MovieCard = ({
       return;
     }
 
-    if (movie.inWatchlist) {
+    const previousState = isInWatchlist;
+
+    if (isInWatchlist) {
       const id = movie._id;
       if (id) {
-        removeFromWatchlist(id);
+        // Optimistically update UI
+        setIsInWatchlist(false);
+
+        removeFromWatchlist(id, {
+          onError: () => {
+            // Revert on error
+            setIsInWatchlist(previousState);
+          }
+        });
       } else {
         toast.error('Cannot remove: Missing movie ID');
       }
@@ -61,7 +82,15 @@ export const MovieCard = ({
       const isTmdbMovie = !movie._id;
 
       if (id) {
-        addToWatchlist({ id, isTmdbMovie });
+        // Optimistically update UI
+        setIsInWatchlist(true);
+
+        addToWatchlist({ id, isTmdbMovie }, {
+          onError: () => {
+            // Revert on error
+            setIsInWatchlist(previousState);
+          }
+        });
       } else {
         toast.error('Cannot add: Missing movie identifier');
       }
@@ -116,17 +145,17 @@ export const MovieCard = ({
             <button
               onClick={handleWatchlistClick}
               disabled={isAdding || isRemoving}
-              className="relative group/watchlist"
+              className="relative group/watchlist disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className={clsx(
                 "w-8 h-10 transition-colors shadow-lg drop-shadow-md",
-                movie.inWatchlist ? "text-[#F5C518] fill-[#F5C518]" : "text-black/60 fill-black/60 hover:text-black/80"
+                isInWatchlist ? "text-[#F5C518] fill-[#F5C518]" : "text-black/60 fill-black/60 hover:text-black/80"
               )}>
                 <svg width="32" height="40" viewBox="0 0 24 34" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M24 0H0V32L12 24L24 32V0Z" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center -mt-2">
-                  {movie.inWatchlist ? (
+                  {isInWatchlist ? (
                     <Check className="w-4 h-4 text-black stroke-[3]" />
                   ) : (
                     <Plus className="w-4 h-4 text-white group-hover/watchlist:text-white/90 stroke-[3]" />

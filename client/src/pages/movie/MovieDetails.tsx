@@ -123,6 +123,25 @@ export default function MovieDetails() {
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                                {/* Breadcrumbs */}
+                <div className="flex items-center gap-2 text-sm mb-6">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-text-secondary hover:text-white transition-colors"
+                    >
+                        Home
+                    </button>
+                    <span className="text-text-muted">/</span>
+                    <button
+                        onClick={() => navigate('/movies')}
+                        className="text-text-secondary hover:text-white transition-colors"
+                    >
+                        Movies
+                    </button>
+                    <span className="text-text-muted">/</span>
+                    <span className="text-white">{movie.title}</span>
+                </div>
+                
                 {/* Ticket Hero Section */}
                 <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
 
