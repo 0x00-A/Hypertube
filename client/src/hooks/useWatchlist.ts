@@ -9,9 +9,9 @@ export const useWatchlist = () => {
 
     return useInfiniteQuery<IMoviesResponse, ApiError>({
         queryKey: ['watchlist', filters],
-        queryFn: ({ pageParam = 1 }) =>
+        queryFn: ({ pageParam }) =>
             movieService.getWatchlist({
-                page: pageParam,
+                page: (pageParam as number) ?? 1,
                 limit: 20,
                 sortBy: filters.sortBy,
                 sortOrder: filters.sortOrder,

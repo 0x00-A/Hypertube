@@ -16,6 +16,9 @@ import toast from 'react-hot-toast';
 
 
 export default function MovieDetails() {
+    // Image loading states
+    const [isPosterLoaded, setIsPosterLoaded] = useState(false);
+    const [isBackdropLoaded, setIsBackdropLoaded] = useState(false);
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const navigate = useNavigate();
@@ -123,7 +126,7 @@ export default function MovieDetails() {
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                                {/* Breadcrumbs */}
+                {/* Breadcrumbs */}
                 <div className="flex items-center gap-2 text-sm mb-6">
                     <button
                         onClick={() => navigate('/')}
@@ -141,7 +144,7 @@ export default function MovieDetails() {
                     <span className="text-text-muted">/</span>
                     <span className="text-white">{movie.title}</span>
                 </div>
-                
+
                 {/* Ticket Hero Section */}
                 <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
 
@@ -154,11 +157,19 @@ export default function MovieDetails() {
 
                     {/* Left Side - Poster */}
                     <div className="hidden md:block relative w-[35%] z-20 bg-black">
-                        <div className="h-full w-full">
+                        <div className="h-full w-full relative">
+                            {/* Skeleton loader for poster */}
+                            {!isPosterLoaded && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                            )}
                             <img
                                 src={posterImage}
                                 alt={movie.title}
-                                className="w-full h-full object-cover"
+                                className={clsx(
+                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    isPosterLoaded ? "opacity-100" : "opacity-0"
+                                )}
+                                onLoad={() => setIsPosterLoaded(true)}
                             />
                         </div>
                     </div>
@@ -167,10 +178,18 @@ export default function MovieDetails() {
                     <div className="relative w-full md:w-[65%] flex-1 flex flex-col">
                         {/* Background Image & Overlay */}
                         <div className="absolute inset-0">
+                            {/* Skeleton loader for backdrop */}
+                            {!isBackdropLoaded && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                            )}
                             <img
                                 src={backdropImage}
                                 alt="Backdrop"
-                                className="w-full h-full object-cover"
+                                className={clsx(
+                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    isBackdropLoaded ? "opacity-100" : "opacity-0"
+                                )}
+                                onLoad={() => setIsBackdropLoaded(true)}
                             />
                             {/* Gradient Overlay for Text Readability */}
                             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
@@ -260,9 +279,9 @@ export default function MovieDetails() {
                                     </button>
                                 </div>
                             </div>
-                        </div >
-                    </div >
-                </div >
+                        </div>
+                    </div>
+                </div>
 
                 <MovieRating
                     isOpen={isRatingModalOpen}
@@ -434,7 +453,7 @@ export default function MovieDetails() {
                 <section id="comments" className="scroll-mt-20 py-12">
                     {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
                 </section>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

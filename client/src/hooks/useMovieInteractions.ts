@@ -15,7 +15,7 @@ export const useAddToWatchlist = () => {
         { id: string | number; isTmdbMovie: boolean }
     >({
         mutationFn: async ({ id, isTmdbMovie }) => {
-            if (!id && id !== 0) throw new Error('Movie ID is required');
+            if (!id) throw new Error('Movie ID is required');
             return movieService.addToWatchlist(id, isTmdbMovie);
         },
         onMutate: async () => {
@@ -26,6 +26,7 @@ export const useAddToWatchlist = () => {
             toast.success('Added to watchlist');
             // Invalidate relevant queries to refetch fresh data
             queryClient.invalidateQueries({ queryKey: queryKeys.movies.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.watchlist.all });
             if (data && data.movieId) {
                 queryClient.invalidateQueries({ queryKey: queryKeys.movies.detail(data.movieId) });
             }
@@ -44,6 +45,7 @@ export const useRemoveFromWatchlist = () => {
         onSuccess: (_, movieId) => {
             toast.success('Removed from watchlist');
             queryClient.invalidateQueries({ queryKey: queryKeys.movies.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.watchlist.all });
             queryClient.invalidateQueries({ queryKey: queryKeys.movies.detail(movieId) });
         },
         onError: (error: ApiError) => {

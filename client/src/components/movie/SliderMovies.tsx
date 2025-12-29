@@ -56,32 +56,44 @@ export const SliderMovies = ({
         {/* Skeleton Background */}
         <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary via-bg-tertiary to-bg-secondary animate-pulse" />
 
-        {/* Skeleton Card */}
-        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-auto z-10">
-          <div className="max-w-sm md:max-w-md lg:max-w-lg">
-            <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-5 lg:p-6 shadow-2xl border border-white/10">
-              {/* Skeleton Title */}
-              <div className="h-8 md:h-10 bg-white/20 rounded-md mb-3 animate-pulse w-3/4" />
+        {/* Skeleton Card - Exact match to actual slider */}
+        <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-auto z-10">
+          <div className="max-w-sm md:max-w-xl lg:max-w-3xl transition-all duration-300">
+            <div className="backdrop-blur-sm bg-black/20 rounded-lg p-4 md:p-6 lg:p-8 shadow-2xl border border-white/10">
 
-              {/* Skeleton Meta Info */}
-              <div className="flex items-center gap-2 mb-3">
+              {/* Skeleton Title - Large */}
+              <div className="h-8 md:h-10 lg:h-12 bg-white/20 rounded-md mb-3 animate-pulse w-2/3 md:w-1/2" />
+
+              {/* Skeleton Meta Info - IMDb Badge, Rating, Language, Genres */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {/* IMDb Badge */}
+                <div className="h-5 w-14 bg-yellow-400/30 rounded animate-pulse" />
+                {/* Star + Rating */}
                 <div className="h-5 w-12 bg-white/20 rounded animate-pulse" />
-                <div className="h-5 w-16 bg-white/20 rounded animate-pulse" />
-                <div className="h-5 w-8 bg-white/20 rounded animate-pulse" />
-                <div className="h-5 w-20 bg-white/20 rounded animate-pulse" />
+                {/* Separator */}
+                <div className="h-4 w-4 bg-white/10 rounded-full animate-pulse" />
+                {/* Language */}
+                <div className="h-4 w-8 bg-white/20 rounded animate-pulse" />
+                {/* Separator */}
+                <div className="h-4 w-4 bg-white/10 rounded-full animate-pulse" />
+                {/* Genres */}
+                <div className="h-4 w-20 bg-white/20 rounded animate-pulse" />
+                <div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
               </div>
 
-              {/* Skeleton Overview */}
-              <div className="space-y-2 mb-4">
-                <div className="h-4 bg-white/20 rounded animate-pulse w-full" />
-                <div className="h-4 bg-white/20 rounded animate-pulse w-5/6" />
+              {/* Skeleton Overview - 3 lines of text */}
+              <div className="space-y-2 mb-4 md:mb-5">
+                <div className="h-4 md:h-5 lg:h-6 bg-white/20 rounded animate-pulse w-full" />
+                <div className="h-4 md:h-5 lg:h-6 bg-white/20 rounded animate-pulse w-full" />
+                <div className="h-4 md:h-5 lg:h-6 bg-white/20 rounded animate-pulse w-5/6" />
               </div>
 
-              {/* Skeleton Buttons */}
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse" />
-                <div className="h-9 w-20 bg-white/20 rounded-lg animate-pulse" />
+              {/* Skeleton Buttons - Large and prominent */}
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="h-9 md:h-10 lg:h-12 w-28 md:w-32 lg:w-36 bg-primary/30 rounded-lg animate-pulse" />
+                <div className="h-9 md:h-10 lg:h-12 w-24 md:w-28 lg:w-32 bg-white/20 rounded-lg animate-pulse" />
               </div>
+
             </div>
           </div>
         </div>
@@ -105,7 +117,7 @@ export const SliderMovies = ({
       {/* Glassmorphism Card - Compact Version */}
       <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-auto z-10">
         <div className="max-w-sm md:max-w-xl lg:max-w-3xl transition-all duration-300">
-          <div className="backdrop-blur-xl bg-black/40 rounded-lg p-4 md:p-6 lg:p-8 shadow-2xl border border-white/10">
+          <div className="backdrop-blur-sm bg-black/20 rounded-lg p-4 md:p-6 lg:p-8 shadow-2xl border border-white/10">
             {/* Movie Title */}
             <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-white leading-tight mb-3">
               {currentMovie.title}

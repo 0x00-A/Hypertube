@@ -1,11 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { IMovieFiltersState } from '../../types/movieFilter.types';
 
-interface ILibraryFiltersState {
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    genre: string;
-    minRating: number;
-    year: number;
+interface ILibraryFiltersState extends IMovieFiltersState {
     search: string;
 }
 

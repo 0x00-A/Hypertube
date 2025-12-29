@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import { AlertCircle, Library as LibraryIcon, SearchX } from 'lucide-react';
 import { MovieCard, MovieCardSkeleton, LibraryFilterBar } from '../../components/movie';
 import { useWatchlist } from '../../hooks/useWatchlist';
+import type { ApiError } from '../../types/api.types';
 
 export default function Library() {
   const {
@@ -67,7 +68,7 @@ export default function Library() {
               <AlertCircle className="w-6 h-6 text-red-500" />
               <div>
                 <p className="text-red-500 font-bold">Failed to load your library</p>
-                <p className="text-text-secondary text-sm mt-1">{(error as Error)?.message || 'Please try again later'}</p>
+                <p className="text-text-secondary text-sm mt-1">{(error as ApiError)?.message || 'Please try again later'}</p>
               </div>
             </div>
           </div>
