@@ -167,97 +167,83 @@ function HeroSection({ movie, onMovieClick }: HeroSectionProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-primary" />
       </div>
 
-      {/* Content Container - Constrained */}
-      <div className="relative h-full flex items-end">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 md:pb-12 lg:pb-32 w-full">
-          {/* Glassmorphism Card */}
-          <div className="max-w-sm md:max-w-xl lg:max-w-3xl transition-all duration-300">
-            <div className="backdrop-blur-sm bg-black/20 rounded-lg p-4 md:p-6 lg:p-8 shadow-2xl border border-white/10">
-
-              {/* Editor's Choice Badge */}
-              <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 bg-primary/20 backdrop-blur-sm border border-primary/30 rounded-full">
-                <Star className="w-3 h-3 text-primary fill-primary" />
-                <span className="text-primary font-semibold text-xs tracking-wide uppercase">
-                  Editor's Choice
+      {/* Content Container - Clean Modern Layout */}
+      <div className="relative h-full flex flex-col justify-between">
+        {/* Main Content - Bottom Left */}
+        <div className="flex-1 flex items-end">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-20 lg:pb-24 w-full">
+            <div className="max-w-2xl md:max-w-3xl lg:max-w-4xl transition-all duration-500">
+              
+              {/* #1 Badge - Top Ranked Movie */}
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="bg-primary/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-2xl">
+                  <span className="text-black font-black text-2xl md:text-3xl">#1</span>
+                </div>
+                <span className="text-primary text-xs md:text-sm font-semibold tracking-wider uppercase">
+                  Top Ranked Movie
                 </span>
               </div>
 
-              {/* Movie Title */}
-              <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-white leading-tight mb-3">
+              {/* Movie Title - Large and Bold */}
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-white leading-none mb-4 md:mb-6 drop-shadow-2xl tracking-tight">
                 {movie.title}
               </h1>
 
-              {/* IMDb Badge + Rating + Year + Duration + Genres */}
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
+              {/* Metadata Row - Clean and Minimal */}
+              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6 flex-wrap">
                 {/* IMDb Badge */}
-                <div className="bg-yellow-400 px-1.5 py-0.5 rounded">
-                  <span className="text-black font-bold text-xs">IMDb</span>
-                </div>
-
-                {/* Star Rating */}
-                <div className="flex items-center gap-1">
-                  <span className="text-yellow-400 text-sm">★</span>
-                  <span className="text-white text-sm font-bold">
+                <div className="bg-yellow-400 px-2 py-1 rounded flex items-center gap-1.5">
+                  <span className="text-black font-bold text-xs md:text-sm">IMDb</span>
+                  <span className="text-black font-bold text-xs md:text-sm">
                     {formatRating(movie.rating)}
                   </span>
                 </div>
 
                 {/* Year */}
                 {movie.year && (
-                  <>
-                    <span className="text-text-muted text-sm">|</span>
-                    <span className="text-text-secondary text-xs">
-                      {movie.year}
-                    </span>
-                  </>
+                  <span className="text-white text-sm md:text-base font-semibold">
+                    {movie.year}
+                  </span>
                 )}
 
                 {/* Duration */}
                 {movie.duration && (
-                  <>
-                    <span className="text-text-muted text-sm">|</span>
-                    <span className="text-text-secondary text-xs">
-                      {movie.duration} min
-                    </span>
-                  </>
+                  <span className="text-white text-sm md:text-base font-semibold">
+                    {movie.duration} min
+                  </span>
                 )}
 
                 {/* Genres */}
                 {movie.genres && movie.genres.length > 0 && (
-                  <>
-                    <span className="text-text-muted text-sm">|</span>
-                    <div className="flex items-center gap-1.5">
-                      {movie.genres.slice(0, 2).map((genre, index) => (
-                        <div key={genre} className="flex items-center gap-1.5">
-                          <span className="text-text-secondary text-xs">{genre}</span>
-                          {index < Math.min(movie.genres!.length, 2) - 1 && (
-                            <span className="text-text-muted text-xs">•</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    {movie.genres.slice(0, 3).map((genre, index) => (
+                      <span key={genre} className="text-text-secondary text-sm md:text-base font-medium">
+                        {genre}
+                        {index < Math.min(movie.genres!.length, 3) - 1 && ' •'}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {/* Synopsis */}
+              {/* Overview - Larger and More Readable */}
               {(movie.synopsis || movie.overview) && (
-                <p className="text-text-secondary text-sm md:text-base lg:text-lg leading-relaxed line-clamp-2 md:line-clamp-3 mb-4 md:mb-5 max-w-prose">
+                <p className="text-white text-base md:text-lg lg:text-xl leading-relaxed line-clamp-3 md:line-clamp-4 mb-6 md:mb-8 max-w-3xl drop-shadow-lg font-normal">
                   {movie.synopsis || movie.overview}
                 </p>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 md:gap-3">
+              {/* Action Buttons - Prominent */}
+              <div className="flex items-center gap-3 md:gap-4">
                 <button
                   onClick={() => onMovieClick(movie)}
-                  className="bg-primary hover:bg-primary-light text-black font-bold px-5 py-2 md:px-6 md:py-2.5 lg:px-8 lg:py-3 rounded-lg transition-all duration-200 shadow-lg text-sm md:text-base lg:text-lg"
+                  className="bg-primary hover:bg-primary-light text-black font-bold px-8 py-3 md:px-10 md:py-4 lg:px-12 lg:py-4 rounded-md transition-all duration-200 shadow-2xl text-base md:text-lg lg:text-xl hover:scale-105 transform"
                 >
-                  WATCH
+                  Watch Now
                 </button>
                 <button
                   onClick={() => onMovieClick(movie)}
-                  className="bg-bg-tertiary hover:bg-border-light border border-border text-text-secondary hover:text-white font-bold px-4 py-2 md:px-5 md:py-2.5 lg:px-6 lg:py-3 rounded-lg transition-all duration-200 text-sm md:text-base lg:text-lg"
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/40 text-white font-bold px-6 py-3 md:px-8 md:py-4 lg:px-10 lg:py-4 rounded-md transition-all duration-200 text-base md:text-lg lg:text-xl hover:scale-105 transform"
                 >
                   More Info
                 </button>

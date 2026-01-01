@@ -28,6 +28,7 @@ export interface IMovie {
   genres?: string[];
   originalLanguage?: string;
   trailer?: string;
+  trending?: boolean;
   images: {
     thumbnail?: string;
     poster?: string;
