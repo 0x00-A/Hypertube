@@ -23,6 +23,7 @@ import UserProfile from './pages/user/UserProfile';
 import EditProfile from './pages/user/EditProfile';
 import NotFound from './pages/notFound/NotFound';
 import Featured from './pages/featured/Featured';
+import Watch from './pages/watch/Watch';
 
 function NavigationSetup() {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ function App() {
             <Route path="/library" element={<Library />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/movies/:id" element={<MovieDetails />} />
+            <Route path="/watch/:id" element={<Watch />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />

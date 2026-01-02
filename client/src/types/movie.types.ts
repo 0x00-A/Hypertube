@@ -89,6 +89,12 @@ export type MovieCardProps = {
   className?: string;
 };
 
+export type ArchiveMovieCardProps = {
+  movie: IMovie;
+  rank: number;
+  className?: string;
+};
+
 export type HeroSliderProps = {
   movies: IMovie[];
   autoPlayInterval?: number;

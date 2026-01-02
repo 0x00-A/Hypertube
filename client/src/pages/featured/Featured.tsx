@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Play, Star } from "lucide-react";
 import { clsx } from "clsx";
 import { useState, useEffect, useRef } from "react";
-import { MovieCard, MovieCardSkeleton, FeaturedPageSkeleton } from "../../components/movie";
+import { MovieCardSkeleton, FeaturedPageSkeleton, ArchiveMovieCard } from "../../components/movie";
 
 export default function Featured() {
   const { movies, isLoading, error, hasNextPage, loadMore } =
@@ -96,21 +96,21 @@ export default function Featured() {
       {/* Loading indicator for infinite scroll - Skeleton cards */}
       {isLoading && movies.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            {/* Loading more indicator - Skeleton cards */}
-              <div
-                className={clsx(
-                  'grid gap-2 sm:gap-2 md:gap-2 mt-4',
-                  'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-                )}
-              >
-                {Array.from({ length: 10 }).map((_, index) => (
-                  <MovieCardSkeleton key={`loading-${index}`} />
-                ))}
-              </div>
+          {/* Loading more indicator - Skeleton cards */}
+          <div
+            className={clsx(
+              'grid gap-2 sm:gap-2 md:gap-2 mt-4',
+              'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+            )}
+          >
+            {Array.from({ length: 10 }).map((_, index) => (
+              <MovieCardSkeleton key={`loading-${index}`} />
+            ))}
+          </div>
 
         </div>
       )}
-      
+
       {/* Infinite scroll trigger */}
       {hasNextPage && !isLoading && movies.length > 0 && (
         <div ref={loadMoreRef} className="py-8 flex justify-center">
@@ -173,7 +173,7 @@ function HeroSection({ movie, onMovieClick }: HeroSectionProps) {
         <div className="flex-1 flex items-end">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-20 lg:pb-24 w-full">
             <div className="max-w-2xl md:max-w-3xl lg:max-w-4xl transition-all duration-500">
-              
+
               {/* #1 Badge - Top Ranked Movie */}
               <div className="inline-flex items-center gap-3 mb-4">
                 <div className="bg-primary/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-2xl">
@@ -564,11 +564,12 @@ function ArchiveSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* High-Density Grid or Empty State */}
         {movies.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-            {movies.map((movie) => (
-              <MovieCard
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+            {movies.map((movie, index) => (
+              <ArchiveMovieCard
                 key={movie.imdbId || movie.tmdbId}
                 movie={movie}
+                rank={index + 1}
               />
             ))}
           </div>

@@ -1,4 +1,5 @@
 export { MovieCard } from './MovieCard';
+export { ArchiveMovieCard } from './ArchiveMovieCard';
 export { MovieCardSkeleton } from './MovieCardSkeleton';
 export { MovieCarousel } from './MovieCarousel';
 export { SliderMovies } from './SliderMovies';
