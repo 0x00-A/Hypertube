@@ -1,9 +1,12 @@
-import { type ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useAppDispatch } from '../../redux/hooks';
 import { clearUser } from '../../redux/slices/authSlice';
 import { useInitializeAuth } from '../../hooks/useAuth';
+
+const REDIRECT_KEY = 'auth_redirect_path';
 
 // ============================================================================
 // Auth Provider Component
@@ -22,6 +25,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Track if OAuth callback was already handled to prevent double execution
+  const oauthHandledRef = useRef(false);
+
+  // Handle OAuth callback (Google/Intra42)
+  // Backend redirects to CLIENT_URL?status=oauth_success after successful OAuth
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const error = searchParams.get('error');
+
+    // Prevent double execution - setSearchParams triggers re-render
+    if (oauthHandledRef.current) {
+      return;
+    }
+
+    if (status === 'oauth_success') {
+      // Mark as handled BEFORE doing anything
+      oauthHandledRef.current = true;
+
+      // Get redirect path BEFORE clearing anything
+      const redirectPath = sessionStorage.getItem(REDIRECT_KEY);
+      sessionStorage.removeItem(REDIRECT_KEY);
+
+      toast.success('Successfully logged in!');
+
+      // Clean up query params
+      setSearchParams({});
+
+      // Navigate to saved path or browse
+      navigate(redirectPath || '/browse', { replace: true });
+    } else if (error === 'oauth_failed') {
+      oauthHandledRef.current = true;
+      toast.error('OAuth authentication failed. Please try again.');
+      // Clean up query params
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, navigate]);
 
   // Listen for unauthorized events from HTTP client
   useEffect(() => {

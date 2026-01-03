@@ -58,10 +58,8 @@ export const useInitializeAuth = () => {
   useEffect(() => {
     if (!isInitialized) {
       if (data) {
-        console.log('✅ Auth initialized with user:', data);
         dispatch(initializeAuth(data));
       } else if (error) {
-        console.log('❌ Auth initialized without user (not logged in)');
         dispatch(initializeAuth(null));
       }
     }
@@ -74,6 +72,8 @@ export const useInitializeAuth = () => {
 // Login Mutation Hook
 // ============================================================================
 
+import { REDIRECT_KEY } from '../constants/auth';
+
 export const useLogin = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -83,22 +83,24 @@ export const useLogin = () => {
     mutationFn: (credentials: LoginCredentials) => authService.login(credentials),
     onSuccess: async () => {
       toast.success('Login successful!');
-      
+
       // Fetch user data from /profile/me after successful login
       try {
         const userData = await authService.getCurrentUser();
-        console.log('✅ User data fetched after login:', userData);
-        
+
         // Update Redux state
         dispatch(setUser(userData));
-        
+
         // Cache user data in React Query
         queryClient.setQueryData(queryKeys.auth.currentUser(), userData);
-        
-        // Navigate to home page
-        navigate('/');
-      } catch (error) {
-        console.error('❌ Failed to fetch user data:', error);
+
+        // Check for saved redirect path
+        const redirectPath = sessionStorage.getItem(REDIRECT_KEY);
+        sessionStorage.removeItem(REDIRECT_KEY);
+
+        // Navigate to saved path or home
+        navigate(redirectPath || '/');
+      } catch {
         toast.error('Failed to fetch user data. Please try again.');
       }
     },
@@ -119,7 +121,7 @@ export const useRegister = () => {
     mutationFn: (data: RegisterData) => authService.register(data),
     onSuccess: () => {
       toast.success('Registration successful! Please check your email to verify your account.');
-      
+
       // Navigate to login page
       navigate('/auth/login');
     },
@@ -142,19 +144,19 @@ export const useLogout = () => {
     mutationFn: authService.logout,
     onSuccess: () => {
       console.log('✅ Logout successful');
-      
+
       // Clear Redux state
       dispatch(clearUser());
-      
+
       // Clear all React Query cache
       queryClient.clear();
-      
+
       // Navigate to browse page (public page)
       navigate('/browse');
     },
     onError: (error) => {
       console.error('❌ Logout failed:', error);
-      
+
       // Even if logout fails on server, clear local state
       dispatch(clearUser());
       queryClient.clear();
@@ -226,10 +228,10 @@ export const useUpdateProfile = () => {
     onSuccess: (updatedUser) => {
       // Update Redux state with server response
       dispatch(setUser(updatedUser));
-      
+
       // Update cache
       queryClient.setQueryData(queryKeys.auth.currentUser(), updatedUser);
-      
+
       toast.success('Profile updated successfully!');
     },
     onError: (error: AuthError, _variables, context) => {
@@ -238,7 +240,7 @@ export const useUpdateProfile = () => {
         queryClient.setQueryData(queryKeys.auth.currentUser(), context.previousUser);
         dispatch(setUser(context.previousUser));
       }
-      
+
       toast.error(error.message || 'Failed to update profile. Please try again.');
     },
   });

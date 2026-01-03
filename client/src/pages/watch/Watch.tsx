@@ -18,8 +18,6 @@ import {
     Settings,
     Maximize,
     Minimize,
-    ThumbsUp,
-    ThumbsDown,
     Share2,
     Star,
     Plus,
@@ -28,6 +26,10 @@ import {
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
 import { useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useMovieInteractions';
+import { useUserRating } from '../../hooks/useUserRating';
+import { CommentSection } from '../../components/comments';
+import { MovieRating } from '../../components/movie';
+import ShareModal from '../../components/common/ShareModal';
 import toast from 'react-hot-toast';
 
 export default function Watch() {
@@ -50,6 +52,13 @@ export default function Watch() {
 
     // Storyline state
     const [isStoryExpanded, setIsStoryExpanded] = useState(false);
+
+    // Rating modal state
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    const { data: currentRating } = useUserRating(movie?._id ?? '');
+
+    // Share modal state
+    const [isShareOpen, setIsShareOpen] = useState(false);
 
     // Watchlist mutations
     const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
@@ -326,19 +335,29 @@ export default function Watch() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors">
-                                <ThumbsUp className="w-5 h-5" />
-                            </button>
-                            <button className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors">
-                                <ThumbsDown className="w-5 h-5" />
-                            </button>
-                            <button className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors">
+                            <button
+                                onClick={() => setIsShareOpen(true)}
+                                className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                            >
                                 <Share2 className="w-5 h-5" />
                             </button>
                             {movie.rating && (
-                                <div className="flex items-center gap-1 px-3 py-2 bg-primary/10 rounded ml-2">
-                                    <Star className="w-5 h-5 text-primary fill-primary" />
-                                    <span className="text-base font-bold text-primary">{movie.rating.toFixed(1)}</span>
+                                <div className="flex items-center gap-2 ml-2">
+                                    {/* IMDb Rating */}
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg">
+                                        <span className="text-base font-bold text-white">{movie.rating.toFixed(1)}</span>
+                                        <span className="bg-[#F5C518] text-black text-[10px] font-bold px-1.5 py-0.5 rounded">IMDb</span>
+                                    </div>
+                                    {/* User Rating Button */}
+                                    <button
+                                        onClick={() => setIsRatingModalOpen(true)}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all active:scale-95 group"
+                                    >
+                                        <Star className={clsx("w-4 h-4 transition-colors", currentRating ? "fill-primary text-primary" : "text-white/60 group-hover:text-white")} />
+                                        <span className="text-sm font-bold">
+                                            {currentRating ? `${currentRating}/10` : 'Rate'}
+                                        </span>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -404,7 +423,31 @@ export default function Watch() {
                             )}
                         </p>
                     </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-white/10 my-6" />
+
+                    {/* Comments Section */}
+                    {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
                 </div>
+
+                {/* Rating Modal */}
+                {movie._id && (
+                    <MovieRating
+                        isOpen={isRatingModalOpen}
+                        onClose={() => setIsRatingModalOpen(false)}
+                        currentRating={currentRating}
+                        movieId={movie._id}
+                        movieTitle={movie.title}
+                    />
+                )}
+
+                {/* Share Modal */}
+                <ShareModal
+                    isOpen={isShareOpen}
+                    onClose={() => setIsShareOpen(false)}
+                    title="Share this movie"
+                />
             </div>
         </div>
     );
