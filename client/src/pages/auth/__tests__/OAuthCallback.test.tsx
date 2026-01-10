@@ -275,7 +275,7 @@ describe('OAuthCallback Component', () => {
 
   describe('Accessibility', () => {
     it('should have proper semantic structure', () => {
-      const { container } = render(
+      render(
         <MemoryRouter initialEntries={['/?status=oauth_success']}>
           <OAuthCallback />
         </MemoryRouter>
@@ -287,14 +287,14 @@ describe('OAuthCallback Component', () => {
     });
 
     it('should be keyboard navigable', () => {
-      const { container } = render(
+      render(
         <MemoryRouter initialEntries={['/?status=oauth_success']}>
           <OAuthCallback />
         </MemoryRouter>
       );
 
-      // Component should be focusable
-      expect(container.firstChild).toBeTruthy();
+      // Component should render successfully
+      expect(screen.getByText('Success!')).toBeInTheDocument();
     });
   });
 });
