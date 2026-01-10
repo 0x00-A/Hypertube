@@ -4,6 +4,7 @@ import FortyTwoStrategy = require('passport-42');
 import { OAuthService } from '../services/oauth.service';
 import { FortyTwoProfile } from '../types/oauth.type';
 import { env } from './env';
+import { logger } from '../utils/logger';
 
 
 export function configurePassport(oauthService: OAuthService): void {

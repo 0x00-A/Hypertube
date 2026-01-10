@@ -5,6 +5,7 @@ import { FortyTwoProfile } from "../types/oauth.type";
 import { PasswordService } from "./password.service";
 import { IUser } from "../interfaces/user.interface";
 import { generateUniqueUsername } from "../utils/usernameGenerator";
+import { logger } from "../utils/logger";
 
 
 export class OAuthService {
@@ -76,7 +77,7 @@ export class OAuthService {
                     username: uniqueUsername,
                     firstName: profile.name.givenName || profile._json.first_name || 'User',
                     lastName: profile.name.familyName || profile._json.last_name || 'FortyTwo',
-                    avatarUrl: profile._json.image_url,
+                    avatarUrl: profile._json.image.link,
                     password: await this._passwordService.generateOAuthPassword(),
                     isActive: true,
                     oauth: {

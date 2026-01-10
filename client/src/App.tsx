@@ -12,6 +12,7 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
+import OAuthCallback from './pages/auth/OAuthCallback';
 import Browse from './pages/browse/Browse';
 import Library from './pages/library/Library';
 import History from './pages/history/History';
@@ -69,6 +70,7 @@ function App() {
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/auth/oauth-callback" element={<OAuthCallback />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* Main app routes with layout */}

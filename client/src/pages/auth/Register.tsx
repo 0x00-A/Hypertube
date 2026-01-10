@@ -54,9 +54,15 @@ export default function Register() {
     registerMutation.mutate(registerData);
   };
 
-  const handleSocialRegister = (provider: string) => {
-    // TODO: Implement OAuth flow
-    toast.success(`${provider} registration coming soon`);
+  const handleSocialRegister = (provider: 'google' | 'intra42') => {
+    // Get API base URL from environment
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+
+    // Map provider to backend route
+    const providerRoute = provider === 'intra42' ? '42' : provider;
+
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${API_BASE_URL}/oauth/${providerRoute}`;
   };
 
   return (
@@ -202,4 +208,3 @@ export default function Register() {
     </div>
   );
 }
-

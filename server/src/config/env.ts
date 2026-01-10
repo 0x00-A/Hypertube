@@ -41,6 +41,8 @@ export const env = cleanEnv(process.env, {
   FORTYTWO_CLIENT_SECRET: str(),
   FORTYTWO_CALLBACK_URL: str(),
 
+  OAUTH_CLIENT_REDIRECT_URL: str(),
+
   EMAIL_HOST: str(),
   EMAIL_PORT: num(),
   EMAIL_USER: str(),
