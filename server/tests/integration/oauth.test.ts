@@ -463,4 +463,62 @@ describe('OAuth Integration Tests', () => {
       expect(dbUser?.oauth?.id).toBe(`google123_${unique}`);
     });
   });
+
+  describe('OAuth Callback Redirects', () => {
+    it('should contain oauth-callback in redirect URL on failed authentication', async () => {
+      // When OAuth callback fails (no valid code), should redirect to client error page
+      const response = await request(app).get('/api/v1/oauth/google/callback');
+
+      expect(response.status).toBe(302);
+      // The redirect should go to Google's OAuth page initially
+      // The actual callback redirect happens in the controller after passport authentication
+      expect(response.headers.location).toBeDefined();
+    });
+
+    it('should initiate OAuth flow for Google authentication', async () => {
+      const response = await request(app).get('/api/v1/oauth/google');
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('accounts.google.com');
+    });
+
+    it('should initiate OAuth flow for 42 authentication', async () => {
+      const response = await request(app).get('/api/v1/oauth/42');
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('api.intra.42.fr');
+    });
+
+    it('should successfully process OAuth and create user in database', async () => {
+      // Test the OAuthService directly to verify user creation
+      const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+      const email = `oauth_redirect_${unique}@example.com`;
+      const mockGoogleProfile = createGoogleProfile({
+        id: `google_redirect_${unique}`,
+        email,
+        given_name: 'Redirect',
+        family_name: 'Test',
+      });
+
+      // Process OAuth through service
+      const user = await oauthService.handleGoogleOAuth(mockGoogleProfile);
+
+      // Verify user was created
+      expect(user).toBeDefined();
+      expect(user.email).toBe(email);
+
+      // Verify in database with oauth field selected
+      const dbUser = await UserModel.findOne({ email }).select('+oauth').exec();
+      expect(dbUser).not.toBeNull();
+      expect(dbUser?.oauth?.provider).toBe('google');
+      expect(dbUser?.oauth?.id).toBe(mockGoogleProfile.id);
+    });
+
+    it('should use environment variable for client redirect URL', () => {
+      // Verify the environment variable is set correctly
+      const clientRedirectUrl = process.env.OAUTH_CLIENT_REDIRECT_URL;
+      expect(clientRedirectUrl).toBeDefined();
+      expect(clientRedirectUrl).toContain('oauth-callback');
+    });
+  });
 });

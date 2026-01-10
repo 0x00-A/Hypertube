@@ -8,7 +8,7 @@ export type FortyTwoProfile = {
     };
     image: {
         link: string;
-    }
+    };
     _json: {
         id: number;
         email: string;
@@ -17,6 +17,6 @@ export type FortyTwoProfile = {
         last_name: string;
         image: {
             link: string;
-        }
+        };
     };
 };

@@ -17,6 +17,24 @@
   - Consistent avatar display across desktop and mobile views
   - Added ring effects on hover for better UX
   - ProfileDropdown component updated to display avatar in user info section
+- **Comprehensive OAuth test coverage** (44 total tests)
+  - **Frontend testing infrastructure setup:**
+    - Vitest test runner with jsdom environment
+    - React Testing Library for component testing
+    - Test setup with mocks for window.matchMedia, IntersectionObserver, ResizeObserver
+  - **Frontend OAuthCallback component tests (18 tests):**
+    - 5 success flow tests (display, toasts, redirects, custom paths, duplicate prevention)
+    - 5 error flow tests (display, toasts, error messages, redirects, duplicate prevention)
+    - 2 invalid callback tests (error handling, loading states)
+    - 1 React Strict Mode compatibility test (prevents double-processing)
+    - 3 UI state tests (success icon, error icon, loading spinner)
+    - 2 accessibility tests (semantic structure, keyboard navigation)
+  - **Backend OAuth integration tests (5 new tests):**
+    - OAuth flow initialization tests for Google and 42 authentication
+    - User creation and database integration tests
+    - Environment variable configuration validation
+    - OAuth callback redirect behavior tests
+  - **Test documentation:** Added comprehensive guide in `server/guides/OAUTH_TEST_COVERAGE.md`
 - (@0x00a) Initial project setup with Docker Compose.
 - (@driver) User authentication system with signup and login endpoints
   - POST /api/v1/auth/signup - User registration with validation
