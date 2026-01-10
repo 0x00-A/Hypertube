@@ -5,7 +5,6 @@ import { FortyTwoProfile } from "../types/oauth.type";
 import { PasswordService } from "./password.service";
 import { IUser } from "../interfaces/user.interface";
 import { generateUniqueUsername } from "../utils/usernameGenerator";
-import { logger } from "../utils/logger";
 
 
 export class OAuthService {
