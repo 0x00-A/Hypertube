@@ -56,13 +56,18 @@ const createFortyTwoProfile = (
     familyName: lastName,
     givenName: firstName,
   },
+  image: {
+    link: image_url,
+  },
   _json: {
     id,
     email,
     login,
-    image_url,
     first_name: firstName,
     last_name: lastName,
+    image: {
+      link: image_url,
+    },
   },
 });
 

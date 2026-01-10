@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import toast from 'react-hot-toast';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MovieSlideshow from '../../components/auth/MovieSlideshow';
@@ -30,7 +29,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const loginMutation = useLogin();
-  const navigate = useNavigate();
 
   const {
     register,

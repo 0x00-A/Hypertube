@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### Added
+- OAuth callback page with dedicated route `/auth/oauth-callback`
+  - Separate component for handling OAuth authentication callbacks
+  - Visual feedback with success, error, and loading states
+  - Animated transitions using Framer Motion
+  - Prevents duplicate toast notifications
+  - React Strict Mode compatible with useRef to prevent double-processing
+  - Support for redirect parameter for deep linking
+  - Automatic redirection with appropriate delays
+- User avatar display in header and profile dropdown
+  - Shows user avatar image when available (from `user.avatarUrl`)
+  - Graceful fallback to initials when no avatar is set
+  - Consistent avatar display across desktop and mobile views
+  - Added ring effects on hover for better UX
+  - ProfileDropdown component updated to display avatar in user info section
 - (@0x00a) Initial project setup with Docker Compose.
 - (@driver) User authentication system with signup and login endpoints
   - POST /api/v1/auth/signup - User registration with validation
@@ -104,8 +118,23 @@
   - Explicit selection only when needed for authentication
 
 ### Changed
+- OAuth backend redirects updated to use dedicated callback route
+  - Google OAuth callback redirects to `/auth/oauth-callback?status=oauth_success` or `error=oauth_failed`
+  - 42 OAuth callback redirects to `/auth/oauth-callback?status=oauth_success` or `error=oauth_failed`
+- Removed OAuth callback handling logic from Login component
+  - Cleaner separation of concerns with dedicated callback page
 - Updated tsconfig.json to include tests directory and Jest types
 - Fixed package.json syntax errors (trailing comma)
+- Fixed FortyTwoProfile type compatibility with passport-42 library
+  - Updated oauth.test.ts helper to include proper image structure
+  - Added type casting in passport.ts to resolve type conflicts
+- Fixed missing dependencies
+  - Installed `adm-zip` and `@types/adm-zip` for subtitle service tests
+- Fixed frontend linting errors
+  - Removed unused imports in Login.tsx (toast, useNavigate)
+  - Removed unused imports in Register.tsx (toast)
+- All backend tests passing (19 test suites, 308 tests)
+- All frontend linting checks passing
 
 ### Security
 - Passwords hashed with Argon2 before storage
