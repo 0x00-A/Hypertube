@@ -26,7 +26,6 @@ export default function OAuthCallback() {
 
     const status = searchParams.get('status');
     const error = searchParams.get('error');
-    const redirectTo = searchParams.get('redirect') || '/browse';
 
     // Handle OAuth success
     if (status === 'oauth_success') {
@@ -36,7 +35,7 @@ export default function OAuthCallback() {
 
       // Redirect after brief delay to show success state
       setTimeout(() => {
-        navigate(redirectTo, { replace: true });
+        navigate('/browse', { replace: true });
       }, 1000);
       return;
     }

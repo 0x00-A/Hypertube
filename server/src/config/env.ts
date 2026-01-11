@@ -13,8 +13,8 @@ export const env = cleanEnv(process.env, {
   YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
   TMDB_BASE_API_URL: str({ default: 'https://api.themoviedb.org/3' }),
   TMDB_IMAGE_BASE_URL: str({ default: 'https://image.tmdb.org/t/p' }),
-  TMDB_API_ACCESS_TOKEN: str({ default: 'test-token' }),
-  OMDB_API_KEY: str({ default: 'test-key' }),
+  TMDB_API_ACCESS_TOKEN: str({ default: 'your-tmdb-api-access-token-here' }),
+  OMDB_API_KEY: str({ default: 'your-omdb-api-key-here' }),
 
   OPEN_SUBTITLES_API_URL: str({ default: 'https://api.opensubtitles.com/api/v1' }),
   OPEN_SUBTITLES_API_KEY: str({ default: '' }),
