@@ -77,7 +77,7 @@ export default function SearchDropdown({
                     <div className="divide-y divide-border/50">
                         {movies.slice(0, 5).map((movie) => (
                             <button
-                                key={movie._id || movie.imdbId}
+                                key={movie._id || movie.tmdbId || movie.imdbId}
                                 onClick={() => handleMovieClick(movie)}
                                 className="w-full flex items-start gap-3 p-3 hover:bg-bg-tertiary transition-colors text-left"
                             >
