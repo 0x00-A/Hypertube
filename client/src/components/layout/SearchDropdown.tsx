@@ -21,7 +21,6 @@ export default function SearchDropdown({
 
     const handleMovieClick = (movie: IMovie) => {
         onClose();
-        console.log("Movies: ", movie)
         const id = movie._id || movie.tmdbId;
         const isTmdbMovie = !movie._id;
         navigate(`/movies/${id}`, { state: { isTmdbMovie } });
@@ -50,7 +49,7 @@ export default function SearchDropdown({
             {/* No Results State */}
             {!isLoading && !hasResults && (
                 <div className="py-8 text-center">
-                    <p className="text-text-muted text-sm">"No results found."</p>
+                    <p className="text-text-muted text-sm">No results found.</p>
                     <div className="flex items-center justify-center gap-1 mt-3">
                         <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
                         <span className="w-2 h-2 bg-primary rounded-full animate-pulse delay-100"></span>

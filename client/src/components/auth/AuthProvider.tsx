@@ -5,8 +5,7 @@ import toast from 'react-hot-toast';
 import { useAppDispatch } from '../../redux/hooks';
 import { clearUser } from '../../redux/slices/authSlice';
 import { useInitializeAuth } from '../../hooks/useAuth';
-
-const REDIRECT_KEY = 'auth_redirect_path';
+import { REDIRECT_KEY } from '../../constants/auth';
 
 // ============================================================================
 // Auth Provider Component

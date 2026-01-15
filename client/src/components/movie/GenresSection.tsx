@@ -53,11 +53,11 @@ export const GenresSection = ({
     if (!genreScrollRef.current) return;
 
     const container = genreScrollRef.current;
-    const scrollAmount = 200; // Scroll by 200px at a time
+    const GENRE_SCROLL_AMOUNT = 200; // Scroll by 200px at a time
 
     const targetScroll = direction === 'left'
-      ? Math.max(0, container.scrollLeft - scrollAmount)
-      : Math.min(container.scrollWidth - container.clientWidth, container.scrollLeft + scrollAmount);
+      ? Math.max(0, container.scrollLeft - GENRE_SCROLL_AMOUNT)
+      : Math.min(container.scrollWidth - container.clientWidth, container.scrollLeft + GENRE_SCROLL_AMOUNT);
 
     container.scrollTo({
       left: targetScroll,

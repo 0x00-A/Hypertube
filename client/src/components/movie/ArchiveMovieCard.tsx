@@ -18,24 +18,19 @@ export interface ArchiveMovieCardProps {
  * ArchiveMovieCard Component
  * Displays a movie card with a rank ribbon bar for the Archive section
  * Structure: Rank bar at top + Complete MovieCard below
+ * 
+ * Note: Parent should use a stable key (movie._id or movie.tmdbId) to ensure
+ * component re-mounts when displaying a different movie.
  */
 export const ArchiveMovieCard = ({ movie, rank, className }: ArchiveMovieCardProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist || false);
-    const [currentMovieId, setCurrentMovieId] = useState(movie._id || movie.tmdbId);
-
+    
     const { isAuthenticated } = useAuthState();
     const navigate = useNavigate();
     const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
     const { mutate: removeFromWatchlist, isPending: isRemoving } = useRemoveFromWatchlist();
-
-    // Sync state when movie prop changes
-    const movieId = movie._id || movie.tmdbId;
-    if (movieId !== currentMovieId) {
-        setIsInWatchlist(movie.inWatchlist || false);
-        setCurrentMovieId(movieId);
-    }
 
     // Memoized image URL getter
     const posterImage = useMemo(() => {

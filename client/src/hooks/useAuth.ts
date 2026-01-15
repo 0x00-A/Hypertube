@@ -143,8 +143,6 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      console.log('✅ Logout successful');
-
       // Clear Redux state
       dispatch(clearUser());
 
@@ -154,9 +152,7 @@ export const useLogout = () => {
       // Navigate to browse page (public page)
       navigate('/browse');
     },
-    onError: (error) => {
-      console.error('❌ Logout failed:', error);
-
+    onError: () => {
       // Even if logout fails on server, clear local state
       dispatch(clearUser());
       queryClient.clear();

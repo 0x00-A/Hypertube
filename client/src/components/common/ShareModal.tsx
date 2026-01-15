@@ -40,6 +40,8 @@ export default function ShareModal({ isOpen, onClose, url, title = 'Share' }: Sh
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
             onClick={handleBackdropClick}
+            role="dialog"
+            aria-modal="true"
         >
             <div className="w-full max-w-md mx-4 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}

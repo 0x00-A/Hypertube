@@ -70,13 +70,14 @@ export default function Watch() {
 
     // Auto-hide controls after 3 seconds
     useEffect(() => {
+        const CONTROLS_AUTO_HIDE_DELAY = 3000; // 3 seconds
         if (showControls && isPlaying) {
             if (controlsTimeoutRef.current) {
                 clearTimeout(controlsTimeoutRef.current);
             }
             controlsTimeoutRef.current = setTimeout(() => {
                 setShowControls(false);
-            }, 3000);
+            }, CONTROLS_AUTO_HIDE_DELAY);
         }
         return () => {
             if (controlsTimeoutRef.current) {
@@ -115,8 +116,8 @@ export default function Watch() {
         setProgress(Math.max(0, Math.min(100, newProgress)));
 
         // Update mock current time based on progress
-        const totalSeconds = 5027; // 01:23:47 in seconds
-        const currentSeconds = Math.floor((newProgress / 100) * totalSeconds);
+        const MOCK_DURATION_SECONDS = 5027; // 01:23:47 in seconds
+        const currentSeconds = Math.floor((newProgress / 100) * MOCK_DURATION_SECONDS);
         const hours = Math.floor(currentSeconds / 3600);
         const minutes = Math.floor((currentSeconds % 3600) / 60);
         const seconds = currentSeconds % 60;
