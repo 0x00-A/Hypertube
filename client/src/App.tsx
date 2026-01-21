@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
 import { AuthProvider } from './components/auth/AuthProvider';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 
 // Pages
@@ -23,6 +24,7 @@ import UserProfile from './pages/user/UserProfile';
 import EditProfile from './pages/user/EditProfile';
 import NotFound from './pages/notFound/NotFound';
 import Featured from './pages/featured/Featured';
+import Watch from './pages/watch/Watch';
 
 function NavigationSetup() {
   const navigate = useNavigate();
@@ -73,18 +75,22 @@ function App() {
 
           {/* Main app routes with layout */}
           <Route element={<MainLayout />}>
+            {/* Public routes */}
             <Route path="/" element={<Navigate to="/browse" replace />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/featured" element={<Featured />} />
-            <Route path="/library" element={<Library />} />
             <Route path="/movies" element={<Movies />} />
-            <Route path="/movies/:id" element={<MovieDetails />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/movies/" element={<Movies />} />
             <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/user/edit" element={<EditProfile />} />
+
+            {/* Protected routes */}
+            <Route path="/movies/:id" element={<ProtectedRoute><MovieDetails /></ProtectedRoute>} />
+            <Route path="/watch/:id" element={<ProtectedRoute><Watch /></ProtectedRoute>} />
+            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/user/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
@@ -94,3 +100,4 @@ function App() {
 }
 
 export default App;
+

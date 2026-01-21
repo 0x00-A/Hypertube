@@ -64,7 +64,6 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
       await logoutMutation.mutateAsync();
       toast.success('Logged out successfully');
     } catch (error: unknown) {
-      console.error('Logout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to logout';
       toast.error(errorMessage);
     }

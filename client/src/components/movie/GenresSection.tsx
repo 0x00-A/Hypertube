@@ -1,8 +1,10 @@
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { MovieCard } from './MovieCard';
 import type { IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
+import { useGenres } from '../../hooks/useGenres';
+import { MovieCardSkeleton } from './MovieCardSkeleton';
 
 export interface GenresSectionProps {
   movies: IMovie[];
@@ -13,13 +15,6 @@ export interface GenresSectionProps {
   className?: string;
 }
 
-const GENRES = [
-  'Comedy',
-  'Drama',
-  'Action',
-  'Animation',
-];
-
 export const GenresSection = ({
   movies,
   selectedGenre,
@@ -28,17 +23,56 @@ export const GenresSection = ({
   isLoading = false,
   className,
 }: GenresSectionProps) => {
+  // Fetch genres from API
+  const { data: apiGenres = [], isLoading: genresLoading } = useGenres();
+
+  // Add "All" at the beginning - memoized to prevent useEffect dependency changes
+  const genres = useMemo(() => ['All', ...apiGenres], [apiGenres]);
+
+  // Genre pills carousel refs and state
+  const genreScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollGenreLeft, setCanScrollGenreLeft] = useState(false);
+  const [canScrollGenreRight, setCanScrollGenreRight] = useState(false);
+
+  // Movie carousel refs and state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const checkScrollPosition = () => {
+  // Check genre pills scroll position
+  const checkGenreScrollPosition = useCallback(() => {
+    if (!genreScrollRef.current) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = genreScrollRef.current;
+    setCanScrollGenreLeft(scrollLeft > 0);
+    setCanScrollGenreRight(scrollLeft < scrollWidth - clientWidth - 1);
+  }, []);
+
+  // Scroll genre pills
+  const scrollGenres = (direction: 'left' | 'right') => {
+    if (!genreScrollRef.current) return;
+
+    const container = genreScrollRef.current;
+    const GENRE_SCROLL_AMOUNT = 200; // Scroll by 200px at a time
+
+    const targetScroll = direction === 'left'
+      ? Math.max(0, container.scrollLeft - GENRE_SCROLL_AMOUNT)
+      : Math.min(container.scrollWidth - container.clientWidth, container.scrollLeft + GENRE_SCROLL_AMOUNT);
+
+    container.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth',
+    });
+  };
+
+  // Check movie carousel scroll position
+  const checkScrollPosition = useCallback(() => {
     if (!scrollContainerRef.current) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-  };
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return;
@@ -79,6 +113,18 @@ export const GenresSection = ({
     });
   };
 
+  // Genre pills scroll listeners
+  useEffect(() => {
+    const container = genreScrollRef.current;
+    if (!container) return;
+
+    checkGenreScrollPosition();
+
+    container.addEventListener('scroll', checkGenreScrollPosition);
+    return () => container.removeEventListener('scroll', checkGenreScrollPosition);
+  }, [genres, checkGenreScrollPosition]);
+
+  // Movie carousel scroll listeners
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -87,13 +133,16 @@ export const GenresSection = ({
 
     container.addEventListener('scroll', checkScrollPosition);
     return () => container.removeEventListener('scroll', checkScrollPosition);
-  }, [movies]);
+  }, [movies, checkScrollPosition]);
 
   useEffect(() => {
-    const handleResize = () => checkScrollPosition();
+    const handleResize = () => {
+      checkScrollPosition();
+      checkGenreScrollPosition();
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [checkScrollPosition, checkGenreScrollPosition]);
 
   return (
     <div className={clsx('relative w-full', className)}>
@@ -111,22 +160,80 @@ export const GenresSection = ({
         )}
       </div>
 
-      {/* Genre Pills */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {GENRES.map((genre) => (
+      {/* Genre Pills Carousel - YouTube style */}
+      <div className="relative group/genres mb-6">
+        {/* Left Arrow */}
+        {canScrollGenreLeft && (
           <button
-            key={genre}
-            onClick={() => onGenreChange(genre)}
+            onClick={() => scrollGenres('left')}
             className={clsx(
-              'px-4 py-2 rounded-full text-sm font-medium transition-all duration-300',
-              selectedGenre === genre
-                ? 'bg-primary text-black'
-                : 'text-text-secondary hover:text-white'
+              'absolute left-0 top-1/2 -translate-y-1/2 z-10',
+              'w-8 h-8 rounded-full',
+              'bg-bg-tertiary/90 backdrop-blur-sm',
+              'flex items-center justify-center',
+              'text-white hover:bg-bg-tertiary transition-all',
+              'shadow-lg',
+              'opacity-0 group-hover/genres:opacity-100',
+              'transform hover:scale-110'
             )}
+            aria-label="Scroll genres left"
           >
-            {genre}
+            <ChevronLeft className="w-5 h-5" />
           </button>
-        ))}
+        )}
+
+        {/* Right Arrow */}
+        {canScrollGenreRight && (
+          <button
+            onClick={() => scrollGenres('right')}
+            className={clsx(
+              'absolute right-0 top-1/2 -translate-y-1/2 z-10',
+              'w-8 h-8 rounded-full',
+              'bg-bg-tertiary/90 backdrop-blur-sm',
+              'flex items-center justify-center',
+              'text-white hover:bg-bg-tertiary transition-all',
+              'shadow-lg',
+              'opacity-0 group-hover/genres:opacity-100',
+              'transform hover:scale-110'
+            )}
+            aria-label="Scroll genres right"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Genre Pills Container */}
+        <div
+          ref={genreScrollRef}
+          className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {genresLoading ? (
+            // Loading skeleton for genre pills
+            Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={`genre-skeleton-${index}`}
+                className="flex-shrink-0 h-9 w-20 bg-border rounded-full animate-pulse"
+              />
+            ))
+          ) : (
+            genres.map((genre) => (
+              <button
+                key={genre}
+                onClick={() => onGenreChange(genre)}
+                className={clsx(
+                  'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+                  'whitespace-nowrap',
+                  selectedGenre === genre
+                    ? 'bg-primary text-black'
+                    : 'bg-border text-text-secondary hover:bg-border-light hover:text-white'
+                )}
+              >
+                {genre}
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Movies Carousel */}
@@ -177,11 +284,7 @@ export const GenresSection = ({
           {isLoading ? (
             // Loading skeleton
             Array.from({ length: 5 }).map((_, index) => (
-              <div key={`skeleton-${index}`} className="animate-pulse">
-                <div className="bg-border rounded-xl p-2">
-                  <div className="bg-bg-secondary rounded-lg aspect-2/3 w-full" />
-                </div>
-              </div>
+              <MovieCardSkeleton key={`loading-${index}`} />
             ))
           ) : movies.length === 0 ? (
             // Empty state

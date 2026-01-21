@@ -41,16 +41,15 @@ export default function Browse() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <HeroSection
-          sliderMovies={slider.movies}
-          lastWatchingList={isAuthenticated ? lastWatchingMovies : []}
-          onPlayClick={handlePlayClick}
-          onViewAllLastWatching={handleViewAllLastWatching}
-        />
+      {/* Hero Section - Full Width */}
+      <HeroSection
+        sliderMovies={slider.movies}
+      />
 
+      {/* Content Sections - Constrained */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isAuthenticated && (
-          <div className="mt-8 lg:mt-12 lg:hidden">
+          <div className="mt-8 lg:mt-12">
             <LastWatchingCarousel
               title="Continue Watching"
               progressList={lastWatchingMovies}

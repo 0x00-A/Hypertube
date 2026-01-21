@@ -97,7 +97,7 @@ class MovieService {
    * Get curated movies (sorted by topRank)
    */
   async getCuratedMovies(
-    page: number = 1, 
+    page: number = 1,
     limit: number = 100,
     filters?: {
       sort?: 'topRank' | 'rating' | 'year';
@@ -158,6 +158,17 @@ class MovieService {
     const response = await httpClient.get<IMoviesResponse>(
       `${this.BASE_PATH}`,
       { params }
+    );
+    return response;
+  }
+
+  /**
+   * Search movies by query
+   */
+  async searchMovies(query: string): Promise<IMoviesResponse> {
+    const response = await httpClient.get<IMoviesResponse>(
+      `${this.BASE_PATH}/search`,
+      { params: { search: query } }
     );
     return response;
   }

@@ -60,7 +60,7 @@ const initialState: MoviesState = {
     error: null,
     page: 1,
     hasNextPage: false,
-    selectedGenre: 'Drama',
+    selectedGenre: 'All',
   },
   slider: {
     data: [],

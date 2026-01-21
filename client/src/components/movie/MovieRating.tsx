@@ -37,11 +37,19 @@ const MovieRating: React.FC<MovieRatingProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/10 backdrop-blur-sm">
+        <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="movie-rating-title"
+        >
             <div
                 className="relative w-full sm:max-w-lg bg-bg-primary rounded-t-3xl sm:rounded-3xl shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
+                <h2 id="movie-rating-title" className="sr-only">
+                    Rate {movieTitle}
+                </h2>
                 {/* Close Button */}
                 <button
                     onClick={onClose}
