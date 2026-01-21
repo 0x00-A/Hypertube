@@ -13,8 +13,10 @@ Hypertube is a high-performance video streaming platform that aggregates externa
 * **Password Reset:** Secure password reset flow with email verification and single-use tokens that expire after 24 hours.
 * **Rate Limiting:** Password reset requests limited to 3 per hour per email address to prevent abuse and email bombing attacks.
 * **OAuth Integration:** Passport.js-based OAuth with automatic account linking and secure token management. OAuth users are automatically verified.
+* **OAuth Callback Page:** Dedicated callback route with visual feedback for success/error states and automatic redirection.
 * **Security First:** Passwords are hashed with Argon2 (never plain text), JWT tokens in httpOnly cookies, and all forms are protected against SQL injections and XSS attacks.
 * **Profile Management:** Users can view their own profile, browse other users, and search by username or ID. Email privacy is enforced (only visible to the account owner).
+* **Avatar Support:** User profile avatars displayed in header and dropdown menus with graceful fallback to initials.
 
 ### 🕵️‍♂️ Smart Library
 * **Aggregated Search:** Queries multiple external APIs (YTS, PopcornTime, etc.) simultaneously to build a unified movie catalog.
@@ -204,14 +206,20 @@ http://localhost:3001/api-docs
 
 **GET** `/v1/oauth/google/callback`
 - Handles Google OAuth callback
-- Sets JWT cookies and redirects to client with status
+- Sets JWT cookies and redirects to `/auth/oauth-callback` with status
 
 **GET** `/v1/oauth/42`
 - Redirects to 42 School OAuth authorization page
 
 **GET** `/v1/oauth/42/callback`
 - Handles 42 OAuth callback
-- Sets JWT cookies and redirects to client with status
+- Sets JWT cookies and redirects to `/auth/oauth-callback` with status
+
+**GET** `/auth/oauth-callback` (Frontend Route)
+- Dedicated OAuth callback page with visual feedback
+- Displays success/error states with animations
+- Handles automatic redirection after OAuth authentication
+- Prevents duplicate notifications
 
 ### User Profile Endpoints
 

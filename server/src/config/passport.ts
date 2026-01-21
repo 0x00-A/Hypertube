@@ -34,9 +34,9 @@ export function configurePassport(oauthService: OAuthService): void {
         clientSecret: env.FORTYTWO_CLIENT_SECRET,
         callbackURL: env.FORTYTWO_CALLBACK_URL,
       },
-      async (accessToken: string, refreshToken: string, profile: FortyTwoProfile, done: VerifyCallback) => {
+      async (accessToken: string, refreshToken: string, profile: unknown, done: VerifyCallback) => {
         try {
-          const user = await oauthService.handleFortyTwoOAuth(profile);
+          const user = await oauthService.handleFortyTwoOAuth(profile as FortyTwoProfile);
           return done(null, user as Express.User);
         } catch (error) {
           return done(error as Error, undefined);

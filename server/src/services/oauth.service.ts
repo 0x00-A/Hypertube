@@ -76,7 +76,7 @@ export class OAuthService {
                     username: uniqueUsername,
                     firstName: profile.name.givenName || profile._json.first_name || 'User',
                     lastName: profile.name.familyName || profile._json.last_name || 'FortyTwo',
-                    avatarUrl: profile._json.image_url,
+                    avatarUrl: profile._json.image.link,
                     password: await this._passwordService.generateOAuthPassword(),
                     isActive: true,
                     oauth: {

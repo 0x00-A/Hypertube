@@ -40,13 +40,13 @@ export class OAuthController {
     passport.authenticate('google', { session: false }, (err: Error | null, user: IUser | false) => {
       if (err || !user) {
         logger.error({ err, provider: 'google' }, 'OAuth authentication failed')
-        return res.redirect(`${env.CLIENT_URL}?error=oauth_failed`);
+        return res.redirect(`${env.OAUTH_CLIENT_REDIRECT_URL}?error=oauth_failed`);
       }
       const tokens = this._jwtService.generateTokens({ userId: user._id! });
 
       this.setResCookies(res, user, tokens);
 
-      return res.redirect(`${env.CLIENT_URL}?status=oauth_success`);
+      return res.redirect(`${env.OAUTH_CLIENT_REDIRECT_URL}?status=oauth_success`);
     })(req, res, next);
   };
 
@@ -60,14 +60,14 @@ export class OAuthController {
     passport.authenticate('42', { session: false }, (err: Error | null, user: IUser | false) => {
       if (err || !user) {
         logger.error({ err, provider: 'fortytwo' }, 'OAuth authentication failed')
-        return res.redirect(`${env.CLIENT_URL}?error=oauth_failed`);
+        return res.redirect(`${env.OAUTH_CLIENT_REDIRECT_URL}?error=oauth_failed`);
       }
 
       const tokens = this._jwtService.generateTokens({ userId: user._id! });
 
       this.setResCookies(res, user, tokens);
 
-      return res.redirect(`${env.CLIENT_URL}?status=oauth_success`);
+      return res.redirect(`${env.OAUTH_CLIENT_REDIRECT_URL}?status=oauth_success`);
     })(req, res, next);
   };
 }

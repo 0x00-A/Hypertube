@@ -6,12 +6,17 @@ export type FortyTwoProfile = {
         familyName: string;
         givenName: string;
     };
+    image: {
+        link: string;
+    };
     _json: {
         id: number;
         email: string;
         login: string;
         first_name: string;
         last_name: string;
-        image_url: string;
+        image: {
+            link: string;
+        };
     };
 };

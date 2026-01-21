@@ -9,10 +9,11 @@ interface ProfileDropdownProps {
   onClose: () => void;
   userInitials: string;
   username?: string;
+  avatarUrl?: string;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export default function ProfileDropdown({ isOpen, onClose, userInitials, username, triggerRef }: ProfileDropdownProps) {
+export default function ProfileDropdown({ isOpen, onClose, userInitials, username, avatarUrl, triggerRef }: ProfileDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const logoutMutation = useLogout();
 
@@ -79,8 +80,16 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
       {/* User Info Section */}
       <div className="px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary-dark flex items-center justify-center shrink-0">
-            <span className="text-base font-bold text-black">{userInitials}</span>
+          <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary-dark flex items-center justify-center shrink-0 overflow-hidden">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={username || 'User'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-base font-bold text-black">{userInitials}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-semibold text-white truncate">

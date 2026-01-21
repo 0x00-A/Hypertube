@@ -229,18 +229,27 @@ export default function Header() {
               <button
                 ref={profileTriggerRef}
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
+                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
                 aria-label="User menu"
               >
-                <span className="text-sm font-bold text-black">
-                  {userInitials}
-                </span>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-bold text-black">
+                    {userInitials}
+                  </span>
+                )}
               </button>
               <ProfileDropdown
                 isOpen={isProfileDropdownOpen}
                 onClose={() => setIsProfileDropdownOpen(false)}
                 userInitials={userInitials}
                 username={username}
+                avatarUrl={user?.avatarUrl}
                 triggerRef={profileTriggerRef}
               />
             </div>
@@ -268,18 +277,27 @@ export default function Header() {
               <button
                 ref={mobileProfileTriggerRef}
                 onClick={() => setIsMobileProfileOpen(!isMobileProfileOpen)}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors"
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
                 aria-label="User menu"
               >
-                <span className="text-xs font-bold text-black">
-                  {userInitials}
-                </span>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-bold text-black">
+                    {userInitials}
+                  </span>
+                )}
               </button>
               <ProfileDropdown
                 isOpen={isMobileProfileOpen}
                 onClose={() => setIsMobileProfileOpen(false)}
                 userInitials={userInitials}
                 username={username}
+                avatarUrl={user?.avatarUrl}
                 triggerRef={mobileProfileTriggerRef}
               />
             </div>
