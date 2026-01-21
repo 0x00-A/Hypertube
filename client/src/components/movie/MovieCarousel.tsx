@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { MovieCard } from './MovieCard';
 import type { IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
+import { MovieCardSkeleton } from './MovieCardSkeleton';
 
 export interface MovieCarouselProps {
   title: string;
@@ -151,11 +152,7 @@ export const MovieCarousel = ({
           {isLoading ? (
             // Loading skeleton
             Array.from({ length: 5 }).map((_, index) => (
-              <div key={`skeleton-${index}`} className="animate-pulse">
-                <div className="bg-border rounded-xl p-2">
-                  <div className="bg-bg-secondary rounded-lg aspect-2/3 w-full" />
-                </div>
-              </div>
+              <MovieCardSkeleton key={`loading-${index}`} />
             ))
           ) : movies.length === 0 ? (
             // Empty state

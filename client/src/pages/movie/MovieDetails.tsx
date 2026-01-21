@@ -241,7 +241,10 @@ export default function MovieDetails() {
                             </p>
 
                             <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                                <button className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-black font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/20">
+                                <button
+                                    onClick={() => navigate(`/watch/${id}`, { state: { isTmdbMovie } })}
+                                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-black font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/20"
+                                >
                                     <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
                                     Play
                                 </button>

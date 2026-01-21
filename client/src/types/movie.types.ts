@@ -28,6 +28,7 @@ export interface IMovie {
   genres?: string[];
   originalLanguage?: string;
   trailer?: string;
+  trending?: boolean;
   images: {
     thumbnail?: string;
     poster?: string;
@@ -85,6 +86,12 @@ export interface IMovieInteraction {
 
 export type MovieCardProps = {
   movie: IMovie;
+  className?: string;
+};
+
+export type ArchiveMovieCardProps = {
+  movie: IMovie;
+  rank: number;
   className?: string;
 };
 

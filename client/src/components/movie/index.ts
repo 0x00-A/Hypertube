@@ -1,4 +1,5 @@
 export { MovieCard } from './MovieCard';
+export { ArchiveMovieCard } from './ArchiveMovieCard';
 export { MovieCardSkeleton } from './MovieCardSkeleton';
 export { MovieCarousel } from './MovieCarousel';
 export { SliderMovies } from './SliderMovies';
@@ -8,6 +9,7 @@ export { LastWatchingCarousel } from './LastWatchingCarousel';
 export { GenresSection } from './GenresSection';
 export { FilterBar } from './FilterBar';
 export { MovieDetailsSkeleton } from './MovieDetailsSkeleton';
+export { FeaturedPageSkeleton } from './FeaturedPageSkeleton';
 export { default as MoviePreviewModal } from './MoviePreviewModal';
 export { default as MovieRating } from './MovieRating';
 export { LibraryFilterBar } from './LibraryFilterBar';

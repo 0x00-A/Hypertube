@@ -1,15 +1,11 @@
-import {
-  useCuratedMovies,
-} from "../../hooks/useCuratedMovies";
-// import { useGenres } from "../../hooks/useGenres";
-import Loader from "../../components/common/Loader";
+import { useCuratedMovies } from "../../hooks/useCuratedMovies";
 import ErrorMessage from "../../components/common/ErrorMessage";
-// import CuratedFilterBar from "../../components/movie/CuratedFilterBar";
 import type { IMovie } from "../../types/movie.types";
 import { useNavigate } from "react-router-dom";
-import { Play, Info, Star } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { clsx } from "clsx";
 import { useState, useEffect, useRef } from "react";
+import { MovieCardSkeleton, FeaturedPageSkeleton, ArchiveMovieCard } from "../../components/movie";
 
 export default function Featured() {
   const { movies, isLoading, error, hasNextPage, loadMore } =
@@ -38,13 +34,9 @@ export default function Featured() {
     };
   }, [isLoading, hasNextPage, loadMore]);
 
-  // Show loader only on initial load
+  // Show skeleton loaders on initial load
   if (isLoading && movies.length === 0) {
-    return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-        <Loader />
-      </div>
-    );
+    return <FeaturedPageSkeleton />;
   }
 
   if (error && movies.length === 0) {
@@ -99,16 +91,25 @@ export default function Featured() {
       {/* Archive Section - The Collection (shows ALL movies, including ones above) */}
       <ArchiveSection
         movies={archiveMovies}
-        onMovieClick={handleMovieClick}
-        isLoadingMore={isLoading && movies.length > 0}
-        // filterBar={
-        //   <CuratedFilterBar
-        //     genres={genres}
-        //     onFilterChange={handleFilterChange}
-        //     isLoading={isLoading}
-        //   />
-        // }
       />
+
+      {/* Loading indicator for infinite scroll - Skeleton cards */}
+      {isLoading && movies.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          {/* Loading more indicator - Skeleton cards */}
+          <div
+            className={clsx(
+              'grid gap-2 sm:gap-2 md:gap-2 mt-4',
+              'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+            )}
+          >
+            {Array.from({ length: 10 }).map((_, index) => (
+              <MovieCardSkeleton key={`loading-${index}`} />
+            ))}
+          </div>
+
+        </div>
+      )}
 
       {/* Infinite scroll trigger */}
       {hasNextPage && !isLoading && movies.length > 0 && (
@@ -117,12 +118,6 @@ export default function Featured() {
         </div>
       )}
 
-      {/* Loading indicator for infinite scroll */}
-      {isLoading && movies.length > 0 && (
-        <div className="py-12 flex justify-center">
-          <Loader />
-        </div>
-      )}
 
       {/* End of results */}
       {!hasNextPage && movies.length > 0 && (
@@ -148,6 +143,11 @@ function HeroSection({ movie, onMovieClick }: HeroSectionProps) {
   const backdropUrl =
     movie.images.backdrop || movie.images.poster || movie.images.thumbnail;
 
+  const formatRating = (rating?: number | string) => {
+    if (!rating) return 'N/A';
+    return typeof rating === 'string' ? rating : rating.toFixed(1);
+  };
+
   return (
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background Image with Gradient Overlay */}
@@ -161,97 +161,96 @@ function HeroSection({ movie, onMovieClick }: HeroSectionProps) {
           )}
           onLoad={() => setImageLoaded(true)}
         />
-        {/* Multi-layer gradient for depth */}
+        {/* Multi-layer gradient for depth and readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/80 via-transparent to-bg-primary/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-primary" />
       </div>
 
-      {/* Content */}
-      <div className="relative h-full flex items-end">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 md:pb-32 w-full">
-          <div className="max-w-3xl">
-            {/* Top Rank Badge */}
-            <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-primary/20 backdrop-blur-sm border border-primary/30 rounded-full">
-              <Star className="w-4 h-4 text-primary fill-primary" />
-              <span className="text-primary font-semibold text-sm tracking-wide uppercase">
-                Editor's Choice
-              </span>
-            </div>
+      {/* Content Container - Clean Modern Layout */}
+      <div className="relative h-full flex flex-col justify-between">
+        {/* Main Content - Bottom Left */}
+        <div className="flex-1 flex items-end">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-20 lg:pb-24 w-full">
+            <div className="max-w-2xl md:max-w-3xl lg:max-w-4xl transition-all duration-500">
 
-            {/* Title - Serif Font for Editorial Feel */}
-            <h1
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 text-white leading-tight tracking-tight"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              {movie.title}
-            </h1>
-
-            {/* Metadata */}
-            <div className="flex items-center gap-4 mb-6 text-text-secondary">
-              <div className="flex items-center gap-1.5">
-                <Star className="w-5 h-5 text-primary fill-primary" />
-                <span className="text-white font-bold text-lg">
-                  {movie.rating?.toFixed(1)}
+              {/* #1 Badge - Top Ranked Movie */}
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="bg-primary/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-2xl">
+                  <span className="text-black font-black text-2xl md:text-3xl">#1</span>
+                </div>
+                <span className="text-primary text-xs md:text-sm font-semibold tracking-wider uppercase">
+                  Top Ranked Movie
                 </span>
               </div>
-              <span className="w-1 h-1 rounded-full bg-text-muted" />
-              <span className="font-medium">{movie.year}</span>
-              {movie.duration && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-text-muted" />
-                  <span className="font-medium">{movie.duration} min</span>
-                </>
-              )}
-              {movie.genres && movie.genres.length > 0 && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-text-muted" />
-                  <span className="font-medium">{movie.genres[0]}</span>
-                </>
-              )}
-            </div>
 
-            {/* Synopsis */}
-            <p className="text-lg text-text-secondary leading-relaxed mb-8 max-w-2xl line-clamp-3">
-              {movie.synopsis || movie.overview}
-            </p>
+              {/* Movie Title - Large and Bold */}
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-white leading-none mb-4 md:mb-6 drop-shadow-2xl tracking-tight">
+                {movie.title}
+              </h1>
 
-            {/* CTA Buttons with Glassmorphism */}
-            <div className="flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => onMovieClick(movie)}
-                className="group relative px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 hover:border-white/40"
-              >
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative flex items-center gap-3">
-                  <Play className="w-5 h-5 text-white fill-white" />
-                  <span className="text-white font-semibold text-lg">
-                    Watch Now
+              {/* Metadata Row - Clean and Minimal */}
+              <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6 flex-wrap">
+                {/* IMDb Badge */}
+                <div className="bg-yellow-400 px-2 py-1 rounded flex items-center gap-1.5">
+                  <span className="text-black font-bold text-xs md:text-sm">IMDb</span>
+                  <span className="text-black font-bold text-xs md:text-sm">
+                    {formatRating(movie.rating)}
                   </span>
                 </div>
-              </button>
 
-              <button
-                onClick={() => onMovieClick(movie)}
-                className="px-8 py-4 bg-transparent border border-white/30 rounded-full transition-all duration-300 hover:bg-white/5 hover:border-white/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Info className="w-5 h-5 text-white" />
-                  <span className="text-white font-semibold text-lg">
-                    More Info
+                {/* Year */}
+                {movie.year && (
+                  <span className="text-white text-sm md:text-base font-semibold">
+                    {movie.year}
                   </span>
-                </div>
-              </button>
+                )}
+
+                {/* Duration */}
+                {movie.duration && (
+                  <span className="text-white text-sm md:text-base font-semibold">
+                    {movie.duration} min
+                  </span>
+                )}
+
+                {/* Genres */}
+                {movie.genres && movie.genres.length > 0 && (
+                  <div className="flex items-center gap-2 md:gap-3">
+                    {movie.genres.slice(0, 3).map((genre, index) => (
+                      <span key={genre} className="text-text-secondary text-sm md:text-base font-medium">
+                        {genre}
+                        {index < Math.min(movie.genres!.length, 3) - 1 && ' •'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Overview - Larger and More Readable */}
+              {(movie.synopsis || movie.overview) && (
+                <p className="text-white text-base md:text-lg lg:text-xl leading-relaxed line-clamp-3 md:line-clamp-4 mb-6 md:mb-8 max-w-3xl drop-shadow-lg font-normal">
+                  {movie.synopsis || movie.overview}
+                </p>
+              )}
+
+              {/* Action Buttons - Prominent */}
+              <div className="flex items-center gap-3 md:gap-4">
+                <button
+                  onClick={() => onMovieClick(movie)}
+                  className="bg-primary hover:bg-primary-light text-black font-bold px-8 py-3 md:px-10 md:py-4 lg:px-12 lg:py-4 rounded-md transition-all duration-200 shadow-2xl text-base md:text-lg lg:text-xl hover:scale-105 transform"
+                >
+                  Watch Now
+                </button>
+                <button
+                  onClick={() => onMovieClick(movie)}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/40 text-white font-bold px-6 py-3 md:px-8 md:py-4 lg:px-10 lg:py-4 rounded-md transition-all duration-200 text-base md:text-lg lg:text-xl hover:scale-105 transform"
+                >
+                  More Info
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60 animate-bounce">
-        <span className="text-xs uppercase tracking-widest">Scroll</span>
-        <div className="w-px h-8 bg-gradient-to-b from-white/60 to-transparent" />
       </div>
     </section>
   );
@@ -540,16 +539,10 @@ function EditorialCard({ movie, onClick }: EditorialCardProps) {
 // ============================================================================
 interface ArchiveSectionProps {
   movies: IMovie[];
-  onMovieClick: (movie: IMovie) => void;
-  isLoadingMore?: boolean;
-  filterBar?: React.ReactNode;
 }
 
 function ArchiveSection({
   movies,
-  onMovieClick,
-  // isLoadingMore,
-  filterBar,
 }: ArchiveSectionProps) {
   return (
     <section className="py-16 md:py-24" data-section="archive">
@@ -568,18 +561,15 @@ function ArchiveSection({
         </div>
       </div>
 
-      {/* Filter Bar */}
-      {filterBar}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* High-Density Grid or Empty State */}
         {movies.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {movies.map((movie) => (
-              <ArchiveCard
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+            {movies.map((movie, index) => (
+              <ArchiveMovieCard
                 key={movie.imdbId || movie.tmdbId}
                 movie={movie}
-                onClick={() => onMovieClick(movie)}
+                rank={index + 1}
               />
             ))}
           </div>
@@ -624,71 +614,4 @@ function ArchiveSection({
   );
 }
 
-interface ArchiveCardProps {
-  movie: IMovie;
-  onClick: () => void;
-}
 
-function ArchiveCard({ movie, onClick }: ArchiveCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const posterUrl = movie.images.poster || movie.images.thumbnail;
-
-  return (
-    <div
-      className="group relative cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
-    >
-      {/* Poster Container */}
-      <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg bg-border">
-        <img
-          src={posterUrl}
-          alt={movie.title}
-          className={clsx(
-            "w-full h-full object-cover transition-all duration-500",
-            isHovered && "scale-110 brightness-50"
-          )}
-        />
-
-        {/* Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-        {/* Rank Badge (Top Left) */}
-        {movie.topRank && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-2.5 py-1 bg-primary/90 backdrop-blur-sm rounded-md shadow-lg">
-            <span className="text-black font-bold text-xs">#{movie.topRank}</span>
-          </div>
-        )}
-
-        {/* Rating Badge (Top Right) */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-md">
-          <Star className="w-3 h-3 text-primary fill-primary" />
-          <span className="text-white font-bold text-xs">
-            {movie.rating?.toFixed(1)}
-          </span>
-        </div>
-
-        {/* Title Overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          <h3 className="text-white font-semibold text-sm line-clamp-2 leading-tight mb-1">
-            {movie.title}
-          </h3>
-          <p className="text-text-secondary text-xs">{movie.year}</p>
-        </div>
-
-        {/* Play Icon on Hover */}
-        <div
-          className={clsx(
-            "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-            isHovered ? "opacity-100" : "opacity-0"
-          )}
-        >
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

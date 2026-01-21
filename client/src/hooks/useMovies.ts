@@ -163,7 +163,11 @@ export const useFetchGenreMovies = (page: number = 1) => {
   const fetchGenreMovies = useCallback(async () => {
     try {
       dispatch(setGenreLoading(true));
-      const response = await movieService.getMoviesByGenre(genres.selectedGenre, page);
+
+      // Use getAllMovies for 'All' genre, otherwise filter by genre
+      const response = genres.selectedGenre === 'All'
+        ? await movieService.getAllMovies({ page, limit: 20 })
+        : await movieService.getMoviesByGenre(genres.selectedGenre, page);
 
       dispatch(setGenreMovies({
         data: response.data,

@@ -49,6 +49,7 @@ export const queryKeys = {
     details: () => [...queryKeys.movies.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.movies.details(), id] as const,
     recommended: (tmdbId?: number) => ['movies', 'recommended', tmdbId] as const,
+    search: (query: string) => [...queryKeys.movies.all, 'search', query] as const,
   },
   watchlist: {
     all: ['watchlist'] as const,
