@@ -7,6 +7,7 @@ import { useUserRating } from '../../hooks/useUserRating';
 import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
 import { MovieRating, MovieCarousel } from '../../components/movie';
+import { Sparkles } from 'lucide-react';
 import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
 import type { ICastMember } from '../../types/movie.types';
@@ -448,6 +449,7 @@ export default function MovieDetails() {
                     <MovieCarousel
                         title="More Like This"
                         movies={recommendedMoviesData?.data || []}
+                        icon={Sparkles}
                         isLoading={isLoadingRecommended}
                     />
                 </section>

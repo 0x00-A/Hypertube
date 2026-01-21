@@ -54,6 +54,7 @@ export const useInitializeAuth = () => {
     retry: false,
     staleTime: Infinity,
   });
+  console.log("profile: ", data)
 
   useEffect(() => {
     if (!isInitialized) {

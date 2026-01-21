@@ -17,6 +17,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { useSearchMovies } from "../../hooks/useSearchMovies";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchDropdown from "./SearchDropdown";
+import { Avatar } from "../ui";
 
 const navLinks = [
   { label: "Browse", path: "/browse", icon: Compass },
@@ -229,20 +230,15 @@ export default function Header() {
               <button
                 ref={profileTriggerRef}
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all"
                 aria-label="User menu"
               >
-                {user?.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-black">
-                    {userInitials}
-                  </span>
-                )}
+                <Avatar
+                  src={user?.avatarUrl}
+                  alt={username}
+                  fallback={userInitials}
+                  size="md"
+                />
               </button>
               <ProfileDropdown
                 isOpen={isProfileDropdownOpen}
@@ -277,20 +273,15 @@ export default function Header() {
               <button
                 ref={mobileProfileTriggerRef}
                 onClick={() => setIsMobileProfileOpen(!isMobileProfileOpen)}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary-light transition-colors overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all cursor-pointer"
                 aria-label="User menu"
               >
-                {user?.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-xs font-bold text-black">
-                    {userInitials}
-                  </span>
-                )}
+                <Avatar
+                  src={user?.avatarUrl}
+                  alt={username}
+                  fallback={userInitials}
+                  size="sm"
+                />
               </button>
               <ProfileDropdown
                 isOpen={isMobileProfileOpen}

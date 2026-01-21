@@ -4,10 +4,13 @@ import { MovieCard } from './MovieCard';
 import type { IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
 import { MovieCardSkeleton } from './MovieCardSkeleton';
+import type { LucideProps } from 'lucide-react';
+import type { ComponentType } from 'react';
 
 export interface MovieCarouselProps {
   title: string;
   movies: IMovie[];
+  icon?: ComponentType<LucideProps>;
   onViewAll?: () => void;
   isLoading?: boolean;
   className?: string;
@@ -16,6 +19,7 @@ export interface MovieCarouselProps {
 export const MovieCarousel = ({
   title,
   movies,
+  icon: Icon,
   onViewAll,
   isLoading = false,
   className,
@@ -93,7 +97,10 @@ export const MovieCarousel = ({
   return (
     <div className={clsx('relative w-full', className)}>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h2 className="text-white text-2xl sm:text-3xl font-bold">{title}</h2>
+        <h2 className="text-white text-2xl sm:text-3xl font-bold flex items-center gap-3">
+          {Icon && <Icon className="w-7 h-7 text-primary" />}
+          {title}
+        </h2>
         {onViewAll && (
           <button
             onClick={onViewAll}
