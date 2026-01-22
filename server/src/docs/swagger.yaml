@@ -824,7 +824,8 @@ paths:
                   example: Doe
                 language:
                   type: string
-                  description: User's preferred language code (e.g., 'en', 'fr', 'es')
+                  enum: [en, fr, es, de, it, pt, ru, ja, zh, ar, nl, sv, no, da, fi, pl, tr, ko, hi]
+                  description: User's preferred language (ISO 639-1 code). Supported languages - en (English), fr (French), es (Spanish), de (German), it (Italian), pt (Portuguese), ru (Russian), ja (Japanese), zh (Chinese), ar (Arabic), nl (Dutch), sv (Swedish), no (Norwegian), da (Danish), fi (Finnish), pl (Polish), tr (Turkish), ko (Korean), hi (Hindi)
                   example: en
                 avatarUrl:
                   type: string
@@ -920,6 +921,14 @@ paths:
                     validationErrors:
                       - path: body.avatarUrl
                         message: Invalid URL format
+                invalidLanguage:
+                  summary: Invalid language code
+                  value:
+                    status: fail
+                    message: Validation Error
+                    validationErrors:
+                      - path: body.language
+                        message: "Invalid enum value. Expected 'en' | 'fr' | 'es' | 'de' | 'it' | 'pt' | 'ru' | 'ja' | 'zh' | 'ar' | 'nl' | 'sv' | 'no' | 'da' | 'fi' | 'pl' | 'tr' | 'ko' | 'hi', received 'xx'"
         '401':
           description: Not authenticated or invalid token
           content:

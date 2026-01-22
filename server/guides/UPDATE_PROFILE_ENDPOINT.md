@@ -39,7 +39,7 @@ This guide documents the `/api/v1/users/update-profile` endpoint implementation,
 | `username` | string | No | Min 3 characters |
 | `firstName` | string | No | None |
 | `lastName` | string | No | None |
-| `language` | string | No | None |
+| `language` | string | No | Must be valid ISO 639-1 code (en, fr, es, de, it, pt, ru, ja, zh, ar, nl, sv, no, da, fi, pl, tr, ko, hi) |
 | `avatarUrl` | string | No | Must be valid URL (http/https) |
 
 **Notes:**
@@ -149,12 +149,17 @@ async updateByUsername(username: string, updateData: IUserProfileUpdate): Promis
 - ✅ Return 401 with invalid token
 - ✅ Return 401 with expired token
 
-#### 3. Input Validation (9 tests)
+#### 3. Input Validation (14 tests)
 - ✅ Invalid email format
 - ✅ Username shorter than 3 characters
 - ✅ Invalid avatarUrl format
 - ✅ Valid https URL
 - ✅ Valid http URL
+- ✅ Valid language code
+- ✅ All supported language codes accepted
+- ✅ Invalid language code rejected
+- ✅ Empty string language code rejected
+- ✅ Numeric language code rejected
 - ✅ Multiple validation errors at once
 - ✅ Whitespace trimming
 - ✅ Duplicate username conflict
@@ -205,6 +210,7 @@ async updateByUsername(username: string, updateData: IUserProfileUpdate): Promis
 | Invalid token | 401 | UnauthorizedError | Token validation error |
 | Invalid email | 400 | ValidationError | "Invalid email address" |
 | Short username | 400 | ValidationError | "Username must be at least 3 characters long" |
+| Invalid language | 400 | ValidationError | "Invalid enum value. Expected 'en' \| 'fr' \| ..." |
 | Invalid URL | 400 | ValidationError | "Invalid URL format" |
 | Duplicate username | 400/409 | Database Error | Constraint violation |
 | Duplicate email | 400/409 | Database Error | Constraint violation |

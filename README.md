@@ -247,6 +247,7 @@ http://localhost:3001/api-docs
 - Optional fields: email, username, firstName, lastName, language, avatarUrl
 - All fields are optional - only provided fields will be updated
 - Validates email format, username length (min 3), and URL format
+- Language must be a valid ISO 639-1 code (en, fr, es, de, it, pt, ru, ja, zh, ar, nl, sv, no, da, fi, pl, tr, ko, hi)
 - Returns 400 for validation errors
 - Returns 409 for duplicate username or email
 - Returns 401 if not authenticated

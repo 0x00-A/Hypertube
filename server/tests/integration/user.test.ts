@@ -711,6 +711,10 @@ describe('User Profile Integration Tests', () => {
         .send({ firstName: 'NewFirstName' });
 
       expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.firstName).toBe('NewFirstName');
+      expect(updatedUser?.lastName).toBe(testUser.lastName); // Original lastName unchanged
     });
 
     it('should update only lastName', async () => {
@@ -720,6 +724,10 @@ describe('User Profile Integration Tests', () => {
         .send({ lastName: 'NewLastName' });
 
       expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.lastName).toBe('NewLastName');
+      expect(updatedUser?.firstName).toBe(testUser.firstName); // Original firstName unchanged
     });
 
     it('should update only avatarUrl', async () => {
@@ -729,6 +737,9 @@ describe('User Profile Integration Tests', () => {
         .send({ avatarUrl: 'https://example.com/new-avatar.png' });
 
       expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.avatarUrl).toBe('https://example.com/new-avatar.png');
     });
 
     it('should return 401 when not authenticated', async () => {
@@ -884,6 +895,69 @@ describe('User Profile Integration Tests', () => {
         const user = await UserModel.findOne({ username: 'validuser' });
         expect(user).toBeTruthy();
       }
+    });
+
+    it('should accept valid language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: 'en' });
+
+      expect(res.status).toBe(200);
+
+      const user = await UserModel.findOne({ username: testUser.username });
+      expect(user?.language).toBe('en');
+    });
+
+    it('should accept all supported language codes', async () => {
+      const supportedLanguages = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'zh'];
+      
+      for (const lang of supportedLanguages) {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .send({ language: lang });
+
+        expect(res.status).toBe(200);
+      }
+    });
+
+    it('should return 400 for invalid language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: 'invalid' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.language',
+          }),
+        ])
+      );
+    });
+
+    it('should return 400 for empty string language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: '' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should return 400 for numeric language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: '123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
     });
 
     it('should not allow updating to existing username', async () => {
