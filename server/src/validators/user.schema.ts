@@ -1,5 +1,37 @@
 import { z } from 'zod';
 
+// ISO 639-1 language codes supported by the application
+const SUPPORTED_LANGUAGES = [
+  'en', // English
+  'es', // Spanish
+  'fr', // French
+  'de', // German
+  'it', // Italian
+  'pt', // Portuguese
+  'ru', // Russian
+  'ja', // Japanese
+  'zh', // Chinese
+  'ar', // Arabic
+  'hi', // Hindi
+  'ko', // Korean
+  'nl', // Dutch
+  'pl', // Polish
+  'tr', // Turkish
+  'sv', // Swedish
+  'da', // Danish
+  'fi', // Finnish
+  'no', // Norwegian
+  'cs', // Czech
+  'ro', // Romanian
+  'hu', // Hungarian
+  'el', // Greek
+  'th', // Thai
+  'vi', // Vietnamese
+  'id', // Indonesian
+  'he', // Hebrew
+  'fa', // Persian
+] as const;
+
 export const ListUsersSchema = z.object({
   query: z.object({
     page: z
@@ -45,6 +77,14 @@ export const UpdateProfileSchema = z.object({
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
     avatarUrl: z.string().url('Invalid URL format').nullish(),
-    language: z.string().nullish(),
+    language: z
+      .string()
+      .refine(
+        (val) => SUPPORTED_LANGUAGES.includes(val as (typeof SUPPORTED_LANGUAGES)[number]),
+        {
+          message: `Language must be a valid ISO 639-1 code. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`,
+        },
+      )
+      .nullish(),
   }),
 });
