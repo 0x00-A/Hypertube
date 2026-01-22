@@ -22,7 +22,6 @@ import Settings from './pages/settings/Settings';
 import Movies from './pages/movie/Movies';
 import MovieDetails from './pages/movie/MovieDetails';
 import UserProfile from './pages/user/UserProfile';
-import EditProfile from './pages/user/EditProfile';
 import NotFound from './pages/notFound/NotFound';
 import Featured from './pages/featured/Featured';
 import Watch from './pages/watch/Watch';
@@ -91,7 +90,6 @@ function App() {
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/user/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Route>

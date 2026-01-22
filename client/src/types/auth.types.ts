@@ -11,6 +11,7 @@ export interface User {
   avatarUrl?: string;
   createdAt: string;
   isActive?: boolean;
+  language?: string;
 }
 
 // ============================================================================
@@ -42,9 +43,11 @@ export interface ResetPasswordData {
 
 export interface UpdateProfileData {
   username?: string;
+  email?: string;
   firstName?: string;
   lastName?: string;
   avatar?: string;
+  language?: string;
 }
 
 export interface ChangePasswordData {

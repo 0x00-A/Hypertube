@@ -5,6 +5,7 @@ import type { IMovie } from '../../types/movie.types';
 import { useMovies } from '../../hooks/useMovies';
 import { useFetchGenreMovies } from '../../hooks/useMovies';
 import { useAuthState } from '../../hooks/useAuth';
+import { Sparkles, TrendingUp } from 'lucide-react';
 
 export default function Browse() {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ export default function Browse() {
             <MovieCarousel
               title="Recommended for You"
               movies={recommended.recommended}
+              icon={Sparkles}
               onViewAll={handleViewAllRecommended}
               isLoading={recommended.isLoading}
             />
@@ -74,6 +76,7 @@ export default function Browse() {
           <MovieCarousel
             title="Trending Movies"
             movies={trending.trending}
+            icon={TrendingUp}
             onViewAll={handleViewAllTrending}
             isLoading={trending.isLoading}
           />

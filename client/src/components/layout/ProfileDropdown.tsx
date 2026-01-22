@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { User, UserPen } from 'lucide-react';
+import { User, Settings } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { Avatar } from '../ui';
 
 interface ProfileDropdownProps {
   isOpen: boolean;
@@ -80,17 +81,13 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
       {/* User Info Section */}
       <div className="px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary-dark flex items-center justify-center shrink-0 overflow-hidden">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={username || 'User'}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-base font-bold text-black">{userInitials}</span>
-            )}
-          </div>
+          <Avatar
+            src={avatarUrl}
+            alt={username || 'User'}
+            fallback={userInitials}
+            size="lg"
+            className="ring-2 ring-primary"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-base font-semibold text-white truncate">
               {username || 'User'}
@@ -112,14 +109,13 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
           <User className="w-5 h-5" />
           <span>View profile</span>
         </Link>
-
         <Link
-          to="/user/edit"
+          to="/settings"
           onClick={onClose}
           className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
         >
-          <UserPen className="w-5 h-5" />
-          <span>Edit Profile</span>
+          <Settings className="w-5 h-5" />
+          <span>Settings</span>
         </Link>
       </div>
 
