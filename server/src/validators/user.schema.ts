@@ -1,7 +1,27 @@
 import { z } from 'zod';
 
 // Supported ISO 639-1 language codes
-const SUPPORTED_LANGUAGES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'zh', 'ar', 'nl', 'sv', 'no', 'da', 'fi', 'pl', 'tr', 'ko', 'hi'] as const;
+const SUPPORTED_LANGUAGES = [
+  'en',
+  'fr',
+  'es',
+  'de',
+  'it',
+  'pt',
+  'ru',
+  'ja',
+  'zh',
+  'ar',
+  'nl',
+  'sv',
+  'no',
+  'da',
+  'fi',
+  'pl',
+  'tr',
+  'ko',
+  'hi',
+] as const;
 // type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 export const ListUsersSchema = z.object({
@@ -16,7 +36,7 @@ export const ListUsersSchema = z.object({
           .number()
           .int('Page must be an integer')
           .positive('Page must be a positive number')
-          .max(10000, 'Page number too large')
+          .max(10000, 'Page number too large'),
       ),
     limit: z
       .string()
@@ -28,17 +48,14 @@ export const ListUsersSchema = z.object({
           .number()
           .int('Limit must be an integer')
           .positive('Limit must be a positive number')
-          .max(100, 'Limit cannot exceed 100')
+          .max(100, 'Limit cannot exceed 100'),
       ),
   }),
 });
 
 export const GetUserSchema = z.object({
   params: z.object({
-    identifier: z
-      .string()
-      .trim()
-      .min(3, 'Identifier must be at least 3 characters long')
+    identifier: z.string().trim().min(3, 'Identifier must be at least 3 characters long'),
   }),
 });
 
@@ -49,6 +66,10 @@ export const UpdateProfileSchema = z.object({
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
     avatarUrl: z.string().url('Invalid URL format').nullish(),
-    language: z.enum(SUPPORTED_LANGUAGES).nullish(),
+    language: z
+      .enum(SUPPORTED_LANGUAGES, {
+        message: 'Language must be a valid ISO 639-1 code',
+      })
+      .nullish(),
   }),
 });

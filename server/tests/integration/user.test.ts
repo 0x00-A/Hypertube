@@ -61,9 +61,7 @@ describe('User Profile Integration Tests', () => {
     });
 
     const cookies = loginRes.headers['set-cookie'] as unknown as string[];
-    const accessTokenCookie = cookies.find((cookie: string) =>
-      cookie.startsWith('accessToken=')
-    );
+    const accessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
     authToken = accessTokenCookie?.split(';')[0].split('=')[1] || '';
   });
 
@@ -353,7 +351,7 @@ describe('User Profile Integration Tests', () => {
         .map(() =>
           request(app)
             .get('/api/v1/users/me')
-            .set('Cookie', [`accessToken=${authToken}`])
+            .set('Cookie', [`accessToken=${authToken}`]),
         );
 
       const responses = await Promise.all(requests);
@@ -778,7 +776,7 @@ describe('User Profile Integration Tests', () => {
             path: 'body.email',
             message: 'Invalid email address',
           }),
-        ])
+        ]),
       );
     });
 
@@ -797,7 +795,7 @@ describe('User Profile Integration Tests', () => {
             path: 'body.username',
             message: 'Username must be at least 3 characters long',
           }),
-        ])
+        ]),
       );
     });
 
@@ -829,7 +827,7 @@ describe('User Profile Integration Tests', () => {
             path: 'body.avatarUrl',
             message: 'Invalid URL format',
           }),
-        ])
+        ]),
       );
     });
 
@@ -911,7 +909,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should accept all supported language codes', async () => {
       const supportedLanguages = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'zh'];
-      
+
       for (const lang of supportedLanguages) {
         const res = await request(app)
           .post('/api/v1/users/update-profile')
@@ -936,7 +934,7 @@ describe('User Profile Integration Tests', () => {
           expect.objectContaining({
             path: 'body.language',
           }),
-        ])
+        ]),
       );
     });
 
@@ -1163,10 +1161,16 @@ describe('User Profile Integration Tests', () => {
         .send({ language: 'invalid' });
 
       expect(res.status).toBe(400);
-      expect(res.body).toMatchObject({
-        status: 'fail',
-      });
-      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.language',
+            message: 'Language must be a valid ISO 639-1 code',
+          }),
+        ]),
+      );
     });
 
     it('should reject empty string language code', async () => {
@@ -1188,10 +1192,16 @@ describe('User Profile Integration Tests', () => {
         .send({ language: '123' });
 
       expect(res.status).toBe(400);
-      expect(res.body).toMatchObject({
-        status: 'fail',
-      });
-      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.language',
+            message: 'Language must be a valid ISO 639-1 code',
+          }),
+        ]),
+      );
     });
 
     it('should reject uppercase language code', async () => {
@@ -1201,10 +1211,16 @@ describe('User Profile Integration Tests', () => {
         .send({ language: 'EN' });
 
       expect(res.status).toBe(400);
-      expect(res.body).toMatchObject({
-        status: 'fail',
-      });
-      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.language',
+            message: 'Language must be a valid ISO 639-1 code',
+          }),
+        ]),
+      );
     });
 
     it('should allow null language value', async () => {
