@@ -40,11 +40,11 @@ export const GetUserSchema = z.object({
 
 export const UpdateProfileSchema = z.object({
   body: z.object({
-    email: z.string().email('Invalid email address').optional(),
-    username: z.string().min(3, 'Username must be at least 3 characters long').optional(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    avatarUrl: z.string().url('Invalid URL format').optional(),
-    language: z.string().optional(),
+    email: z.string().trim().email('Invalid email address').optional(),
+    username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
+    firstName: z.string().nullish(),
+    lastName: z.string().nullish(),
+    avatarUrl: z.string().url('Invalid URL format').nullish(),
+    language: z.string().nullish(),
   }),
 });
