@@ -9,13 +9,14 @@
   - Zod schema validation for all input fields
   - Email format validation
   - Username minimum length validation (3 characters)
+  - Language validation (ISO 639-1 codes: en, fr, es, de, it, pt, ru, ja, zh, ar, nl, sv, no, da, fi, pl, tr, ko, hi)
   - Avatar URL format validation (http/https)
   - JWT authentication required
   - Repository pattern with updateByUsername method
-  - Comprehensive test coverage: 33 integration tests
+  - Comprehensive test coverage: 38 integration tests
     - 9 successful update tests (single field, multiple fields, all fields, firstName+lastName together)
     - 3 authentication/authorization tests
-    - 9 input validation tests
+    - 14 input validation tests (email, username, URL, language codes)
     - 8 edge case tests (concurrent requests, null values, unknown fields)
     - 4 response format validation tests
   - Swagger/OpenAPI documentation with examples

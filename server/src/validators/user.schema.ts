@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Supported ISO 639-1 language codes
+const SUPPORTED_LANGUAGES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'zh', 'ar', 'nl', 'sv', 'no', 'da', 'fi', 'pl', 'tr', 'ko', 'hi'] as const;
+// type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
 export const ListUsersSchema = z.object({
   query: z.object({
     page: z
@@ -45,6 +49,6 @@ export const UpdateProfileSchema = z.object({
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
     avatarUrl: z.string().url('Invalid URL format').nullish(),
-    language: z.string().nullish(),
+    language: z.enum(SUPPORTED_LANGUAGES).nullish(),
   }),
 });
