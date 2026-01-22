@@ -82,7 +82,7 @@ export const UpdateProfileSchema = z.object({
       .refine(
         (val) => SUPPORTED_LANGUAGES.includes(val as (typeof SUPPORTED_LANGUAGES)[number]),
         {
-          message: `Language must be a valid ISO 639-1 code. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`,
+          message: 'Language must be a valid ISO 639-1 code (e.g., en, fr, es, de)',
         },
       )
       .nullish(),
