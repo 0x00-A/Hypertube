@@ -16,7 +16,54 @@ import {
 import { Select, type SelectOption } from '../../components/ui/Select';
 import { clsx } from 'clsx';
 
-// Language options
+// ============================================================================
+// SaveButton Component - Reusable save button with loading state
+// ============================================================================
+
+interface SaveButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  isLoading: boolean;
+  label?: string;
+  loadingLabel?: string;
+  icon?: React.ReactNode;
+}
+
+const SaveButton = ({ 
+  onClick, 
+  disabled, 
+  isLoading, 
+  label = 'Save Changes',
+  loadingLabel = 'Saving...',
+  icon = <Save className="w-5 h-5" />
+}: SaveButtonProps) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={clsx(
+      'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
+      !disabled && !isLoading
+        ? 'bg-primary text-black hover:bg-primary-light'
+        : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
+    )}
+  >
+    {isLoading ? (
+      <>
+        <Loader2 className="w-5 h-5 animate-spin" />
+        {loadingLabel}
+      </>
+    ) : (
+      <>
+        {icon}
+        {label}
+      </>
+    )}
+  </button>
+);
+
+// ============================================================================
+// Constants & Types
+// ============================================================================
 const LANGUAGES: SelectOption[] = [
   { value: 'en', label: 'English' },
   { value: 'fr', label: 'Français' },
@@ -40,7 +87,7 @@ const SETTINGS_TABS = [
 
 type TabId = typeof SETTINGS_TABS[number]['id'];
 
-interface FormData {
+interface SettingsFormData {
   language: string;
   email: string;
   username: string;
@@ -66,7 +113,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabId>('profile');
 
   // Form state
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<SettingsFormData>({
     language: user?.language || 'en',
     email: user?.email || '',
     username: user?.username || '',
@@ -108,7 +155,7 @@ export default function Settings() {
     return formData.username?.[0]?.toUpperCase() || '?';
   }, [user, formData]);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof SettingsFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setSuccessMessage('');
     setErrorMessage('');
@@ -144,33 +191,37 @@ export default function Settings() {
       setUploadingImage(true);
       setErrorMessage('');
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewAvatar(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Create preview using URL.createObjectURL for better performance
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewAvatar(previewUrl);
 
-      // TODO: Implement actual image upload to server
-      // For now, we'll use the data URL
-      // In production, upload to server/cloud storage and get URL
+      // Upload to server and get permanent URL
       const imageUrl = await uploadImageToServer(file);
       setFormData(prev => ({ ...prev, avatarUrl: imageUrl }));
       
+      // Clean up object URL after successful upload
+      URL.revokeObjectURL(previewUrl);
     } catch (error) {
       setErrorMessage('Failed to upload image. Please try again.');
-      console.error('Image upload error:', error);
+      // Re-throw for proper error handling
+      throw error;
     } finally {
       setUploadingImage(false);
     }
   };
 
-  // Mock image upload function - replace with actual implementation
+  // Image upload function
   const uploadImageToServer = async (file: File): Promise<string> => {
-    // Simulate upload delay
+    // Development-only mock implementation
+    // TODO: Replace with actual upload to server/cloud storage in production
+    if (import.meta.env.PROD) {
+      throw new Error('Image upload is not yet implemented. Please contact support.');
+    }
+    
+    // Simulate upload delay (development only)
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // For now, return data URL
+    // Return data URL for development
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -482,28 +533,11 @@ export default function Settings() {
 
                 {/* Save Button */}
                 <div className="mt-6 flex justify-end">
-                  <button
+                  <SaveButton
                     onClick={handleSaveProfile}
                     disabled={!hasChanges || isPending}
-                    className={clsx(
-                      'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-                      hasChanges && !isPending
-                        ? 'bg-primary text-black hover:bg-primary-light'
-                        : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-                    )}
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
+                    isLoading={isPending}
+                  />
                 </div>
               </div>
             </>
@@ -566,28 +600,11 @@ export default function Settings() {
 
               {/* Save Button */}
               <div className="mt-6 flex justify-end">
-                <button
+                <SaveButton
                   onClick={handleSaveProfile}
                   disabled={!hasChanges || isPending}
-                  className={clsx(
-                    'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-                    hasChanges && !isPending
-                      ? 'bg-primary text-black hover:bg-primary-light'
-                      : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-                  )}
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Save Changes
-                    </>
-                  )}
-                </button>
+                  isLoading={isPending}
+                />
               </div>
             </div>
           )}
@@ -664,28 +681,14 @@ export default function Settings() {
                   />
                 </div>
 
-                <button
+                <SaveButton
                   onClick={handleChangePasswordSubmit}
                   disabled={!passwordData.currentPassword || !passwordData.newPassword || isChangingPassword}
-                  className={clsx(
-                    'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-                    passwordData.currentPassword && passwordData.newPassword && !isChangingPassword
-                      ? 'bg-primary text-black hover:bg-primary-light'
-                      : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-                  )}
-                >
-                  {isChangingPassword ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-5 h-5" />
-                      Update Password
-                    </>
-                  )}
-                </button>
+                  isLoading={isChangingPassword}
+                  label="Update Password"
+                  loadingLabel="Updating..."
+                  icon={<Lock className="w-5 h-5" />}
+                />
               </div>
             </div>
           )}
@@ -714,28 +717,12 @@ export default function Settings() {
                 </div>
 
                 <div className="mt-6 flex justify-end">
-                  <button
+                  <SaveButton
                     onClick={handleSaveProfile}
                     disabled={!hasChanges || isPending}
-                    className={clsx(
-                      'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-                      hasChanges && !isPending
-                        ? 'bg-primary text-black hover:bg-primary-light'
-                        : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-                    )}
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        Save Preferences
-                      </>
-                    )}
-                  </button>
+                    isLoading={isPending}
+                    label="Save Preferences"
+                  />
                 </div>
               </div>
             </div>

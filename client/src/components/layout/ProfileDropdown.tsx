@@ -18,8 +18,6 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
   const dropdownRef = useRef<HTMLDivElement>(null);
   const logoutMutation = useLogout();
 
-  console.log("avatar: ", avatarUrl)
-
   // Close dropdown when clicking outside
   useEffect(() => {
     if (!isOpen) return;

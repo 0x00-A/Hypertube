@@ -200,15 +200,19 @@ export default function Header() {
                     isFilterDropdownOpen ? "text-primary" : "text-text-muted hover:text-primary"
                   )}
                   aria-label="Filter"
+                  aria-expanded={isFilterDropdownOpen}
+                  aria-controls="header-filter-dropdown-desktop"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                 </button>
                 {/* Filter Dropdown */}
-                <FilterDropdown
-                  isOpen={isFilterDropdownOpen}
-                  onClose={() => setIsFilterDropdownOpen(false)}
-                  triggerRef={filterTriggerRef}
-                />
+                <div id="header-filter-dropdown-desktop">
+                  <FilterDropdown
+                    isOpen={isFilterDropdownOpen}
+                    onClose={() => setIsFilterDropdownOpen(false)}
+                    triggerRef={filterTriggerRef}
+                  />
+                </div>
               </div>
             </div>
           </form>
@@ -338,15 +342,19 @@ export default function Header() {
                       isFilterDropdownOpen ? "text-primary" : "text-text-muted hover:text-primary"
                     )}
                     aria-label="Filter"
+                    aria-expanded={isFilterDropdownOpen}
+                    aria-controls="header-filter-dropdown-mobile"
                   >
                     <SlidersHorizontal className="w-4 h-4" />
                   </button>
                   {/* Mobile Filter Dropdown */}
-                  <FilterDropdown
-                    isOpen={isFilterDropdownOpen}
-                    onClose={() => setIsFilterDropdownOpen(false)}
-                    triggerRef={mobileFilterTriggerRef}
-                  />
+                  <div id="header-filter-dropdown-mobile">
+                    <FilterDropdown
+                      isOpen={isFilterDropdownOpen}
+                      onClose={() => setIsFilterDropdownOpen(false)}
+                      triggerRef={mobileFilterTriggerRef}
+                    />
+                  </div>
                 </div>
               </div>
             </form>
