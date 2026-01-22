@@ -1,5 +1,5 @@
 import { Globe, Mail, User, Lock } from 'lucide-react';
-import type { SelectOption } from '../../components/ui/Select';
+import type { SelectOption } from '../components/ui/Select';
 
 export const LANGUAGES: SelectOption[] = [
   { value: 'en', label: 'English' },
