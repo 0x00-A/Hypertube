@@ -1125,6 +1125,97 @@ describe('User Profile Integration Tests', () => {
       expect([200, 400]).toContain(res.status);
     });
 
+    it('should successfully update profile with valid language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: 'en' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Profile updated successfully',
+      });
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.language).toBe('en');
+    });
+
+    it('should successfully update profile with different valid language codes', async () => {
+      const validLanguages = ['fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'zh'];
+
+      for (const lang of validLanguages) {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .send({ language: lang });
+
+        expect(res.status).toBe(200);
+        const updatedUser = await UserModel.findOne({ username: testUser.username });
+        expect(updatedUser?.language).toBe(lang);
+      }
+    });
+
+    it('should reject invalid language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: 'invalid' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+    });
+
+    it('should reject empty string language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: '' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+    });
+
+    it('should reject numeric language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: '123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+    });
+
+    it('should reject uppercase language code', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: 'EN' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.message).toContain('Language must be a valid ISO 639-1 code');
+    });
+
+    it('should allow null language value', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ language: null });
+
+      expect(res.status).toBe(200);
+    });
+
     it('should handle undefined values in optional fields', async () => {
       const res = await request(app)
         .post('/api/v1/users/update-profile')
