@@ -787,6 +787,173 @@ paths:
                     type: string
                     example: User not found
 
+  /api/v1/users/update-profile:
+    post:
+      summary: Update authenticated user's profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      description: |
+        Updates the authenticated user's profile information. All fields are optional - only provided fields will be updated.
+        Requires valid JWT token in cookie. Users can update their username, email, bio, and avatar URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: New email address
+                  example: newemail@example.com
+                username:
+                  type: string
+                  minLength: 3
+                  description: New username (minimum 3 characters)
+                  example: newusername
+                bio:
+                  type: string
+                  maxLength: 500
+                  description: User biography or description (max 500 characters)
+                  example: Software engineer passionate about movies
+                avatarUrl:
+                  type: string
+                  format: uri
+                  description: URL to user's avatar image (must be valid http/https URL)
+                  example: https://example.com/avatar.jpg
+            examples:
+              updateAll:
+                summary: Update all fields
+                value:
+                  email: newemail@example.com
+                  username: newusername
+                  bio: Movie enthusiast and developer
+                  avatarUrl: https://cdn.example.com/avatar.jpg
+              updateUsername:
+                summary: Update username only
+                value:
+                  username: mynewusername
+              updateBio:
+                summary: Update bio only
+                value:
+                  bio: I love watching classic movies
+              emptyUpdate:
+                summary: Empty update (no changes)
+                value: {}
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Profile updated successfully
+        '400':
+          description: Validation error - invalid input data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Validation Error
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                          example: body.email
+                        message:
+                          type: string
+                          example: Invalid email address
+              examples:
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    status: fail
+                    message: Validation Error
+                    validationErrors:
+                      - path: body.email
+                        message: Invalid email address
+                shortUsername:
+                  summary: Username too short
+                  value:
+                    status: fail
+                    message: Validation Error
+                    validationErrors:
+                      - path: body.username
+                        message: Username must be at least 3 characters long
+                longBio:
+                  summary: Bio exceeds maximum length
+                  value:
+                    status: fail
+                    message: Validation Error
+                    validationErrors:
+                      - path: body.bio
+                        message: Bio cannot exceed 500 characters
+                invalidUrl:
+                  summary: Invalid avatar URL
+                  value:
+                    status: fail
+                    message: Validation Error
+                    validationErrors:
+                      - path: body.avatarUrl
+                        message: Invalid URL format
+        '401':
+          description: Not authenticated or invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized, No access token provided
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+        '409':
+          description: Conflict - username or email already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Username or email already exists
+
   /api/v1/movies:
     get:
       summary: List movies with pagination and filters

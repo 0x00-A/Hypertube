@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import { NotFoundError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
+import { IUserProfileUpdate } from '../interfaces/user.interface';
 
 
 export class UserController {
@@ -51,6 +52,19 @@ export class UserController {
         user,
       },
     });
+  });
+
+  updateProfile = asyncHandler(async (req: Request, res: Response) => {
+    const newData = req.validated?.body as IUserProfileUpdate;
+    if (req.user == null || req.user.username == null) {
+      throw new NotFoundError('User not found');
+    }
+    await this._service.updateProfile(req.user.username, newData);
+    res.json({
+      status: 'success',
+      message: 'Profile updated successfully',
+    });
+
   });
 
 }
