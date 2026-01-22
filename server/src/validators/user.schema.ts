@@ -37,3 +37,12 @@ export const GetUserSchema = z.object({
       .min(3, 'Identifier must be at least 3 characters long')
   }),
 });
+
+export const UpdateProfileSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address').optional(),
+    username: z.string().min(3, 'Username must be at least 3 characters long').optional(),
+    bio: z.string().max(500, 'Bio cannot exceed 500 characters').optional(),
+    avatarUrl: z.string().url('Invalid URL format').optional(),
+  }),
+});

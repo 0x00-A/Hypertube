@@ -18,3 +18,10 @@ export interface IUser {
 
   language?: string;
 }
+
+export interface IUserProfileUpdate {
+  email?: string;
+  username?: string;
+  bio?: string;
+  avatarUrl?: string;
+}

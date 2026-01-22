@@ -223,18 +223,33 @@ http://localhost:3001/api-docs
 
 ### User Profile Endpoints
 
-**GET** `/v1/profile/me`
+**GET** `/v1/users/`
+- List all users with pagination
+- Query parameters: page (1-10000), limit (1-100)
+- No authentication required
+- Email, password, and OAuth fields excluded
+
+**GET** `/v1/users/me`
 - Get authenticated user's profile (requires JWT token)
 - Returns user information including email
 - Returns 401 if not authenticated
 
-**GET** `/v1/profile/:username`
-- Get public user profile by username
+**GET** `/v1/users/:identifier`
+- Get public user profile by username or MongoDB ID
 - No authentication required
 - Email field excluded unless viewing own profile
 - Password and OAuth fields never exposed
 - Returns 404 if user not found
 - Returns 400 for invalid username format
+
+**POST** `/v1/users/update-profile`
+- Update authenticated user's profile (requires JWT token)
+- Optional fields: email, username, bio (max 500 chars), avatarUrl
+- All fields are optional - only provided fields will be updated
+- Validates email format, username length (min 3), and URL format
+- Returns 400 for validation errors
+- Returns 409 for duplicate username or email
+- Returns 401 if not authenticated
 
 ## 👥 Authors
 

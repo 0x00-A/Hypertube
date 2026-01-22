@@ -1,5 +1,5 @@
 import { UserModel } from '../models/User';
-import { IUser, IOAuth } from '../interfaces/user.interface';
+import { IUser, IOAuth, IUserProfileUpdate } from '../interfaces/user.interface';
 import { ISignupDTO } from '../interfaces/auth.interface';
 import { IUserDocument } from '../models/user.model.types';
 
@@ -161,6 +161,15 @@ export class UserRepository {
       { username: 1, _id: 0 }
     ).exec();
     return docs.map(doc => doc.username);
+  }
+
+  async updateByUsername(username: string, updateData: IUserProfileUpdate): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOneAndUpdate(
+      { username },
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).exec();
+    return this.toIUser(doc);
   }
 
   async update(userId: string, updateData: Partial<IUser>): Promise<Partial<IUser> | null> {

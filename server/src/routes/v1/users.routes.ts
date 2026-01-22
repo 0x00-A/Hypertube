@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../../controllers/user.controller';
 import { validate } from '../../middleware/validate';
-import { GetUserSchema, ListUsersSchema } from '../../validators/user.schema';
+import { GetUserSchema, ListUsersSchema, UpdateProfileSchema } from '../../validators/user.schema';
 import { auth } from '../../middleware/auth';
 
 export const createUserRoutes = (controller: UserController) => {
@@ -10,6 +10,6 @@ export const createUserRoutes = (controller: UserController) => {
     router.get('/', validate(ListUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
     router.get('/me', auth, (req, res, next) => controller.getMe(req, res, next));
     router.get('/:identifier', validate(GetUserSchema), (req, res, next) => controller.getUser(req, res, next));
-
+    router.post('/update-profile', auth, validate(UpdateProfileSchema), (req, res, next) => controller.updateProfile(req, res, next));
     return router;
 }
