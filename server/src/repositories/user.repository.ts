@@ -27,9 +27,12 @@ export class UserRepository {
       createdAt: doc.createdAt,
       password: doc.password,
       isActive: doc.isActive,
+      language: doc.language,
     };
 
-    const oauthValue = doc.get('oauth') as { provider: 'google' | 'fortytwo'; id: string } | undefined;
+    const oauthValue = doc.get('oauth') as
+      | { provider: 'google' | 'fortytwo'; id: string }
+      | undefined;
     if (oauthValue !== undefined) {
       user.oauth = oauthValue;
     }
@@ -73,7 +76,7 @@ export class UserRepository {
   async findByOauth(oauth: IOAuth): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findOne({
       'oauth.provider': oauth.provider,
-      'oauth.id': oauth.id
+      'oauth.id': oauth.id,
     }).exec();
     return this.toIUser(doc);
   }
@@ -82,7 +85,7 @@ export class UserRepository {
     const doc = await UserModel.findOne({ username }).select('+password').exec();
     return this.toIUser(doc);
   }
-  async findByEmailLogin(email: string): Promise<Partial<IUser>  | null> {
+  async findByEmailLogin(email: string): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findOne({ email }).select('+password +oauth').exec();
     return this.toIUser(doc);
   }
@@ -95,7 +98,10 @@ export class UserRepository {
     return this.toIUser(doc);
   }
 
-  async findAll(filter: Partial<IUser>, options: { skip?: number; limit?: number } = {}): Promise<Partial<IUser>[]> {
+  async findAll(
+    filter: Partial<IUser>,
+    options: { skip?: number; limit?: number } = {},
+  ): Promise<Partial<IUser>[]> {
     const query = UserModel.find(filter).select('-email');
     if (options.skip !== undefined) {
       query.skip(options.skip);
@@ -105,7 +111,7 @@ export class UserRepository {
     }
     const docs = await query.exec();
     return docs
-      .map(doc => this.toIUser(doc))
+      .map((doc) => this.toIUser(doc))
       .filter((user): user is Partial<IUser> => user !== null);
   }
 
@@ -129,10 +135,10 @@ export class UserRepository {
           'oauth.provider': oauth.provider,
           'oauth.id': oauth.id,
           'oauth.isPasswordSet': hasPassword,
-          'isActive': true
-        }
+          isActive: true,
+        },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).exec();
 
     if (!doc) return null;
@@ -158,16 +164,19 @@ export class UserRepository {
   async findUsernamesByPattern(pattern: string): Promise<string[]> {
     const docs = await UserModel.find(
       { username: { $regex: `^${pattern}`, $options: 'i' } },
-      { username: 1, _id: 0 }
+      { username: 1, _id: 0 },
     ).exec();
-    return docs.map(doc => doc.username);
+    return docs.map((doc) => doc.username);
   }
 
-  async updateByUsername(username: string, updateData: IUserProfileUpdate): Promise<Partial<IUser> | null> {
+  async updateByUsername(
+    username: string,
+    updateData: IUserProfileUpdate,
+  ): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findOneAndUpdate(
       { username },
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).exec();
     return this.toIUser(doc);
   }
@@ -176,7 +185,7 @@ export class UserRepository {
     const doc = await UserModel.findByIdAndUpdate(
       userId,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).exec();
     return this.toIUser(doc);
   }

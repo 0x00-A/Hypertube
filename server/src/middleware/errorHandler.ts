@@ -95,7 +95,24 @@ export const errorHandler = (
     });
   }
 
-  // 5. Unknown/programmer errors
+  // 5. PayloadTooLargeError (body-parser)
+  if (err.name === 'PayloadTooLargeError') {
+    statusCode = 413;
+    message = 'Request payload too large. Please upload a smaller file (max 10MB).';
+
+    logger.warn(
+      { path: req.originalUrl, limit: (err as Error & { limit?: number }).limit },
+      'Payload too large',
+    );
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      path: req.originalUrl,
+    });
+  }
+
+  // 6. Unknown/programmer errors
   logger.error({ err, path: req.originalUrl }, 'Unhandled/Unexpected error');
 
   // Never leak internal error details in production

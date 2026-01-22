@@ -3,17 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authService } from '../services/auth.service';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { setUser, clearUser, updateUser, initializeAuth } from '../redux/slices/authSlice';
+import { setUser, clearUser, initializeAuth } from '../redux/slices/authSlice';
 import { queryKeys } from '../config/queryClient';
 import type {
   LoginCredentials,
   RegisterData,
   ForgotPasswordData,
   ResetPasswordData,
-  UpdateProfileData,
   ChangePasswordData,
   AuthError,
-  User,
 } from '../types/auth.types';
 import { useEffect } from 'react';
 
@@ -193,51 +191,6 @@ export const useResetPassword = () => {
     },
     onError: (error: AuthError) => {
       toast.error(error.message || 'Password reset failed. Please try again.');
-    },
-  });
-};
-
-// ============================================================================
-// Update Profile Mutation Hook
-// ============================================================================
-
-export const useUpdateProfile = () => {
-  const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
-    onMutate: async (data) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.auth.currentUser() });
-
-      // Snapshot previous value
-      const previousUser = queryClient.getQueryData<User>(queryKeys.auth.currentUser());
-
-      // Optimistically update Redux and cache
-      if (previousUser) {
-        dispatch(updateUser(data));
-      }
-
-      return { previousUser };
-    },
-    onSuccess: (updatedUser) => {
-      // Update Redux state with server response
-      dispatch(setUser(updatedUser));
-
-      // Update cache
-      queryClient.setQueryData(queryKeys.auth.currentUser(), updatedUser);
-
-      toast.success('Profile updated successfully!');
-    },
-    onError: (error: AuthError, _variables, context) => {
-      // Rollback on error
-      if (context?.previousUser) {
-        queryClient.setQueryData(queryKeys.auth.currentUser(), context.previousUser);
-        dispatch(setUser(context.previousUser));
-      }
-
-      toast.error(error.message || 'Failed to update profile. Please try again.');
     },
   });
 };

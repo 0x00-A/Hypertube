@@ -1,22 +1,30 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { authService } from '../services/auth.service';
-import type { UpdateProfileData, User } from '../types/auth.types';
-import { useDispatch } from 'react-redux';
+import { queryKeys } from '../config/queryClient';
+import { useAppDispatch } from '../redux/hooks';
 import { setUser } from '../redux/slices/authSlice';
+import type { UpdateProfileData } from '../types/auth.types';
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   return useMutation({
     mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
-    onSuccess: (updatedUser: User) => {
-      // Update the user in Redux store
+    onSuccess: async () => {
+      // Invalidate and refetch user data
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.currentUser() });
+      
+      // Fetch fresh user data and update Redux store
+      const updatedUser = await authService.getCurrentUser();
       dispatch(setUser(updatedUser));
       
-      // Invalidate and refetch user-related queries
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Profile updated successfully!');
+    },
+    onError: (error: unknown) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      toast.error(errorMessage);
     },
   });
 };

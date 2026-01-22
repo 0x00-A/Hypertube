@@ -2,105 +2,12 @@ import { useState, useMemo, useRef } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
-import { 
-  Globe, 
-  Mail, 
-  User as UserIcon, 
-  Camera, 
-  Save, 
-  Loader2,
-  Lock,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { Select, type SelectOption } from '../../components/ui/Select';
+import { Camera, Loader2, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Select } from '../../components/ui/Select';
 import { clsx } from 'clsx';
-
-// ============================================================================
-// SaveButton Component - Reusable save button with loading state
-// ============================================================================
-
-interface SaveButtonProps {
-  onClick: () => void;
-  disabled: boolean;
-  isLoading: boolean;
-  label?: string;
-  loadingLabel?: string;
-  icon?: React.ReactNode;
-}
-
-const SaveButton = ({ 
-  onClick, 
-  disabled, 
-  isLoading, 
-  label = 'Save Changes',
-  loadingLabel = 'Saving...',
-  icon = <Save className="w-5 h-5" />
-}: SaveButtonProps) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={clsx(
-      'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-      !disabled && !isLoading
-        ? 'bg-primary text-black hover:bg-primary-light'
-        : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-    )}
-  >
-    {isLoading ? (
-      <>
-        <Loader2 className="w-5 h-5 animate-spin" />
-        {loadingLabel}
-      </>
-    ) : (
-      <>
-        {icon}
-        {label}
-      </>
-    )}
-  </button>
-);
-
-// ============================================================================
-// Constants & Types
-// ============================================================================
-const LANGUAGES: SelectOption[] = [
-  { value: 'en', label: 'English' },
-  { value: 'fr', label: 'Français' },
-  { value: 'es', label: 'Español' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'pt', label: 'Português' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'ja', label: '日本語' },
-  { value: 'zh', label: '中文' },
-  { value: 'ar', label: 'العربية' },
-];
-
-// Settings tabs
-const SETTINGS_TABS = [
-  { id: 'profile', label: 'My Profile', icon: UserIcon },
-  { id: 'account', label: 'Account', icon: Mail },
-  { id: 'password', label: 'Password', icon: Lock },
-  { id: 'preferences', label: 'Preferences', icon: Globe },
-] as const;
-
-type TabId = typeof SETTINGS_TABS[number]['id'];
-
-interface SettingsFormData {
-  language: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl: string;
-}
-
-interface PasswordData {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+import { SaveButton } from '../../components/ui/SaveButton';
+import { LANGUAGES, SETTINGS_TABS } from '../../constants/settings';
+import type { TabId, SettingsFormData, PasswordData } from '../../types/settings.types';
 
 
 export default function Settings() {
@@ -210,6 +117,55 @@ export default function Settings() {
     }
   };
 
+  // Compress image to reduce payload size
+  const compressImage = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions (max 800x800)
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800;
+          
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with quality reduction
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/jpeg',
+            0.85 // 85% quality
+          );
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
   // Image upload function
   const uploadImageToServer = async (file: File): Promise<string> => {
     // Development-only mock implementation
@@ -217,6 +173,9 @@ export default function Settings() {
     if (import.meta.env.PROD) {
       throw new Error('Image upload is not yet implemented. Please contact support.');
     }
+    
+    // Compress image before converting to base64
+    const compressedBlob = await compressImage(file);
     
     // Simulate upload delay (development only)
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -227,7 +186,7 @@ export default function Settings() {
       reader.onloadend = () => {
         resolve(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedBlob);
     });
   };
 
@@ -259,7 +218,7 @@ export default function Settings() {
         username: formData.username,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        avatar: formData.avatarUrl,
+        avatarUrl: formData.avatarUrl,
         language: formData.language,
       },
       {
