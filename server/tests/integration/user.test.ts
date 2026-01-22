@@ -652,7 +652,8 @@ describe('User Profile Integration Tests', () => {
       const updateData = {
         username: 'updateduser',
         email: 'updated@example.com',
-        bio: 'This is my updated bio',
+        firstName: 'Updated',
+        lastName: 'Name',
         avatarUrl: 'https://example.com/avatar.jpg',
       };
 
@@ -703,11 +704,20 @@ describe('User Profile Integration Tests', () => {
       expect(updatedUser?.username).toBe(testUser.username); // Original username unchanged
     });
 
-    it('should update only bio', async () => {
+    it('should update only firstName', async () => {
       const res = await request(app)
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: 'My new bio' });
+        .send({ firstName: 'NewFirstName' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should update only lastName', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ lastName: 'NewLastName' });
 
       expect(res.status).toBe(200);
     });
@@ -780,34 +790,17 @@ describe('User Profile Integration Tests', () => {
       );
     });
 
-    it('should return 400 for bio exceeding 500 characters', async () => {
-      const longBio = 'a'.repeat(501);
+    it('should update firstName and lastName together', async () => {
       const res = await request(app)
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: longBio });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('status', 'fail');
-      expect(res.body).toHaveProperty('validationErrors');
-      expect(res.body.validationErrors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            path: 'body.bio',
-            message: 'Bio cannot exceed 500 characters',
-          }),
-        ])
-      );
-    });
-
-    it('should accept bio with exactly 500 characters', async () => {
-      const maxBio = 'a'.repeat(500);
-      const res = await request(app)
-        .post('/api/v1/users/update-profile')
-        .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: maxBio });
+        .send({ firstName: 'John', lastName: 'Doe' });
 
       expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.firstName).toBe('John');
+      expect(updatedUser?.lastName).toBe('Doe');
     });
 
     it('should return 400 for invalid avatarUrl format', async () => {
@@ -854,14 +847,13 @@ describe('User Profile Integration Tests', () => {
         .send({
           username: 'ab',
           email: 'invalid',
-          bio: 'a'.repeat(501),
           avatarUrl: 'not-a-url',
         });
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('status', 'fail');
       expect(res.body).toHaveProperty('validationErrors');
-      expect(res.body.validationErrors.length).toBeGreaterThanOrEqual(4);
+      expect(res.body.validationErrors.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should allow empty body (no updates)', async () => {
@@ -939,11 +931,11 @@ describe('User Profile Integration Tests', () => {
         request(app)
           .post('/api/v1/users/update-profile')
           .set('Cookie', [`accessToken=${authToken}`])
-          .send({ bio: 'First update' }),
+          .send({ firstName: 'First' }),
         request(app)
           .post('/api/v1/users/update-profile')
           .set('Cookie', [`accessToken=${authToken}`])
-          .send({ bio: 'Second update' }),
+          .send({ firstName: 'Second' }),
       ];
 
       const responses = await Promise.all(requests);
@@ -956,19 +948,20 @@ describe('User Profile Integration Tests', () => {
 
     it('should preserve fields not included in update', async () => {
       const originalUser = await UserModel.findOne({ username: testUser.username });
+      const originalEmail = originalUser?.email;
       const originalFirstName = originalUser?.firstName;
-      const originalLastName = originalUser?.lastName;
 
       const res = await request(app)
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: 'New bio only' });
+        .send({ lastName: 'NewLastNameOnly' });
 
       expect(res.status).toBe(200);
 
       const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.email).toBe(originalEmail);
       expect(updatedUser?.firstName).toBe(originalFirstName);
-      expect(updatedUser?.lastName).toBe(originalLastName);
+      expect(updatedUser?.lastName).toBe('NewLastNameOnly');
     });
 
     it('should update successfully with username containing valid characters', async () => {
@@ -987,7 +980,7 @@ describe('User Profile Integration Tests', () => {
       const res = await request(app)
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: 'Test bio' });
+        .send({ firstName: 'TestName' });
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status', 'success');
@@ -1023,7 +1016,7 @@ describe('User Profile Integration Tests', () => {
       const res = await request(app)
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ bio: 'Test' });
+        .send({ firstName: 'Test' });
 
       expect(res.status).toBe(200);
       expect(res.body).not.toHaveProperty('password');
@@ -1049,7 +1042,8 @@ describe('User Profile Integration Tests', () => {
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
-          bio: null,
+          firstName: null,
+          lastName: null,
           avatarUrl: null,
         });
 
@@ -1062,7 +1056,8 @@ describe('User Profile Integration Tests', () => {
         .post('/api/v1/users/update-profile')
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
-          bio: undefined,
+          firstName: undefined,
+          lastName: undefined,
           avatarUrl: undefined,
         });
 

@@ -244,7 +244,7 @@ http://localhost:3001/api-docs
 
 **POST** `/v1/users/update-profile`
 - Update authenticated user's profile (requires JWT token)
-- Optional fields: email, username, bio (max 500 chars), avatarUrl
+- Optional fields: email, username, firstName, lastName, language, avatarUrl
 - All fields are optional - only provided fields will be updated
 - Validates email format, username length (min 3), and URL format
 - Returns 400 for validation errors

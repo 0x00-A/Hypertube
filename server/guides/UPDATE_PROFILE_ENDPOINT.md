@@ -23,7 +23,9 @@ This guide documents the `/api/v1/users/update-profile` endpoint implementation,
   body: {
     email?: string,      // Optional, must be valid email
     username?: string,   // Optional, min 3 characters
-    bio?: string,        // Optional, max 500 characters
+    firstName?: string,  // Optional
+    lastName?: string,   // Optional
+    language?: string,   // Optional
     avatarUrl?: string   // Optional, must be valid URL
   }
 }
@@ -35,7 +37,9 @@ This guide documents the `/api/v1/users/update-profile` endpoint implementation,
 |-------|------|----------|-------------|
 | `email` | string | No | Must be valid email format |
 | `username` | string | No | Min 3 characters |
-| `bio` | string | No | Max 500 characters |
+| `firstName` | string | No | None |
+| `lastName` | string | No | None |
+| `language` | string | No | None |
 | `avatarUrl` | string | No | Must be valid URL (http/https) |
 
 **Notes:**
@@ -129,26 +133,25 @@ async updateByUsername(username: string, updateData: IUserProfileUpdate): Promis
 
 ### Test Categories
 
-#### 1. Successful Updates (8 tests)
+#### 1. Successful Updates (9 tests)
 - ✅ Update all fields together
 - ✅ Update username only
 - ✅ Update email only
-- ✅ Update bio only
+- ✅ Update firstName only
+- ✅ Update lastName only
+- ✅ Update firstName and lastName together
 - ✅ Update avatarUrl only
 - ✅ Empty body (no-op)
 - ✅ Username with valid special characters
-- ✅ Preserve unchanged fields
 
 #### 2. Authentication & Authorization (3 tests)
 - ✅ Return 401 when not authenticated
 - ✅ Return 401 with invalid token
 - ✅ Return 401 with expired token
 
-#### 3. Input Validation (11 tests)
+#### 3. Input Validation (9 tests)
 - ✅ Invalid email format
 - ✅ Username shorter than 3 characters
-- ✅ Bio exceeding 500 characters
-- ✅ Bio with exactly 500 characters (valid)
 - ✅ Invalid avatarUrl format
 - ✅ Valid https URL
 - ✅ Valid http URL
@@ -157,8 +160,9 @@ async updateByUsername(username: string, updateData: IUserProfileUpdate): Promis
 - ✅ Duplicate username conflict
 - ✅ Duplicate email conflict
 
-#### 4. Edge Cases (7 tests)
+#### 4. Edge Cases (8 tests)
 - ✅ Concurrent update requests
+- ✅ Preserve unchanged fields
 - ✅ Very long valid email
 - ✅ Additional unknown fields
 - ✅ Null values in optional fields
@@ -201,7 +205,6 @@ async updateByUsername(username: string, updateData: IUserProfileUpdate): Promis
 | Invalid token | 401 | UnauthorizedError | Token validation error |
 | Invalid email | 400 | ValidationError | "Invalid email address" |
 | Short username | 400 | ValidationError | "Username must be at least 3 characters long" |
-| Long bio | 400 | ValidationError | "Bio cannot exceed 500 characters" |
 | Invalid URL | 400 | ValidationError | "Invalid URL format" |
 | Duplicate username | 400/409 | Database Error | Constraint violation |
 | Duplicate email | 400/409 | Database Error | Constraint violation |
@@ -254,17 +257,19 @@ curl -X POST https://api.hypertube.com/api/v1/users/update-profile \
   -H "Content-Type: application/json" \
   -d '{
     "email": "newemail@example.com",
-    "bio": "Software engineer passionate about movies",
+    "firstName": "John",
+    "lastName": "Doe",
+    "language": "en",
     "avatarUrl": "https://cdn.example.com/avatar.jpg"
   }'
 ```
 
-### Update Bio Only
+### Update Name Only
 ```bash
 curl -X POST https://api.hypertube.com/api/v1/users/update-profile \
   -H "Cookie: accessToken=<token>" \
   -H "Content-Type: application/json" \
-  -d '{"bio": "Movie enthusiast and torrent streamer"}'
+  -d '{"firstName": "Jane", "lastName": "Smith"}'
 ```
 
 ## Running Tests
