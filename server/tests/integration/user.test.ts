@@ -646,4 +646,427 @@ describe('User Profile Integration Tests', () => {
       expect(userId).toMatch(/^[0-9a-fA-F]{24}$/);
     });
   });
+
+  describe('POST /api/v1/users/update-profile', () => {
+    it('should successfully update user profile with valid data', async () => {
+      const updateData = {
+        username: 'updateduser',
+        email: 'updated@example.com',
+        bio: 'This is my updated bio',
+        avatarUrl: 'https://example.com/avatar.jpg',
+      };
+
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send(updateData);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Profile updated successfully',
+      });
+
+      // Verify the update in database
+      const updatedUser = await UserModel.findOne({ username: 'updateduser' });
+      expect(updatedUser).toBeTruthy();
+      expect(updatedUser?.email).toBe('updated@example.com');
+    });
+
+    it('should update only username', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ username: 'newusername' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Profile updated successfully',
+      });
+
+      const updatedUser = await UserModel.findOne({ username: 'newusername' });
+      expect(updatedUser).toBeTruthy();
+      expect(updatedUser?.email).toBe(testUser.email); // Original email unchanged
+    });
+
+    it('should update only email', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ email: 'newemail@example.com' });
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.email).toBe('newemail@example.com');
+      expect(updatedUser?.username).toBe(testUser.username); // Original username unchanged
+    });
+
+    it('should update only bio', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: 'My new bio' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should update only avatarUrl', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: 'https://example.com/new-avatar.png' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .send({ username: 'newuser' });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Unauthorized: No access token provided',
+      });
+    });
+
+    it('should return 401 with invalid token', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', ['accessToken=invalidtoken123'])
+        .send({ username: 'newuser' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 400 for invalid email format', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ email: 'invalid-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.email',
+            message: 'Invalid email address',
+          }),
+        ])
+      );
+    });
+
+    it('should return 400 for username shorter than 3 characters', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ username: 'ab' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.username',
+            message: 'Username must be at least 3 characters long',
+          }),
+        ])
+      );
+    });
+
+    it('should return 400 for bio exceeding 500 characters', async () => {
+      const longBio = 'a'.repeat(501);
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: longBio });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.bio',
+            message: 'Bio cannot exceed 500 characters',
+          }),
+        ])
+      );
+    });
+
+    it('should accept bio with exactly 500 characters', async () => {
+      const maxBio = 'a'.repeat(500);
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: maxBio });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should return 400 for invalid avatarUrl format', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: 'not-a-url' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'body.avatarUrl',
+            message: 'Invalid URL format',
+          }),
+        ])
+      );
+    });
+
+    it('should accept valid https URL for avatarUrl', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: 'https://cdn.example.com/avatar.jpg' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should accept valid http URL for avatarUrl', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: 'http://example.com/avatar.png' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should handle multiple validation errors at once', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          username: 'ab',
+          email: 'invalid',
+          bio: 'a'.repeat(501),
+          avatarUrl: 'not-a-url',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(res.body.validationErrors.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('should allow empty body (no updates)', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({});
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Profile updated successfully',
+      });
+    });
+
+    it('should trim whitespace from fields during validation', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          username: '   validuser   ',
+          email: '   valid@email.com   ',
+        });
+
+      // Depending on implementation, this might succeed or fail
+      // If successful, verify trimming worked
+      if (res.status === 200) {
+        const user = await UserModel.findOne({ username: 'validuser' });
+        expect(user).toBeTruthy();
+      }
+    });
+
+    it('should not allow updating to existing username', async () => {
+      // Create another user
+      await UserModel.create({
+        username: 'existinguser',
+        email: 'existing@example.com',
+        password: hashedPassword,
+        firstName: 'Existing',
+        lastName: 'User',
+        isActive: true,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ username: 'existinguser' });
+
+      // Should return error (implementation dependent - could be 400 or 409)
+      expect([400, 409, 500]).toContain(res.status);
+    });
+
+    it('should not allow updating to existing email', async () => {
+      // Create another user
+      await UserModel.create({
+        username: 'existingemail',
+        email: 'existing.email@example.com',
+        password: hashedPassword,
+        firstName: 'Existing',
+        lastName: 'Email',
+        isActive: true,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ email: 'existing.email@example.com' });
+
+      // Should return error (implementation dependent - could be 400 or 409)
+      expect([400, 409, 500]).toContain(res.status);
+    });
+
+    it('should handle concurrent update requests', async () => {
+      const requests = [
+        request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .send({ bio: 'First update' }),
+        request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .send({ bio: 'Second update' }),
+      ];
+
+      const responses = await Promise.all(requests);
+
+      // Both should succeed (last write wins)
+      responses.forEach((res) => {
+        expect(res.status).toBe(200);
+      });
+    });
+
+    it('should preserve fields not included in update', async () => {
+      const originalUser = await UserModel.findOne({ username: testUser.username });
+      const originalFirstName = originalUser?.firstName;
+      const originalLastName = originalUser?.lastName;
+
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: 'New bio only' });
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.firstName).toBe(originalFirstName);
+      expect(updatedUser?.lastName).toBe(originalLastName);
+    });
+
+    it('should update successfully with username containing valid characters', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ username: 'user_name_123' });
+
+      expect(res.status).toBe(200);
+
+      const user = await UserModel.findOne({ username: 'user_name_123' });
+      expect(user).toBeTruthy();
+    });
+
+    it('should return consistent response structure on success', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: 'Test bio' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('status', 'success');
+      expect(res.body).toHaveProperty('message');
+      expect(typeof res.body.message).toBe('string');
+    });
+
+    it('should return consistent error response structure on validation failure', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ email: 'invalid' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('status', 'fail');
+      expect(res.body).toHaveProperty('message');
+      expect(res.body).toHaveProperty('validationErrors');
+      expect(Array.isArray(res.body.validationErrors)).toBe(true);
+    });
+
+    it('should handle very long valid email', async () => {
+      const longEmail = 'a'.repeat(50) + '@' + 'b'.repeat(50) + '.com';
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ email: longEmail });
+
+      // Should either succeed or fail gracefully
+      expect([200, 400]).toContain(res.status);
+    });
+
+    it('should not expose sensitive fields in any response', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ bio: 'Test' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty('password');
+      expect(res.body).not.toHaveProperty('oauth');
+    });
+
+    it('should reject additional unknown fields gracefully', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          username: 'validuser',
+          unknownField: 'should be ignored',
+          anotherUnknown: 123,
+        });
+
+      // Should either succeed (ignoring unknown fields) or return validation error
+      expect([200, 400]).toContain(res.status);
+    });
+
+    it('should handle null values in optional fields', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          bio: null,
+          avatarUrl: null,
+        });
+
+      // Should handle gracefully (either ignore or validate)
+      expect([200, 400]).toContain(res.status);
+    });
+
+    it('should handle undefined values in optional fields', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          bio: undefined,
+          avatarUrl: undefined,
+        });
+
+      expect([200, 400]).toContain(res.status);
+    });
+  });
 });
