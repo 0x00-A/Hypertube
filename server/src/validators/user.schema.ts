@@ -42,7 +42,9 @@ export const UpdateProfileSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email address').optional(),
     username: z.string().min(3, 'Username must be at least 3 characters long').optional(),
-    bio: z.string().max(500, 'Bio cannot exceed 500 characters').optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     avatarUrl: z.string().url('Invalid URL format').optional(),
+    language: z.string().optional(),
   }),
 });

@@ -5,19 +5,18 @@
 ### Added
 - **User profile update endpoint** (POST /api/v1/users/update-profile)
   - Allows authenticated users to update their profile information
-  - Optional fields: email, username, bio (max 500 characters), avatarUrl
+  - Optional fields: email, username, firstName, lastName, language, avatarUrl
   - Zod schema validation for all input fields
   - Email format validation
   - Username minimum length validation (3 characters)
-  - Bio maximum length validation (500 characters)
   - Avatar URL format validation (http/https)
   - JWT authentication required
   - Repository pattern with updateByUsername method
   - Comprehensive test coverage: 33 integration tests
-    - 8 successful update tests (single field, multiple fields, all fields)
+    - 9 successful update tests (single field, multiple fields, all fields, firstName+lastName together)
     - 3 authentication/authorization tests
-    - 11 input validation tests
-    - 7 edge case tests (concurrent requests, null values, unknown fields)
+    - 9 input validation tests
+    - 8 edge case tests (concurrent requests, null values, unknown fields)
     - 4 response format validation tests
   - Swagger/OpenAPI documentation with examples
   - Implementation guide in `server/guides/UPDATE_PROFILE_ENDPOINT.md`
