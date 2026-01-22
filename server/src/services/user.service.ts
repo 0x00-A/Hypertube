@@ -50,6 +50,4 @@ export class UserService {
   async updateProfile(username: string, newData: IUserProfileUpdate): Promise<void> {
     await this._repo.updateByUsername(username, newData);
   }
-
-
 }

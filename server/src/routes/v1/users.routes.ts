@@ -10,7 +10,6 @@ export const createUserRoutes = (controller: UserController) => {
     router.get('/', validate(ListUsersSchema), (req, res, next) => controller.listUsers(req, res, next));
     router.get('/me', auth, (req, res, next) => controller.getMe(req, res, next));
     router.get('/:identifier', validate(GetUserSchema), (req, res, next) => controller.getUser(req, res, next));
-    router.post('/update-profile', validate(UpdateProfileSchema), auth, (req, res, next) => controller.updateProfile(req, res, next));
-
+    router.post('/update-profile', auth, validate(UpdateProfileSchema), (req, res, next) => controller.updateProfile(req, res, next));
     return router;
 }

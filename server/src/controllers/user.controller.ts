@@ -64,9 +64,7 @@ export class UserController {
       status: 'success',
       message: 'Profile updated successfully',
     });
-
   });
-
 }
 // export const listUsers = asyncHandler(async (req: Request, res: Response) => {
 //   const page = parseInt((req.query.page as string) || '1', 10);
