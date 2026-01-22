@@ -1,6 +1,6 @@
 import { useAuthState } from '../../hooks/useAuth';
 import { useWatchlist } from '../../hooks/useWatchlist';
-import { User, Film, Clock, Star, Settings, Calendar } from 'lucide-react';
+import { User, Film, Clock, Star, Settings, Calendar, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MovieCarousel } from '../../components/movie/MovieCarousel';
 import { useMemo } from 'react';
@@ -33,6 +33,23 @@ export default function Profile() {
     if (!user?.createdAt) return '';
     const date = new Date(user.createdAt);
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, [user]);
+
+  // Get language display name
+  const languageDisplay = useMemo(() => {
+    const languages: Record<string, string> = {
+      en: 'English',
+      fr: 'Français',
+      es: 'Español',
+      de: 'Deutsch',
+      it: 'Italiano',
+      pt: 'Português',
+      ru: 'Русский',
+      ja: '日本語',
+      zh: '中文',
+      ar: 'العربية',
+    };
+    return languages[user?.language || 'en'] || user?.language || 'English';
   }, [user]);
 
   // Get initials for avatar fallback
@@ -99,6 +116,12 @@ export default function Profile() {
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-primary" />
                     <span>{user.email}</span>
+                  </div>
+                )}
+                {user.language && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    <span>{languageDisplay}</span>
                   </div>
                 )}
               </div>

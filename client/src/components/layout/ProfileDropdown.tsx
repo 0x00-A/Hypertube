@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { User, Settings } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Avatar } from '../ui';
@@ -110,6 +110,14 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
         >
           <User className="w-5 h-5" />
           <span>View profile</span>
+        </Link>
+        <Link
+          to="/settings"
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-white hover:bg-bg-tertiary transition-colors"
+        >
+          <Settings className="w-5 h-5" />
+          <span>Settings</span>
         </Link>
       </div>
 

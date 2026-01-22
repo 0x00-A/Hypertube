@@ -17,6 +17,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { useSearchMovies } from "../../hooks/useSearchMovies";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchDropdown from "./SearchDropdown";
+import FilterDropdown from "./FilterDropdown";
 import { Avatar } from "../ui";
 
 const navLinks = [
@@ -34,12 +35,15 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const { isAuthenticated, user } = useAuthState();
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
   const profileTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileProfileTriggerRef = useRef<HTMLButtonElement>(null);
+  const filterTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileFilterTriggerRef = useRef<HTMLButtonElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +94,7 @@ export default function Header() {
   }, []);
 
   const handleFilterClick = () => {
-    // TODO: Implement filter functionality
+    setIsFilterDropdownOpen(!isFilterDropdownOpen);
   };
 
   const toggleMobileMenu = () => {
@@ -186,14 +190,26 @@ export default function Header() {
                 className="w-full pl-10 pr-10 py-2 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-              <button
-                type="button"
-                onClick={handleFilterClick}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary transition-colors"
-                aria-label="Filter"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <button
+                  ref={filterTriggerRef}
+                  type="button"
+                  onClick={handleFilterClick}
+                  className={clsx(
+                    "w-6 h-6 flex items-center justify-center transition-colors relative",
+                    isFilterDropdownOpen ? "text-primary" : "text-text-muted hover:text-primary"
+                  )}
+                  aria-label="Filter"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+                {/* Filter Dropdown */}
+                <FilterDropdown
+                  isOpen={isFilterDropdownOpen}
+                  onClose={() => setIsFilterDropdownOpen(false)}
+                  triggerRef={filterTriggerRef}
+                />
+              </div>
             </div>
           </form>
 
@@ -312,14 +328,26 @@ export default function Header() {
                   className="w-full pl-11 pr-11 py-2.5 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                <button
-                  type="button"
-                  onClick={handleFilterClick}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-text-muted hover:text-primary transition-colors"
-                  aria-label="Filter"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <button
+                    ref={mobileFilterTriggerRef}
+                    type="button"
+                    onClick={handleFilterClick}
+                    className={clsx(
+                      "w-6 h-6 flex items-center justify-center transition-colors relative",
+                      isFilterDropdownOpen ? "text-primary" : "text-text-muted hover:text-primary"
+                    )}
+                    aria-label="Filter"
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                  </button>
+                  {/* Mobile Filter Dropdown */}
+                  <FilterDropdown
+                    isOpen={isFilterDropdownOpen}
+                    onClose={() => setIsFilterDropdownOpen(false)}
+                    triggerRef={mobileFilterTriggerRef}
+                  />
+                </div>
               </div>
             </form>
 
