@@ -62,9 +62,8 @@ export const authService = {
   /**
    * Update user profile
    */
-  updateProfile: async (data: UpdateProfileData): Promise<User> => {
-    const response = await httpClient.put<{ status: string; data: { user: User } }>('/auth/profile', data);
-    return response.data.user;
+  updateProfile: async (data: UpdateProfileData): Promise<void> => {
+    await httpClient.post<{ status: string; message: string }>('/users/update-profile', data);
   },
 
   /**

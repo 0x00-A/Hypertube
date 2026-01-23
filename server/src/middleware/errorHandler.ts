@@ -8,8 +8,15 @@ interface MongoServerError extends Error {
   keyValue?: Record<string, unknown>;
 }
 
+interface PayloadTooLargeError extends Error {
+  type?: string;
+  status?: number;
+  statusCode?: number;
+  expected?: number;
+}
+
 export const errorHandler = (
-  err: Error | AppError | MongooseError.ValidationError | MongoServerError,
+  err: Error | AppError | MongooseError.ValidationError | MongoServerError | PayloadTooLargeError,
   req: Request,
   res: Response,
   _next: NextFunction,
@@ -95,7 +102,22 @@ export const errorHandler = (
     });
   }
 
-  // 5. Unknown/programmer errors
+  // 5. PayloadTooLargeError (body-parser)
+  const payloadErr = err as PayloadTooLargeError;
+  if (payloadErr.type === 'entity.too.large' || payloadErr.status === 413) {
+    statusCode = 413;
+    message = 'Request payload too large. Please upload a smaller file (max 5MB)';
+
+    logger.warn({ path: req.originalUrl, expected: payloadErr.expected }, 'Payload too large');
+
+    return res.status(statusCode).json({
+      status: 'fail',
+      message,
+      path: req.originalUrl,
+    });
+  }
+
+  // 6. Unknown/programmer errors
   logger.error({ err, path: req.originalUrl }, 'Unhandled/Unexpected error');
 
   // Never leak internal error details in production

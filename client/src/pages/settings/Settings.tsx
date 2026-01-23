@@ -2,105 +2,12 @@ import { useState, useMemo, useRef } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
-import { 
-  Globe, 
-  Mail, 
-  User as UserIcon, 
-  Camera, 
-  Save, 
-  Loader2,
-  Lock,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { Select, type SelectOption } from '../../components/ui/Select';
+import { Camera, Loader2, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Select } from '../../components/ui/Select';
 import { clsx } from 'clsx';
-
-// ============================================================================
-// SaveButton Component - Reusable save button with loading state
-// ============================================================================
-
-interface SaveButtonProps {
-  onClick: () => void;
-  disabled: boolean;
-  isLoading: boolean;
-  label?: string;
-  loadingLabel?: string;
-  icon?: React.ReactNode;
-}
-
-const SaveButton = ({ 
-  onClick, 
-  disabled, 
-  isLoading, 
-  label = 'Save Changes',
-  loadingLabel = 'Saving...',
-  icon = <Save className="w-5 h-5" />
-}: SaveButtonProps) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={clsx(
-      'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
-      !disabled && !isLoading
-        ? 'bg-primary text-black hover:bg-primary-light'
-        : 'bg-bg-tertiary text-text-disabled cursor-not-allowed border border-border'
-    )}
-  >
-    {isLoading ? (
-      <>
-        <Loader2 className="w-5 h-5 animate-spin" />
-        {loadingLabel}
-      </>
-    ) : (
-      <>
-        {icon}
-        {label}
-      </>
-    )}
-  </button>
-);
-
-// ============================================================================
-// Constants & Types
-// ============================================================================
-const LANGUAGES: SelectOption[] = [
-  { value: 'en', label: 'English' },
-  { value: 'fr', label: 'Français' },
-  { value: 'es', label: 'Español' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'pt', label: 'Português' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'ja', label: '日本語' },
-  { value: 'zh', label: '中文' },
-  { value: 'ar', label: 'العربية' },
-];
-
-// Settings tabs
-const SETTINGS_TABS = [
-  { id: 'profile', label: 'My Profile', icon: UserIcon },
-  { id: 'account', label: 'Account', icon: Mail },
-  { id: 'password', label: 'Password', icon: Lock },
-  { id: 'preferences', label: 'Preferences', icon: Globe },
-] as const;
-
-type TabId = typeof SETTINGS_TABS[number]['id'];
-
-interface SettingsFormData {
-  language: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl: string;
-}
-
-interface PasswordData {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+import { SaveButton } from '../../components/ui/SaveButton';
+import { LANGUAGES, SETTINGS_TABS } from '../../constants/settings';
+import type { TabId, SettingsFormData, PasswordData } from '../../types/settings.types';
 
 
 export default function Settings() {
@@ -259,7 +166,7 @@ export default function Settings() {
         username: formData.username,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        avatar: formData.avatarUrl,
+        avatarUrl: formData.avatarUrl,
         language: formData.language,
       },
       {

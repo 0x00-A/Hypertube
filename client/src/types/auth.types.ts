@@ -46,7 +46,7 @@ export interface UpdateProfileData {
   email?: string;
   firstName?: string;
   lastName?: string;
-  avatar?: string;
+  avatarUrl?: string;
   language?: string;
 }
 
