@@ -94,6 +94,10 @@ export class UserRepository {
     const doc = await UserModel.findOne({ username }).select('+oauth').exec();
     return this.toIUser(doc);
   }
+  async findByUsernameWithPasswordOauth(username: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOne({ username }).select('+password +oauth').exec();
+    return this.toIUser(doc);
+  }
 
   async findAll(filter: Partial<IUser>, options: { skip?: number; limit?: number } = {}): Promise<Partial<IUser>[]> {
     const query = UserModel.find(filter).select('-email');
