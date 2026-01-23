@@ -3,6 +3,19 @@
 ## [Unreleased]
 
 ### Added
+- **Change password endpoint** (POST /api/v1/users/change-password)
+  - Allows authenticated users to change their password
+  - Required fields: currentPassword, newPassword (both minimum 8 characters)
+  - Zod schema validation for input fields
+  - Verifies current password before allowing change
+  - Prevents OAuth users without password from changing password
+  - Hashes new password using PasswordService (bcrypt/argon2)
+  - JWT authentication required
+  - Comprehensive test coverage:
+    - 10 unit tests for UserService.changePassword method
+    - 13 integration tests for the API endpoint
+    - Tests cover: successful password change, incorrect current password, validation errors, OAuth users, multiple password changes, password hashing
+  - Swagger/OpenAPI documentation with detailed examples
 - **User profile update endpoint** (POST /api/v1/users/update-profile)
   - Allows authenticated users to update their profile information
   - Optional fields: email, username, firstName, lastName, language, avatarUrl
