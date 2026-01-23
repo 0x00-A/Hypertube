@@ -12,7 +12,7 @@ export const SaveButton = ({
 }: SaveButtonProps) => (
   <button
     onClick={onClick}
-    disabled={disabled}
+    disabled={disabled || isLoading}
     className={clsx(
       'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200',
       !disabled && !isLoading
