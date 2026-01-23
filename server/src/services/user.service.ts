@@ -67,6 +67,6 @@ export class UserService {
       throw new BadRequestError('Current password is incorrect');
     }
     const hashedPassword = await this._password_service.hashPassword(newPassword);
-    await this._repo.updateByUsername(username, { password: hashedPassword });
-  };
+    await this._repo.updatePasswordByUsername(username, hashedPassword);
+  }
 }

@@ -25,5 +25,4 @@ export interface IUserProfileUpdate {
   lastName?: string;
   avatarUrl?: string;
   language?: string;
-  password?: string;
 }

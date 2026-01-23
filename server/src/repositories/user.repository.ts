@@ -185,6 +185,15 @@ export class UserRepository {
     return this.toIUser(doc);
   }
 
+  async updatePasswordByUsername(username: string, hashedPassword: string): Promise<Partial<IUser> | null> {
+    const doc = await UserModel.findOneAndUpdate(
+      { username },
+      { $set: { password: hashedPassword } },
+      { new: true, runValidators: true }
+    ).exec();
+    return this.toIUser(doc);
+  }
+
   async update(userId: string, updateData: Partial<IUser>): Promise<Partial<IUser> | null> {
     const doc = await UserModel.findByIdAndUpdate(
       userId,

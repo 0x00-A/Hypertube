@@ -144,13 +144,14 @@ describe('UserService.list', () => {
 
 describe('UserService.changePassword', () => {
   let userService: UserService;
-  let mockRepository: jest.Mocked<Pick<UserRepository, 'findByUsernameWithPasswordOauth' | 'updateByUsername'>>;
+  let mockRepository: jest.Mocked<Pick<UserRepository, 'findByUsernameWithPasswordOauth' | 'updateByUsername' | 'updatePasswordByUsername'>>;
   let mockPasswordService: jest.Mocked<PasswordService>;
 
   beforeEach(() => {
     mockRepository = {
       findByUsernameWithPasswordOauth: jest.fn(),
       updateByUsername: jest.fn(),
+      updatePasswordByUsername: jest.fn(),
     };
 
     mockPasswordService = {
@@ -179,16 +180,14 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
     mockPasswordService.verifyPassword.mockResolvedValue(true);
     mockPasswordService.hashPassword.mockResolvedValue('hashedNewPassword');
-    mockRepository.updateByUsername.mockResolvedValue(null);
+    mockRepository.updatePasswordByUsername.mockResolvedValue(null);
 
     await userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!');
 
     expect(mockRepository.findByUsernameWithPasswordOauth).toHaveBeenCalledWith('testuser');
     expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith('hashedOldPassword', 'OldPassword123!');
     expect(mockPasswordService.hashPassword).toHaveBeenCalledWith('NewPassword456!');
-    expect(mockRepository.updateByUsername).toHaveBeenCalledWith('testuser', {
-      password: 'hashedNewPassword',
-    });
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith('testuser', 'hashedNewPassword');
   });
 
   it('should throw BadRequestError when user not found', async () => {
@@ -203,7 +202,7 @@ describe('UserService.changePassword', () => {
     ).rejects.toThrow('User not found');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
-    expect(mockRepository.updateByUsername).not.toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).not.toHaveBeenCalled();
   });
 
   it('should throw BadRequestError when user has no password', async () => {
@@ -229,7 +228,7 @@ describe('UserService.changePassword', () => {
     ).rejects.toThrow('User not found');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
-    expect(mockRepository.updateByUsername).not.toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).not.toHaveBeenCalled();
   });
 
   it('should throw BadRequestError for OAuth users without password set', async () => {
@@ -255,7 +254,7 @@ describe('UserService.changePassword', () => {
     ).rejects.toThrow('Password change not allowed for OAuth users');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
-    expect(mockRepository.updateByUsername).not.toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).not.toHaveBeenCalled();
   });
 
   it('should throw BadRequestError when oauth object is missing', async () => {
@@ -269,14 +268,14 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
     mockPasswordService.verifyPassword.mockResolvedValue(true);
     mockPasswordService.hashPassword.mockResolvedValue('hashedNewPassword');
-    mockRepository.updateByUsername.mockResolvedValue(null);
+    mockRepository.updatePasswordByUsername.mockResolvedValue(null);
 
     // Should succeed for regular users without oauth
     await expect(
       userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!')
     ).resolves.not.toThrow();
 
-    expect(mockRepository.updateByUsername).toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalled();
   });
 
   it('should throw BadRequestError when current password is incorrect', async () => {
@@ -304,7 +303,7 @@ describe('UserService.changePassword', () => {
 
     expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith('hashedOldPassword', 'WrongPassword123!');
     expect(mockPasswordService.hashPassword).not.toHaveBeenCalled();
-    expect(mockRepository.updateByUsername).not.toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).not.toHaveBeenCalled();
   });
 
   it('should hash new password before saving', async () => {
@@ -322,14 +321,12 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
     mockPasswordService.verifyPassword.mockResolvedValue(true);
     mockPasswordService.hashPassword.mockResolvedValue('hashedNewPassword');
-    mockRepository.updateByUsername.mockResolvedValue(null);
+    mockRepository.updatePasswordByUsername.mockResolvedValue(null);
 
     await userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!');
 
     expect(mockPasswordService.hashPassword).toHaveBeenCalledWith('NewPassword456!');
-    expect(mockRepository.updateByUsername).toHaveBeenCalledWith('testuser', {
-      password: 'hashedNewPassword',
-    });
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith('testuser', 'hashedNewPassword');
   });
 
   it('should allow password change for regular users with isPasswordSet true', async () => {
@@ -347,13 +344,13 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
     mockPasswordService.verifyPassword.mockResolvedValue(true);
     mockPasswordService.hashPassword.mockResolvedValue('hashedNewPassword');
-    mockRepository.updateByUsername.mockResolvedValue(null);
+    mockRepository.updatePasswordByUsername.mockResolvedValue(null);
 
     await expect(
       userService.changePassword('regularuser', 'OldPassword123!', 'NewPassword456!')
     ).resolves.not.toThrow();
 
-    expect(mockRepository.updateByUsername).toHaveBeenCalled();
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalled();
   });
 
   it('should call repository methods in correct order', async () => {
@@ -385,8 +382,8 @@ describe('UserService.changePassword', () => {
       return 'hashedNewPassword';
     });
 
-    mockRepository.updateByUsername.mockImplementation(async () => {
-      callOrder.push('updateByUsername');
+    mockRepository.updatePasswordByUsername.mockImplementation(async () => {
+      callOrder.push('updatePasswordByUsername');
       return null;
     });
 
@@ -396,7 +393,7 @@ describe('UserService.changePassword', () => {
       'findByUsernameWithPasswordOauth',
       'verifyPassword',
       'hashPassword',
-      'updateByUsername',
+      'updatePasswordByUsername',
     ]);
   });
 });

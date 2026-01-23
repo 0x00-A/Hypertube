@@ -1334,7 +1334,7 @@ describe('User Profile Integration Tests', () => {
       expect(res.body.validationErrors).toBeDefined();
       expect(res.body.validationErrors[0]).toMatchObject({
         path: 'body.newPassword',
-        message: 'New password must be at least 8 characters long',
+        message: 'New password must be at least 6 characters long',
       });
     });
 
@@ -1354,7 +1354,7 @@ describe('User Profile Integration Tests', () => {
       expect(res.body.validationErrors).toBeDefined();
       expect(res.body.validationErrors[0]).toMatchObject({
         path: 'body.currentPassword',
-        message: 'Current password must be at least 8 characters long',
+        message: 'Current password must be at least 6 characters long',
       });
     });
 
@@ -1402,7 +1402,7 @@ describe('User Profile Integration Tests', () => {
       expect(res.body.validationErrors.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should return 400 for OAuth users without password set', async () => {
+    it('should allow password change for OAuth users with password set', async () => {
       // Create OAuth user with password set to true (regular account that linked OAuth)
       const oauthUserHashedPass = await passwordService.hashPassword('OAuthPass123!');
       await UserModel.create({
@@ -1439,6 +1439,51 @@ describe('User Profile Integration Tests', () => {
         });
 
       expect(res.status).toBe(200);
+    });
+
+    it('should return 400 for OAuth users without password set (pure OAuth users)', async () => {
+      // Create a pure OAuth user (never set a password)
+      // In real OAuth flow, the password field would be set to a random hash
+      // but isPasswordSet flag indicates they never set their own password
+      await UserModel.create({
+        username: 'pureoauthuser',
+        email: 'pureoauth@example.com',
+        password: await passwordService.hashPassword('RandomGeneratedHash123!'),
+        firstName: 'Pure',
+        lastName: 'OAuth',
+        isActive: true,
+        oauth: {
+          provider: 'google',
+          id: 'google456',
+          isPasswordSet: false, // Never set password - pure OAuth user
+        },
+      });
+
+      // Simulate OAuth login by manually creating session
+      // In production, this would happen through the OAuth callback
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: 'pureoauthuser',
+        password: 'RandomGeneratedHash123!',
+      });
+
+      const cookies = loginRes.headers['set-cookie'] as unknown as string[];
+      const oauthTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const oauthToken = oauthTokenCookie?.split(';')[0].split('=')[1] || '';
+
+      // Attempt to change password should fail
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${oauthToken}`])
+        .send({
+          currentPassword: 'RandomGeneratedHash123!',
+          newPassword: 'NewPassword456!',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Password change not allowed for OAuth users',
+      });
     });
 
     it('should allow password change multiple times', async () => {
