@@ -143,7 +143,7 @@ export default function Profile() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         {/* Watchlist Count */}
         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 p-6 hover:border-blue-500/40 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-8 -mt-10 group-hover:scale-150 transition-transform duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <Film className="w-8 h-8 text-blue-400" />
@@ -155,7 +155,7 @@ export default function Profile() {
 
         {/* Watched Count */}
         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 p-6 hover:border-green-500/40 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-8 -mt-10 group-hover:scale-150 transition-transform duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-green-400" />
@@ -167,7 +167,7 @@ export default function Profile() {
 
         {/* Average Rating */}
         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-6 hover:border-primary/40 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-8 -mt-10 group-hover:scale-150 transition-transform duration-500" />
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <Star className="w-8 h-8 text-primary" />
