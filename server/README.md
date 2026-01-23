@@ -57,7 +57,13 @@ Defined in `src/docs/swagger.ts` with placeholder schemas (Movie, User, Comment)
 
 ### Protected Routes (Require Authentication)
 - Movies: `GET /v1/movies`, `GET /v1/movies/:id`
-- Users: `GET /v1/users`, `GET /v1/users/:id`, `PATCH /v1/users/:id`
+- Users: 
+  - `GET /v1/users` - List all users (paginated)
+  - `GET /v1/users/me` - Get current authenticated user's profile
+  - `GET /v1/users/:id` - Get specific user profile
+  - `PATCH /v1/users/:id` - Update specific user
+  - `POST /v1/users/update-profile` - Update authenticated user's profile (email, username, firstName, lastName, language, avatarUrl)
+  - `POST /v1/users/change-password` - Change authenticated user's password (requires current password)
 - Comments: `GET /v1/comments`, `POST /v1/comments`, `DELETE /v1/comments/:id`
 
 Protected routes require a valid access token in cookies. The auth middleware:
