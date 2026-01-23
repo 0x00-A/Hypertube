@@ -117,55 +117,6 @@ export default function Settings() {
     }
   };
 
-  // Compress image to reduce payload size
-  const compressImage = async (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (e) => {
-        const img = new Image();
-        img.src = e.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Calculate new dimensions (max 800x800)
-          let width = img.width;
-          let height = img.height;
-          const maxSize = 800;
-          
-          if (width > height && width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          } else if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Convert to blob with quality reduction
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error('Failed to compress image'));
-              }
-            },
-            'image/jpeg',
-            0.85 // 85% quality
-          );
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-    });
-  };
-
   // Image upload function
   const uploadImageToServer = async (file: File): Promise<string> => {
     // Development-only mock implementation
@@ -173,9 +124,6 @@ export default function Settings() {
     if (import.meta.env.PROD) {
       throw new Error('Image upload is not yet implemented. Please contact support.');
     }
-    
-    // Compress image before converting to base64
-    const compressedBlob = await compressImage(file);
     
     // Simulate upload delay (development only)
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -186,7 +134,7 @@ export default function Settings() {
       reader.onloadend = () => {
         resolve(reader.result as string);
       };
-      reader.readAsDataURL(compressedBlob);
+      reader.readAsDataURL(file);
     });
   };
 

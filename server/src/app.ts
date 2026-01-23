@@ -40,9 +40,9 @@ export const createApp = () => {
     }),
   );
   app.use(cors(corsOptions));
-  // Increase limit to 10MB to handle base64-encoded images
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  // Set 5MB limit to handle base64-encoded images
+  app.use(express.json({ limit: '5mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '5mb' }));
   app.use(cookieParser());
   app.use(passport.initialize());
 
