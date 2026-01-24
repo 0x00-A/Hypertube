@@ -1,0 +1,180 @@
+
+> server@0.1.0 test
+> jest
+
+jest-haste-map: duplicate manual mock found: nodemailer
+  The following files share their name; please delete one of them:
+    * <rootDir>/tests/__mocks__/nodemailer.ts
+    * <rootDir>/dist/tests/__mocks__/nodemailer.js
+
+FAIL tests/unit/services/user.service.test.ts (19.765 s)
+  ● UserService.changePassword › should successfully change password when all conditions are met
+
+    TypeError: this._repo.updatePasswordByUsername is not a function
+
+      68 |     }
+      69 |     const hashedPassword = await this._password_service.hashPassword(newPassword);
+    > 70 |     await this._repo.updatePasswordByUsername(username, hashedPassword);
+         |                      ^
+      71 |   }
+      72 | }
+
+      at UserService.changePassword (src/services/user.service.ts:70:22)
+      at Object.<anonymous> (tests/unit/services/user.service.test.ts:184:5)
+
+  ● UserService.changePassword › should throw BadRequestError when oauth object is missing
+
+    expect(received).resolves.not.toThrow()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [TypeError: this._repo.updatePasswordByUsername is not a function]
+
+      273 |
+      274 |     // Should succeed for regular users without oauth
+    > 275 |     await expect(
+          |           ^
+      276 |       userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!')
+      277 |     ).resolves.not.toThrow();
+      278 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/unit/services/user.service.test.ts:275:11)
+
+  ● UserService.changePassword › should hash new password before saving
+
+    TypeError: this._repo.updatePasswordByUsername is not a function
+
+      68 |     }
+      69 |     const hashedPassword = await this._password_service.hashPassword(newPassword);
+    > 70 |     await this._repo.updatePasswordByUsername(username, hashedPassword);
+         |                      ^
+      71 |   }
+      72 | }
+
+      at UserService.changePassword (src/services/user.service.ts:70:22)
+      at Object.<anonymous> (tests/unit/services/user.service.test.ts:327:5)
+
+  ● UserService.changePassword › should allow password change for regular users with isPasswordSet true
+
+    expect(received).resolves.not.toThrow()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [TypeError: this._repo.updatePasswordByUsername is not a function]
+
+      350 |     mockRepository.updateByUsername.mockResolvedValue(null);
+      351 |
+    > 352 |     await expect(
+          |           ^
+      353 |       userService.changePassword('regularuser', 'OldPassword123!', 'NewPassword456!')
+      354 |     ).resolves.not.toThrow();
+      355 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/unit/services/user.service.test.ts:352:11)
+
+  ● UserService.changePassword › should call repository methods in correct order
+
+    TypeError: this._repo.updatePasswordByUsername is not a function
+
+      68 |     }
+      69 |     const hashedPassword = await this._password_service.hashPassword(newPassword);
+    > 70 |     await this._repo.updatePasswordByUsername(username, hashedPassword);
+         |                      ^
+      71 |   }
+      72 | }
+
+      at UserService.changePassword (src/services/user.service.ts:70:22)
+      at Object.<anonymous> (tests/unit/services/user.service.test.ts:393:5)
+
+PASS tests/integration/oauth.test.ts (20.718 s)
+PASS tests/integration/movies/movie.state.api.test.ts (26.194 s)
+PASS tests/integration/movies/movies.test.ts (44.249 s)
+PASS tests/integration/scraper.integration.test.ts
+[2026-01-23 22:16:48.482 +0100] [31mERROR[39m: [36m[MovieService] No IMDb ID found for TMDb ID "999999999".[39m
+PASS tests/integration/movies/movies.trending.api.test.ts (10.408 s)
+PASS tests/integration/comments.test.ts (53.394 s)
+PASS tests/integration/movies/movie.search.api.test.ts (9.393 s)
+PASS tests/integration/movies/movies.recommended.api.test.ts (12.382 s)
+[2026-01-23 22:16:52.685 +0100] [31mERROR[39m: [36m[MovieService] Error fetching recommended movies: Request failed with status code 400[39m
+PASS tests/unit/usernameGenerator.test.ts (5.439 s)
+PASS tests/unit/scraper/scraperEngine.test.ts (6.614 s)
+PASS tests/unit/movies/movie.service.test.ts
+PASS tests/integration/movies/curated.api.test.ts (5.794 s)
+[2026-01-23 22:16:58.712 +0100] [31mERROR[39m: [36m[MovieService] No IMDb ID found for TMDb ID "12345".[39m
+[2026-01-23 22:16:58.728 +0100] [31mERROR[39m: [36m[MovieService] TMDB metadata not found for IMDb ID "tt1234567".[39m
+PASS tests/integration/movies/movieInteractions.api.test.ts (65.766 s)
+PASS tests/integration/example.test.ts
+PASS tests/integration/movies/movies.popular.api.test.ts
+[2026-01-23 22:17:02.239 +0100] [31mERROR[39m: [36m[MovieService] Error fetching popular movies: Request failed with status code 400[39m
+PASS tests/integration/auth.test.ts (67.355 s)
+FAIL tests/integration/movies/movies.slider.api.test.ts (16.484 s)
+  ● GET /api/v1/movies/slider › should return up to 6 slider movies (200) or gracefully handle TMDB errors (502)
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+       5 |   const app = createApp();
+       6 |
+    >  7 |   it('should return up to 6 slider movies (200) or gracefully handle TMDB errors (502)', async () => {
+         |   ^
+       8 |     const res = await request(app).get('/api/v1/movies/slider');
+       9 |     expect([200, 502]).toContain(res.status);
+      10 |
+
+      at tests/integration/movies/movies.slider.api.test.ts:7:3
+      at Object.<anonymous> (tests/integration/movies/movies.slider.api.test.ts:4:1)
+
+[2026-01-23 22:17:06.885 +0100] [31mERROR[39m: [36m[MovieService] Error completing data for movie TMDb ID "991494": Client must be connected before running operations[39m
+[2026-01-23 22:17:06.902 +0100] [31mERROR[39m: [36m[MovieService] Error fetching homepage slider movies: Client must be connected before running operations[39m
+FAIL tests/integration/user.test.ts (76.038 s)
+  ● User Profile Integration Tests › POST /api/v1/users/change-password › should return 400 when new password is too short
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "message": "New password must be at least 8 characters long",
+    +   "message": "New password must be at least 6 characters long",
+        "path": "body.newPassword",
+      }
+
+      1333 |       });
+      1334 |       expect(res.body.validationErrors).toBeDefined();
+    > 1335 |       expect(res.body.validationErrors[0]).toMatchObject({
+           |                                            ^
+      1336 |         path: 'body.newPassword',
+      1337 |         message: 'New password must be at least 8 characters long',
+      1338 |       });
+
+      at Object.<anonymous> (tests/integration/user.test.ts:1335:44)
+
+  ● User Profile Integration Tests › POST /api/v1/users/change-password › should return 400 when current password is too short
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "message": "Current password must be at least 8 characters long",
+    +   "message": "Current password must be at least 6 characters long",
+        "path": "body.currentPassword",
+      }
+
+      1353 |       });
+      1354 |       expect(res.body.validationErrors).toBeDefined();
+    > 1355 |       expect(res.body.validationErrors[0]).toMatchObject({
+           |                                            ^
+      1356 |         path: 'body.currentPassword',
+      1357 |         message: 'Current password must be at least 8 characters long',
+      1358 |       });
+
+      at Object.<anonymous> (tests/integration/user.test.ts:1355:44)
+
+Test Suites: 3 failed, 1 skipped, 16 passed, 19 of 20 total
+Tests:       8 failed, 4 skipped, 369 passed, 381 total
+Snapshots:   0 total
+Time:        77.867 s, estimated 80 s
+Ran all test suites.

@@ -65,6 +65,19 @@ export class UserController {
       message: 'Profile updated successfully',
     });
   });
+
+  changePassword = asyncHandler(async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.validated?.body as { currentPassword: string; newPassword: string };
+    if (req.user == null || req.user.username == null) {
+      throw new NotFoundError('User not found');
+    }
+    await this._service.changePassword(req.user.username, currentPassword, newPassword);
+    res.json({
+      status: 'success',
+      message: 'Password changed successfully',
+    });
+  });
+
 }
 // export const listUsers = asyncHandler(async (req: Request, res: Response) => {
 //   const page = parseInt((req.query.page as string) || '1', 10);

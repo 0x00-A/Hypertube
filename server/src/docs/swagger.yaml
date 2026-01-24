@@ -969,6 +969,151 @@ paths:
                     type: string
                     example: Username or email already exists
 
+  /api/v1/users/change-password:
+    post:
+      summary: Change authenticated user's password
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      description: |
+        Changes the password for the authenticated user. Requires the current password for verification
+        and a new password that meets minimum security requirements.
+        
+        **Requirements:**
+        - User must be authenticated (JWT token in cookie)
+        - Current password must be correct
+        - New password must be at least 8 characters long
+        - OAuth users without a password set cannot use this endpoint
+        
+        **Security Notes:**
+        - The new password is hashed before storage using bcrypt/argon2
+        - Current JWT tokens remain valid after password change (consider re-authentication)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: User's current password for verification
+                  example: CurrentPass123!
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: New password (minimum 8 characters)
+                  example: NewSecurePass456!
+            examples:
+              changePassword:
+                summary: Change password
+                value:
+                  currentPassword: OldPassword123!
+                  newPassword: NewSecurePassword456!
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Password changed successfully
+        '400':
+          description: Bad request - validation error, incorrect current password, or OAuth user restriction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                  path:
+                    type: string
+                  validationErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        message:
+                          type: string
+              examples:
+                incorrectPassword:
+                  summary: Current password is incorrect
+                  value:
+                    status: fail
+                    message: Current password is incorrect
+                    path: /api/v1/users/change-password
+                passwordTooShort:
+                  summary: New password too short
+                  value:
+                    status: fail
+                    message: Validation Error
+                    path: /api/v1/users/change-password
+                    validationErrors:
+                      - path: body.newPassword
+                        message: New password must be at least 8 characters long
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    status: fail
+                    message: Validation Error
+                    path: /api/v1/users/change-password
+                    validationErrors:
+                      - path: body.currentPassword
+                        message: Required
+                      - path: body.newPassword
+                        message: Required
+                oauthUserRestriction:
+                  summary: OAuth user without password cannot change password
+                  value:
+                    status: fail
+                    message: Password change not allowed for OAuth users
+                    path: /api/v1/users/change-password
+        '401':
+          description: Not authenticated or invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized, No access token provided
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: User not found
+
   /api/v1/movies:
     get:
       summary: List movies with pagination and filters

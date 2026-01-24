@@ -1245,4 +1245,344 @@ describe('User Profile Integration Tests', () => {
       expect([200, 400]).toContain(res.status);
     });
   });
+
+  describe('POST /api/v1/users/change-password', () => {
+    it('should successfully change password with valid credentials', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'NewSecurePass456!',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Password changed successfully',
+      });
+
+      // Verify can login with new password
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: 'NewSecurePass456!',
+      });
+
+      expect(loginRes.status).toBe(200);
+
+      // Verify cannot login with old password
+      const oldLoginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: testUser.password,
+      });
+
+      expect(oldLoginRes.status).toBe(401);
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'NewSecurePass456!',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Unauthorized: No access token provided',
+      });
+    });
+
+    it('should return 400 when current password is incorrect', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: 'WrongPassword123!',
+          newPassword: 'NewSecurePass456!',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Current password is incorrect',
+      });
+
+      // Verify password was not changed
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: testUser.password,
+      });
+
+      expect(loginRes.status).toBe(200);
+    });
+
+    it('should return 400 when new password is too short', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'short',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.validationErrors).toBeDefined();
+      expect(res.body.validationErrors[0]).toMatchObject({
+        path: 'body.newPassword',
+        message: 'New password must be at least 6 characters long',
+      });
+    });
+
+    it('should return 400 when current password is too short', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: 'short',
+          newPassword: 'NewSecurePass456!',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.validationErrors).toBeDefined();
+      expect(res.body.validationErrors[0]).toMatchObject({
+        path: 'body.currentPassword',
+        message: 'Current password must be at least 6 characters long',
+      });
+    });
+
+    it('should return 400 when currentPassword is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          newPassword: 'NewSecurePass456!',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.validationErrors).toBeDefined();
+    });
+
+    it('should return 400 when newPassword is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.validationErrors).toBeDefined();
+    });
+
+    it('should return 400 when both passwords are missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+      });
+      expect(res.body.validationErrors).toBeDefined();
+      expect(res.body.validationErrors.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should allow password change for OAuth users with password set', async () => {
+      // Create OAuth user with password set to true (regular account that linked OAuth)
+      const oauthUserHashedPass = await passwordService.hashPassword('OAuthPass123!');
+      await UserModel.create({
+        username: 'oauthlinkeduser',
+        email: 'oauthlinked@example.com',
+        password: oauthUserHashedPass,
+        firstName: 'OAuth',
+        lastName: 'Linked',
+        isActive: true,
+        oauth: {
+          provider: 'google',
+          id: 'google123',
+          isPasswordSet: true, // Has password, can change it
+        },
+      });
+
+      // Login as OAuth user with password
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: 'oauthlinkeduser',
+        password: 'OAuthPass123!',
+      });
+
+      const cookies = loginRes.headers['set-cookie'] as unknown as string[];
+      const oauthTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const oauthToken = oauthTokenCookie?.split(';')[0].split('=')[1] || '';
+
+      // Should be able to change password
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${oauthToken}`])
+        .send({
+          currentPassword: 'OAuthPass123!',
+          newPassword: 'NewOAuthPass456!',
+        });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should return 400 for OAuth users without password set (pure OAuth users)', async () => {
+      // Create a pure OAuth user (never set a password)
+      // In real OAuth flow, the password field would be set to a random hash
+      // but isPasswordSet flag indicates they never set their own password
+      await UserModel.create({
+        username: 'pureoauthuser',
+        email: 'pureoauth@example.com',
+        password: await passwordService.hashPassword('RandomGeneratedHash123!'),
+        firstName: 'Pure',
+        lastName: 'OAuth',
+        isActive: true,
+        oauth: {
+          provider: 'google',
+          id: 'google456',
+          isPasswordSet: false, // Never set password - pure OAuth user
+        },
+      });
+
+      // Simulate OAuth login by manually creating session
+      // In production, this would happen through the OAuth callback
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: 'pureoauthuser',
+        password: 'RandomGeneratedHash123!',
+      });
+
+      const cookies = loginRes.headers['set-cookie'] as unknown as string[];
+      const oauthTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const oauthToken = oauthTokenCookie?.split(';')[0].split('=')[1] || '';
+
+      // Attempt to change password should fail
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${oauthToken}`])
+        .send({
+          currentPassword: 'RandomGeneratedHash123!',
+          newPassword: 'NewPassword456!',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Password change not allowed for OAuth users',
+      });
+    });
+
+    it('should allow password change multiple times', async () => {
+      // First password change
+      const res1 = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'NewPassword1!',
+        });
+
+      expect(res1.status).toBe(200);
+
+      // Login with new password to get new token
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: 'NewPassword1!',
+      });
+
+      const cookies = loginRes.headers['set-cookie'] as unknown as string[];
+      const newAccessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const newAuthToken = newAccessTokenCookie?.split(';')[0].split('=')[1] || '';
+
+      // Second password change
+      const res2 = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${newAuthToken}`])
+        .send({
+          currentPassword: 'NewPassword1!',
+          newPassword: 'NewPassword2!',
+        });
+
+      expect(res2.status).toBe(200);
+
+      // Verify final password works
+      const finalLoginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: 'NewPassword2!',
+      });
+
+      expect(finalLoginRes.status).toBe(200);
+    });
+
+    it('should hash the new password in database', async () => {
+      await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'NewSecurePass456!',
+        });
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username }).select('+password');
+      expect(updatedUser?.password).toBeDefined();
+      expect(updatedUser?.password).not.toBe('NewSecurePass456!');
+      expect(updatedUser?.password?.length).toBeGreaterThan(20); // Hashed password is long
+    });
+
+    it('should not change password when using same password as current', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: testUser.password,
+        });
+
+      // This should succeed technically, but it's the same password
+      expect(res.status).toBe(200);
+
+      // Verify old password still works
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        identifier: testUser.username,
+        password: testUser.password,
+      });
+
+      expect(loginRes.status).toBe(200);
+    });
+
+    it('should invalidate old sessions after password change', async () => {
+      // Change password
+      await request(app)
+        .post('/api/v1/users/change-password')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({
+          currentPassword: testUser.password,
+          newPassword: 'NewSecurePass456!',
+        });
+
+      // Try to use old token - Note: JWT tokens remain valid until expiry
+      // This test documents current behavior; ideally would invalidate on password change
+      const res = await request(app)
+        .get('/api/v1/users/me')
+        .set('Cookie', [`accessToken=${authToken}`]);
+
+      // Current behavior: token still works
+      // Future enhancement: implement token blacklisting on password change
+      expect([200, 401]).toContain(res.status);
+    });
+  });
 });

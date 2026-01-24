@@ -51,7 +51,7 @@ export const createControllers = () => {
   configurePassport(oauthService);
 
   // accounts dependencies
-  const userService = new UserService(userRepository);
+  const userService = new UserService(userRepository, passwordService);
   const userController = new UserController(userService);
 
   // comments dependencies
