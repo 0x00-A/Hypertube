@@ -74,10 +74,59 @@ export default function Profile() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Profile Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-primary/5 border border-primary/20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      <div className="relative overflow-hidden rounded-2xl bg-black border border-red-900/30 shadow-2xl">
+        {/* Main theater background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-black" />
         
-        <div className="relative p-8 sm:p-12">
+        {/* Red velvet curtain - left side */}
+        <div className="absolute left-0 top-0 bottom-0 w-1/6 bg-gradient-to-r from-red-900/80 via-red-800/50 to-transparent opacity-90"
+             style={{
+               backgroundImage: `
+                 linear-gradient(180deg, rgba(127, 29, 29, 0.9) 0%, rgba(153, 27, 27, 0.8) 50%, rgba(127, 29, 29, 0.9) 100%),
+                 repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(139, 0, 0, 0.3) 3px, rgba(139, 0, 0, 0.3) 6px)
+               `,
+               boxShadow: 'inset -30px 0 40px rgba(0, 0, 0, 0.8)'
+             }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-red-950/60 to-transparent" />
+        </div>
+        
+        {/* Red velvet curtain - right side */}
+        <div className="absolute right-0 top-0 bottom-0 w-1/6 bg-gradient-to-l from-red-900/80 via-red-800/50 to-transparent opacity-90"
+             style={{
+               backgroundImage: `
+                 linear-gradient(180deg, rgba(127, 29, 29, 0.9) 0%, rgba(153, 27, 27, 0.8) 50%, rgba(127, 29, 29, 0.9) 100%),
+                 repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(139, 0, 0, 0.3) 3px, rgba(139, 0, 0, 0.3) 6px)
+               `,
+               boxShadow: 'inset 30px 0 40px rgba(0, 0, 0, 0.8)'
+             }}>
+          <div className="absolute inset-0 bg-gradient-to-l from-red-950/60 to-transparent" />
+        </div>
+        
+        {/* Gold trim - left */}
+        <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-yellow-700/40 via-yellow-600/60 to-yellow-700/40" 
+             style={{ boxShadow: '2px 0 10px rgba(202, 138, 4, 0.5)' }} />
+        
+        {/* Gold trim - right */}
+        <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-yellow-700/40 via-yellow-600/60 to-yellow-700/40"
+             style={{ boxShadow: '-2px 0 10px rgba(202, 138, 4, 0.5)' }} />
+        
+        {/* Gold trim - top */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-700/40 via-yellow-600/60 to-yellow-700/40"
+             style={{ boxShadow: '0 2px 10px rgba(202, 138, 4, 0.5)' }} />
+        
+        {/* Center stage spotlight effect */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-full">
+          <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-yellow-300/5 to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+        </div>
+        
+        {/* Ambient warm glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-950/30 via-transparent to-transparent" />
+        
+        {/* Floor/stage gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black via-gray-950/50 to-transparent" />
+        
+        <div className="relative p-6 sm:p-10 lg:p-12 z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             {/* Avatar */}
             <div className="relative group">

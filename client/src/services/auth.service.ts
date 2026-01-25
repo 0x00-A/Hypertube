@@ -49,14 +49,16 @@ export const authService = {
    * Send password reset email
    */
   forgotPassword: async (data: ForgotPasswordData): Promise<MessageResponse> => {
-    return httpClient.post<MessageResponse>('/auth/forgot-password', data);
+    return httpClient.post<MessageResponse>('/auth/request-password-reset', data);
   },
 
   /**
    * Reset password with token
    */
   resetPassword: async (data: ResetPasswordData): Promise<MessageResponse> => {
-    return httpClient.post<MessageResponse>('/auth/reset-password', data);
+    // Backend only needs token and newPassword (confirmPassword is frontend validation only)
+    const { token, newPassword } = data;
+    return httpClient.post<MessageResponse>('/auth/reset-password', { token, newPassword });
   },
 
   /**
@@ -70,7 +72,9 @@ export const authService = {
    * Change user password
    */
   changePassword: async (data: ChangePasswordData): Promise<MessageResponse> => {
-    return httpClient.put<MessageResponse>('/auth/change-password', data);
+    // Backend only needs currentPassword and newPassword (confirmPassword is frontend validation only)
+    const { currentPassword, newPassword } = data;
+    return httpClient.post<MessageResponse>('/users/change-password', { currentPassword, newPassword });
   },
 
   /**

@@ -3,6 +3,7 @@ import { AlertCircle, Library as LibraryIcon, SearchX } from 'lucide-react';
 import { MovieCard, MovieCardSkeleton, LibraryFilterBar } from '../../components/movie';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import type { ApiError } from '../../types/api.types';
+import clsx from 'clsx';
 
 export default function Library() {
   const {
@@ -92,7 +93,11 @@ export default function Library() {
 
             {/* Movies Grid */}
             {movies.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              <div 
+                className={clsx(
+                              'grid gap-2 sm:gap-2 md:gap-2',
+                              'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                            )}>
                 {movies.map((movie) => (
                   <MovieCard
                     key={movie._id || movie.imdbId}
@@ -113,7 +118,12 @@ export default function Library() {
 
             {/* Initial Loading Skeletons */}
             {isLoading && movies.length === 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              <div
+                className={clsx(
+                  'grid gap-2 sm:gap-2 md:gap-2 mt-4',
+                  'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                )}
+              >
                 {Array.from({ length: 15 }).map((_, i) => (
                   <MovieCardSkeleton key={`skeleton-${i}`} />
                 ))}
