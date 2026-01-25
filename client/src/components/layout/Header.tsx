@@ -250,7 +250,7 @@ export default function Header() {
               <button
                 ref={profileTriggerRef}
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all"
+                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all flex items-center justify-center"
                 aria-label="User menu"
               >
                 <Avatar
@@ -293,7 +293,7 @@ export default function Header() {
               <button
                 ref={mobileProfileTriggerRef}
                 onClick={() => setIsMobileProfileOpen(!isMobileProfileOpen)}
-                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary hover:ring-primary-light transition-all cursor-pointer flex items-center justify-center"
                 aria-label="User menu"
               >
                 <Avatar
