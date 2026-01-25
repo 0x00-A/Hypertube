@@ -2,6 +2,12 @@
 // User Types
 // ============================================================================
 
+export interface IOAuth {
+  provider: 'google' | 'fortytwo';
+  id: string;
+  isPasswordSet?: boolean;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -12,6 +18,7 @@ export interface User {
   createdAt: string;
   isActive?: boolean;
   language?: string;
+  oauth?: IOAuth;
 }
 
 // ============================================================================

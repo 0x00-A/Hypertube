@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Star, Bookmark, ChevronRight, Loader2 } from "lucide-react";
+import { Star, Bookmark, Loader2 } from "lucide-react";
 import type { IMovie } from "../../types/movie.types";
 
 interface SearchDropdownProps {
@@ -24,11 +24,6 @@ export default function SearchDropdown({
         const id = movie._id || movie.tmdbId;
         const isTmdbMovie = !movie._id;
         navigate(`/movies/${id}`, { state: { isTmdbMovie } });
-    };
-
-    const handleShowMore = () => {
-        onClose();
-        navigate(`/browse?search=${encodeURIComponent(searchQuery)}`);
     };
 
     // Show nothing if no query
@@ -62,15 +57,8 @@ export default function SearchDropdown({
             {!isLoading && hasResults && (
                 <>
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <div className="px-4 py-3 border-b border-border">
                         <span className="text-text-secondary text-sm">Your search result</span>
-                        <button
-                            onClick={handleShowMore}
-                            className="flex items-center gap-1 text-text-secondary hover:text-primary text-sm transition-colors"
-                        >
-                            Show more
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
                     </div>
 
                     {/* Movie List */}

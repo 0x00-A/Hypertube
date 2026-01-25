@@ -518,85 +518,127 @@ export default function Settings() {
 
           {activeTab === 'password' && (
             <div className="bg-bg-card rounded-lg border border-border p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-text-primary mb-1">Change Password</h3>
-                <p className="text-sm text-text-secondary">Update your password to keep your account secure.</p>
-              </div>
+              {/* Check if user is OAuth without password */}
+              {user.oauth && !user.oauth.isPasswordSet ? (
+                <div className="max-w-md">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-text-primary mb-1">OAuth Authentication</h3>
+                    <p className="text-sm text-text-secondary">
+                      You're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} to sign in.
+                    </p>
+                  </div>
 
-              <div className="space-y-6 max-w-md">
-                {/* Current Password */}
-                <div className="space-y-2">
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-text-secondary">
-                    Current Password
-                  </label>
-                  <input
-                    id="currentPassword"
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                    className={clsx(
-                      'w-full px-4 py-3 rounded-lg',
-                      'bg-bg-tertiary text-text-primary',
-                      'border border-border',
-                      'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
-                      'transition-all duration-200'
-                    )}
-                    placeholder="••••••••"
-                  />
+                  <div className="flex items-start gap-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="p-3 bg-primary/10 rounded-full shrink-0">
+                      <Lock className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-text-primary mb-2">No Password Required</h4>
+                      <p className="text-sm text-text-secondary leading-relaxed">
+                        Since you're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} OAuth to log in, 
+                        you don't need a password for this account. You can always sign in using your{' '}
+                        {user.oauth.provider === 'google' ? 'Google' : '42'} account.
+                      </p>
+                    </div>
+                  </div>
+
+                  {user.oauth.provider === 'google' && (
+                    <div className="mt-4 flex items-center gap-2 text-sm text-text-muted">
+                      <img src="/images/logos/Google_Favicon_2025.svg" alt="Google" className="w-5 h-5" />
+                      <span>Signed in with Google</span>
+                    </div>
+                  )}
+
+                  {user.oauth.provider === 'fortytwo' && (
+                    <div className="mt-4 flex items-center gap-2 text-sm text-text-muted">
+                      <img src="/images/logos/42_Logo.svg" alt="42" className="w-5 h-5 invert" />
+                      <span>Signed in with 42</span>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-text-primary mb-1">Change Password</h3>
+                    <p className="text-sm text-text-secondary">Update your password to keep your account secure.</p>
+                  </div>
 
-                {/* New Password */}
-                <div className="space-y-2">
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-text-secondary">
-                    New Password
-                  </label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                    className={clsx(
-                      'w-full px-4 py-3 rounded-lg',
-                      'bg-bg-tertiary text-text-primary',
-                      'border border-border',
-                      'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
-                      'transition-all duration-200'
-                    )}
-                    placeholder="••••••••"
-                  />
-                  <p className="text-xs text-text-muted">Must be at least 8 characters</p>
-                </div>
+                  <div className="space-y-6 max-w-md">
+                    {/* Current Password */}
+                    <div className="space-y-2">
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-text-secondary">
+                        Current Password
+                      </label>
+                      <input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                        className={clsx(
+                          'w-full px-4 py-3 rounded-lg',
+                          'bg-bg-tertiary text-text-primary',
+                          'border border-border',
+                          'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
+                          'transition-all duration-200'
+                        )}
+                        placeholder="••••••••"
+                      />
+                    </div>
 
-                {/* Confirm Password */}
-                <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
-                    Confirm New Password
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                    className={clsx(
-                      'w-full px-4 py-3 rounded-lg',
-                      'bg-bg-tertiary text-text-primary',
-                      'border border-border',
-                      'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
-                      'transition-all duration-200'
-                    )}
-                    placeholder="••••••••"
-                  />
-                </div>
+                    {/* New Password */}
+                    <div className="space-y-2">
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-text-secondary">
+                        New Password
+                      </label>
+                      <input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                        className={clsx(
+                          'w-full px-4 py-3 rounded-lg',
+                          'bg-bg-tertiary text-text-primary',
+                          'border border-border',
+                          'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
+                          'transition-all duration-200'
+                        )}
+                        placeholder="••••••••"
+                      />
+                      <p className="text-xs text-text-muted">Must be at least 8 characters</p>
+                    </div>
 
-                <SaveButton
-                  onClick={handleChangePasswordSubmit}
-                  disabled={!passwordData.currentPassword || !passwordData.newPassword || isChangingPassword}
-                  isLoading={isChangingPassword}
-                  label="Update Password"
-                  loadingLabel="Updating..."
-                  icon={<Lock className="w-5 h-5" />}
-                />
-              </div>
+                    {/* Confirm Password */}
+                    <div className="space-y-2">
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
+                        Confirm New Password
+                      </label>
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                        className={clsx(
+                          'w-full px-4 py-3 rounded-lg',
+                          'bg-bg-tertiary text-text-primary',
+                          'border border-border',
+                          'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary',
+                          'transition-all duration-200'
+                        )}
+                        placeholder="••••••••"
+                      />
+                    </div>
+
+                    <SaveButton
+                      onClick={handleChangePasswordSubmit}
+                      disabled={!passwordData.currentPassword || !passwordData.newPassword || isChangingPassword}
+                      isLoading={isChangingPassword}
+                      label="Update Password"
+                      loadingLabel="Updating..."
+                      icon={<Lock className="w-5 h-5" />}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           )}
 
