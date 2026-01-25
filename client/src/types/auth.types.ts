@@ -2,6 +2,12 @@
 // User Types
 // ============================================================================
 
+export interface IOAuth {
+  provider: 'google' | 'fortytwo';
+  id: string;
+  isPasswordSet?: boolean;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -12,6 +18,7 @@ export interface User {
   createdAt: string;
   isActive?: boolean;
   language?: string;
+  oauth?: IOAuth;
 }
 
 // ============================================================================
@@ -37,8 +44,8 @@ export interface ForgotPasswordData {
 
 export interface ResetPasswordData {
   token: string;
-  password: string;
-  confirmPassword: string;
+  newPassword: string;
+  confirmPassword: string; // Frontend validation only, not sent to backend
 }
 
 export interface UpdateProfileData {
@@ -53,7 +60,7 @@ export interface UpdateProfileData {
 export interface ChangePasswordData {
   currentPassword: string;
   newPassword: string;
-  confirmPassword: string;
+  confirmPassword: string; // Frontend validation only, not sent to backend
 }
 
 // ============================================================================
