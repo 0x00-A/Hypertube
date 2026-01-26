@@ -2,7 +2,6 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Calendar, Globe, User as UserIcon } from 'lucide-react';
 import { getAvatarUrl } from '../../utils/avatarUtils';
-import { formatDistanceToNow } from 'date-fns';
 import { useUserProfile } from '../../hooks/useUserProfile';
 
 const LANGUAGES: Record<string, string> = {
@@ -73,7 +72,7 @@ export default function UserProfile() {
     : user.username?.slice(0, 2).toUpperCase() || '?';
 
   const memberSince = user.createdAt
-    ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })
+    ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Unknown';
 
   const languageDisplay = user.language ? LANGUAGES[user.language] || user.language.toUpperCase() : 'Not set';
