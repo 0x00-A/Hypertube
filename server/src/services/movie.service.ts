@@ -326,6 +326,9 @@ export class MovieService {
         originalLanguage: metadata.originalLanguage,
         trailer: metadata.trailer,
         cast: metadata.cast || [],
+        director: metadata.director || null,
+        producer: metadata.producer || null,
+        productionCompanies: metadata.productionCompanies || [],
         images: metadata.images,
         torrents: ytsMovieDetails?.torrents
           ? ytsMovieDetails.torrents.map((t) => ({

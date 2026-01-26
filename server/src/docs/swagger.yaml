@@ -2075,13 +2075,39 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cast'
-          maxItems: 6
-          description: Main cast members (up to 6 actors)
+          maxItems: 18
+          description: Main cast members (up to 18 actors)
           example:
             - id: 3894
               name: Christian Bale
               character: Bruce Wayne / Batman
               profilePath: https://image.tmdb.org/t/p/w185/3qx2QFUbG6t6IlzR0F9k3Z6Yhf7.jpg
+        director:
+          $ref: '#/components/schemas/CrewMember'
+          nullable: true
+          description: Movie director
+          example:
+            id: 525
+            name: Christopher Nolan
+            profilePath: https://image.tmdb.org/t/p/w185/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg
+        producer:
+          $ref: '#/components/schemas/CrewMember'
+          nullable: true
+          description: First producer (known_for_department = Production)
+          example:
+            id: 9996
+            name: Emma Thomas
+            profilePath: https://image.tmdb.org/t/p/w185/sample.jpg
+        productionCompanies:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionCompany'
+          description: Production companies involved in the movie
+          example:
+            - id: 923
+              name: Legendary Pictures
+              logoPath: https://image.tmdb.org/t/p/w200/5UQsZrfbfG2dYJbx8DxfoTr2Bvu.png
+              originCountry: US
         images:
           type: object
           required:
@@ -2235,6 +2261,48 @@ components:
           type: string
           description: URL to actor's profile image
           example: https://image.tmdb.org/t/p/w185/3qx2QFUbG6t6IlzR0F9k3Z6Yhf7.jpg
+
+    CrewMember:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: TMDB crew member ID
+          example: 525
+        name:
+          type: string
+          description: Crew member's name
+          example: Christopher Nolan
+        profilePath:
+          type: string
+          description: URL to crew member's profile image
+          example: https://image.tmdb.org/t/p/w185/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg
+
+    ProductionCompany:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: TMDB production company ID
+          example: 923
+        name:
+          type: string
+          description: Production company name
+          example: Legendary Pictures
+        logoPath:
+          type: string
+          description: URL to production company logo
+          example: https://image.tmdb.org/t/p/w200/5UQsZrfbfG2dYJbx8DxfoTr2Bvu.png
+        originCountry:
+          type: string
+          description: Country of origin (ISO 3166-1 alpha-2)
+          example: US
 
     TrendingMovieItem:
       type: object
