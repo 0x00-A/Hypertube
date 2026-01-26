@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Pencil, Trash2, Flag, MoreVertical } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { IComment } from '../../types/comment.types';
 import { useUpdateComment } from '../../hooks/useUpdateComment';
 import { useDeleteComment } from '../../hooks/useDeleteComment';
 import { useAuthState } from '../../hooks/useAuth';
 import { MAX_COMMENT_LENGTH } from '../../utils/constants';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 interface CommentCardProps {
     comment: IComment;
@@ -75,7 +77,7 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
                         {comment.user.avatarUrl ? (
                             <img
-                                src={comment.user.avatarUrl}
+                                src={getAvatarUrl(comment.user.avatarUrl)}
                                 alt={comment.user.username}
                                 className="w-full h-full object-cover"
                             />
@@ -90,9 +92,12 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-semibold text-base">
+                        <Link 
+                            to={`/user/${comment.user.username}`}
+                            className="text-white font-semibold text-base hover:text-primary transition-colors"
+                        >
                             {comment.user.username}
-                        </span>
+                        </Link>
 
                         <div className="flex items-center gap-3">
                             <span className="text-text-secondary text-sm">

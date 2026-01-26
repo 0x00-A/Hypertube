@@ -63,3 +63,10 @@ typings/
 /dist
 
 .env.test
+
+# Uploaded files (keep directory structure with .gitkeep)
+uploads/*
+!uploads/.gitkeep
+!uploads/avatars/
+uploads/avatars/*
+!uploads/avatars/.gitkeep

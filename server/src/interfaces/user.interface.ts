@@ -23,7 +23,7 @@ export interface IUserProfileUpdate {
   username?: string;
   firstName?: string;
   lastName?: string;
-  avatarUrl?: string;
+  avatarUrl?: string; // Now stores file path like /uploads/avatars/uuid-timestamp.jpg
   language?: string;
   password?: string;
 }

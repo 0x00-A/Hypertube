@@ -53,7 +53,7 @@ export interface UpdateProfileData {
   email?: string;
   firstName?: string;
   lastName?: string;
-  avatarUrl?: string;
+  avatar?: File; // Changed from avatarUrl to avatar (File object)
   language?: string;
 }
 

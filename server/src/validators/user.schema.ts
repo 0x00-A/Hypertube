@@ -65,7 +65,8 @@ export const UpdateProfileSchema = z.object({
     username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
-    avatarUrl: z.string().url('Invalid URL format').nullish(),
+    // avatarUrl is now a file path set by multer middleware, not validated as URL
+    avatarUrl: z.string().nullish(),
     language: z
       .enum(SUPPORTED_LANGUAGES, {
         message: 'Language must be a valid ISO 639-1 code',

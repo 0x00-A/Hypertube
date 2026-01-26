@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 // import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
@@ -40,11 +41,14 @@ export const createApp = () => {
     }),
   );
   app.use(cors(corsOptions));
-  // Set 5MB limit to handle base64-encoded images
-  app.use(express.json({ limit: '5mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+  // Reduced limit since we're no longer sending base64 images
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
   app.use(passport.initialize());
+
+  // Serve static files for uploaded avatars
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   // Disable rate limiting in test environment to prevent 429 errors
   // if (env.NODE_ENV === 'production') {

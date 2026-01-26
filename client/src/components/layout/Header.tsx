@@ -19,6 +19,7 @@ import ProfileDropdown from "./ProfileDropdown";
 import SearchDropdown from "./SearchDropdown";
 import FilterDropdown from "./FilterDropdown";
 import { Avatar } from "../ui";
+import { getAvatarUrl } from "../../utils/avatarUtils";
 
 const navLinks = [
   { label: "Browse", path: "/browse", icon: Compass },
@@ -254,7 +255,7 @@ export default function Header() {
                 aria-label="User menu"
               >
                 <Avatar
-                  src={user?.avatarUrl}
+                  src={getAvatarUrl(user?.avatarUrl)}
                   alt={username}
                   fallback={userInitials}
                   size="md"
@@ -265,7 +266,7 @@ export default function Header() {
                 onClose={() => setIsProfileDropdownOpen(false)}
                 userInitials={userInitials}
                 username={username}
-                avatarUrl={user?.avatarUrl}
+                avatarUrl={getAvatarUrl(user?.avatarUrl)}
                 triggerRef={profileTriggerRef}
               />
             </div>
@@ -297,7 +298,7 @@ export default function Header() {
                 aria-label="User menu"
               >
                 <Avatar
-                  src={user?.avatarUrl}
+                  src={getAvatarUrl(user?.avatarUrl)}
                   alt={username}
                   fallback={userInitials}
                   size="sm"
@@ -308,7 +309,7 @@ export default function Header() {
                 onClose={() => setIsMobileProfileOpen(false)}
                 userInitials={userInitials}
                 username={username}
-                avatarUrl={user?.avatarUrl}
+                avatarUrl={getAvatarUrl(user?.avatarUrl)}
                 triggerRef={mobileProfileTriggerRef}
               />
             </div>
