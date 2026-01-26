@@ -66,6 +66,19 @@ export interface ICast {
   profilePath?: string;
 }
 
+export interface ICrewMember {
+  id: number;
+  name: string;
+  profilePath?: string;
+}
+
+export interface IProductionCompany {
+  id: number;
+  name: string;
+  logoPath?: string;
+  originCountry?: string;
+}
+
 export interface ISubtitle {
   id?: string; // internal DB id or provider subtitle id
   fileId?: number; // OpenSubtitles file_id
@@ -94,6 +107,9 @@ export interface IMovie {
   originalLanguage?: string;
   trailer?: string;
   cast?: ICast[];
+  director?: ICrewMember | null;
+  producer?: ICrewMember | null;
+  productionCompanies?: IProductionCompany[];
   images: {
     thumbnail: string;
     poster: string;

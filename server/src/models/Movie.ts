@@ -28,6 +28,25 @@ const castSchema = new Schema(
   { _id: false },
 );
 
+const crewMemberSchema = new Schema(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    profilePath: { type: String },
+  },
+  { _id: false },
+);
+
+const productionCompanySchema = new Schema(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    logoPath: { type: String },
+    originCountry: { type: String },
+  },
+  { _id: false },
+);
+
 const subtitleSchema = new Schema(
   {
     id: { type: String },
@@ -60,7 +79,10 @@ const movieSchema = new Schema(
     genres: [{ type: String }], // Array for filtering
     originalLanguage: { type: String, default: 'en' }, // Original language
     trailer: { type: String },
-    cast: { type: [castSchema], default: () => [] }, // Up to 6 main actors
+    cast: { type: [castSchema], default: () => [] }, // Up to 18 main actors
+    director: { type: crewMemberSchema, default: null }, // Movie director
+    producer: { type: crewMemberSchema, default: null }, // First producer with Production department
+    productionCompanies: { type: [productionCompanySchema], default: () => [] }, // Production companies
 
     images: {
       thumbnail: { type: String }, // Medium image for lists

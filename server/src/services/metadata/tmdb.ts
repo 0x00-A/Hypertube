@@ -109,8 +109,8 @@ export async function getMetadata(imdbId: string) {
       Array.isArray((credits as any).cast)
     ) {
       return (credits as any).cast
-        .slice(0, 6)
-        .map((actor: any) => ({
+        .slice(0, 18)
+        .map((actor: { id?: number; name?: string; character?: string; profile_path?: string }) => ({
           id: typeof actor.id === 'number' ? actor.id : 0,
           name: typeof actor.name === 'string' ? actor.name : '',
           character: typeof actor.character === 'string' ? actor.character : '',
@@ -119,7 +119,75 @@ export async function getMetadata(imdbId: string) {
               ? `${IMAGE_BASE}/w185${actor.profile_path}`
               : undefined,
         }))
-        .filter((actor: any) => actor.name && actor.character);
+        .filter((actor: { name: string; character: string }) => actor.name && actor.character);
+    }
+    return [];
+  };
+
+  // Parse director from crew (job === 'Director')
+  const parseDirector = (credits: unknown): { id: number; name: string; profilePath?: string } | null => {
+    if (
+      typeof credits === 'object' &&
+      credits &&
+      'crew' in credits &&
+      Array.isArray((credits as { crew?: unknown[] }).crew)
+    ) {
+      const director = (credits as { crew: Array<{ id?: number; name?: string; job?: string; profile_path?: string }> }).crew.find(
+        (member) => member.job === 'Director'
+      );
+      if (director) {
+        return {
+          id: typeof director.id === 'number' ? director.id : 0,
+          name: typeof director.name === 'string' ? director.name : '',
+          profilePath:
+            typeof director.profile_path === 'string' && director.profile_path
+              ? `${IMAGE_BASE}/w185${director.profile_path}`
+              : undefined,
+        };
+      }
+    }
+    return null;
+  };
+
+  // Parse first producer with known_for_department === 'Production'
+  const parseProducer = (credits: unknown): { id: number; name: string; profilePath?: string } | null => {
+    if (
+      typeof credits === 'object' &&
+      credits &&
+      'crew' in credits &&
+      Array.isArray((credits as { crew?: unknown[] }).crew)
+    ) {
+      const producer = (credits as { crew: Array<{ id?: number; name?: string; job?: string; known_for_department?: string; profile_path?: string }> }).crew.find(
+        (member) => member.job === 'Producer' && member.known_for_department === 'Production'
+      );
+      if (producer) {
+        return {
+          id: typeof producer.id === 'number' ? producer.id : 0,
+          name: typeof producer.name === 'string' ? producer.name : '',
+          profilePath:
+            typeof producer.profile_path === 'string' && producer.profile_path
+              ? `${IMAGE_BASE}/w185${producer.profile_path}`
+              : undefined,
+        };
+      }
+    }
+    return null;
+  };
+
+  // Parse production companies
+  const parseProductionCompanies = (companies: unknown): Array<{ id: number; name: string; logoPath?: string; originCountry?: string }> => {
+    if (Array.isArray(companies)) {
+      return companies
+        .map((company: { id?: number; name?: string; logo_path?: string; origin_country?: string }) => ({
+          id: typeof company.id === 'number' ? company.id : 0,
+          name: typeof company.name === 'string' ? company.name : '',
+          logoPath:
+            typeof company.logo_path === 'string' && company.logo_path
+              ? `${IMAGE_BASE}/w200${company.logo_path}`
+              : undefined,
+          originCountry: typeof company.origin_country === 'string' ? company.origin_country : undefined,
+        }))
+        .filter((company) => company.name);
     }
     return [];
   };
@@ -147,6 +215,9 @@ export async function getMetadata(imdbId: string) {
     images: parseImages(details.poster_path, details.backdrop_path),
     trailer: trailerUrl,
     cast: parseCast(details.credits),
+    director: parseDirector(details.credits),
+    producer: parseProducer(details.credits),
+    productionCompanies: parseProductionCompanies(details.production_companies),
   };
 }
 
