@@ -20,6 +20,7 @@ import { Select } from '../../components/ui/Select';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
 import { useDebounce } from '../../hooks/useDebounce';
+import { hasActiveLibraryFilters } from '../../utils/filterHelpers';
 
 const LIBRARY_SORT_OPTIONS = [
     { value: 'lastUpdated', label: 'Recently Added' },
@@ -41,13 +42,7 @@ export const LibraryFilterBar = () => {
         setLocalSearch('');
     };
 
-    const hasActiveFilters =
-        filters.genre !== 'All' ||
-        filters.minRating > 0 ||
-        filters.year > 0 ||
-        filters.sortBy !== 'lastUpdated' ||
-        filters.sortOrder !== 'desc' ||
-        filters.search !== '';
+    const hasActiveFiltersValue = hasActiveLibraryFilters(filters);
 
     return (
         <div className="w-full space-y-4 mb-8">
@@ -123,7 +118,7 @@ export const LibraryFilterBar = () => {
                     </div>
 
                     {/* Reset Button */}
-                    {hasActiveFilters && (
+                    {hasActiveFiltersValue && (
                         <button
                             onClick={handleReset}
                             className={clsx(

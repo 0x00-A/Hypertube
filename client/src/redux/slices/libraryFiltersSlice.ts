@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { IMovieFiltersState } from '../../types/movieFilter.types';
 
-interface ILibraryFiltersState extends IMovieFiltersState {
+export interface ILibraryFiltersState extends IMovieFiltersState {
     search: string;
 }
 
