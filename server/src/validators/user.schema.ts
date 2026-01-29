@@ -65,8 +65,26 @@ export const UpdateProfileSchema = z.object({
     username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
-    // avatarUrl is now a file path set by multer middleware, not validated as URL
-    avatarUrl: z.string().nullish(),
+    // avatarUrl can be either a file path (from multer) or an external URL
+    avatarUrl: z
+      .string()
+      .refine(
+        (val) => {
+          // Allow file paths (starts with /uploads/ or uploads/)
+          if (val.startsWith('/uploads/') || val.startsWith('uploads/')) {
+            return true;
+          }
+          // Otherwise validate as URL
+          try {
+            const url = new URL(val);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        },
+        { message: 'Invalid URL format' },
+      )
+      .nullish(),
     language: z
       .enum(SUPPORTED_LANGUAGES, {
         message: 'Language must be a valid ISO 639-1 code',
