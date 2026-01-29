@@ -80,11 +80,8 @@ export const authService = {
     if (data.lastName) formData.append('lastName', data.lastName);
     if (data.language) formData.append('language', data.language);
     
-    await httpClient.post<{ status: string; message: string }>('/users/update-profile', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Let axios automatically set Content-Type with boundary for multipart/form-data
+    await httpClient.post<{ status: string; message: string }>('/users/update-profile', formData);
   },
 
   /**

@@ -353,9 +353,9 @@ async function cleanupOrphanedAvatars() {
 
 ## 📚 Documentation References
 
-- **[AVATAR_STORAGE_CHANGES.md](../AVATAR_STORAGE_CHANGES.md)** - Quick reference
-- **[guides/AVATAR_FILE_STORAGE.md](../server/guides/AVATAR_FILE_STORAGE.md)** - Complete guide
-- **[guides/AVATAR_UPLOAD_FLOW.md](../server/guides/AVATAR_UPLOAD_FLOW.md)** - Visual diagrams
+- **[AVATAR_STORAGE_CHANGES.md](AVATAR_STORAGE_CHANGES.md)** - Quick reference
+- **[guides/AVATAR_FILE_STORAGE.md](server/guides/AVATAR_FILE_STORAGE.md)** - Complete guide
+- **[guides/AVATAR_UPLOAD_FLOW.md](server/guides/AVATAR_UPLOAD_FLOW.md)** - Visual diagrams
 - **[Multer Documentation](https://github.com/expressjs/multer)** - Official docs
 
 ## 🆘 Need Help?
