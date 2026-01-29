@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
@@ -42,6 +42,15 @@ export default function Settings() {
   const [previewAvatar, setPreviewAvatar] = useState<string>(getAvatarUrl(user?.avatarUrl));
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // Cleanup object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewAvatar && previewAvatar.startsWith('blob:')) {
+        URL.revokeObjectURL(previewAvatar);
+      }
+    };
+  }, [previewAvatar]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -102,6 +111,11 @@ export default function Settings() {
 
     // Store the file for upload
     setAvatarFile(file);
+
+    // Revoke previous preview URL (if any) to avoid memory leaks
+    if (previewAvatar && previewAvatar.startsWith('blob:')) {
+      URL.revokeObjectURL(previewAvatar);
+    }
 
     // Create preview using URL.createObjectURL
     const previewUrl = URL.createObjectURL(file);

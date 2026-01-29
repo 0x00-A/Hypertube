@@ -139,14 +139,11 @@ chmod -R 755 server/uploads
 
 ## Dependencies Added
 
-```json
-{
-  "multer": "^1.4.5-lts.1",
-  "@types/multer": "^1.4.7",
-  "uuid": "^9.0.0",
-  "@types/uuid": "^9.0.0"
-}
-```
+The avatar file storage feature uses the following packages (see `server/package.json` for the exact versions):
+- `multer`
+- `@types/multer`
+- `uuid`
+- `@types/uuid`
 
 ## Documentation
 

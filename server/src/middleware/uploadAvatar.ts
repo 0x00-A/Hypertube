@@ -33,14 +33,13 @@ export const deleteOldAvatar = (avatarPath: string): void => {
     return;
   }
 
-  try {
-    // Convert database path to filesystem path
-    const fullPath = path.join(__dirname, '../../', avatarPath);
+  // Normalize to a relative path so path.join resolves under the project root
+  const normalizedAvatarPath = avatarPath.startsWith('/') ? avatarPath.slice(1) : avatarPath;
+  const fullPath = path.join(__dirname, '../../', normalizedAvatarPath);
 
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  } catch (error) {
-    logger.error({ error, avatarPath }, 'Failed to delete old avatar');
-  }
+  // Fire-and-forget asynchronous deletion to avoid blocking the event loop
+  fs.promises.unlink(fullPath).catch((error: unknown) => {
+    // Log but don't throw - deleting old avatar shouldn't break the update
+    logger.error({ error, avatarPath, fullPath }, 'Failed to delete old avatar');
+  });
 };
