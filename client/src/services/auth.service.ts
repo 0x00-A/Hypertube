@@ -46,6 +46,14 @@ export const authService = {
   },
 
   /**
+   * Get user profile by username
+   */
+  getUserProfile: async (username: string): Promise<User> => {
+    const response = await httpClient.get<{ status: string; data: { user: User } }>(`/users/${username}`);
+    return response.data.user;
+  },
+
+  /**
    * Send password reset email
    */
   forgotPassword: async (data: ForgotPasswordData): Promise<MessageResponse> => {
