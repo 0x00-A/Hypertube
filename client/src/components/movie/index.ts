@@ -2,6 +2,7 @@ export { MovieCard } from './MovieCard';
 export { ArchiveMovieCard } from './ArchiveMovieCard';
 export { MovieCardSkeleton } from './MovieCardSkeleton';
 export { MovieCarousel } from './MovieCarousel';
+export { CastCarousel } from './CastCarousel';
 export { SliderMovies } from './SliderMovies';
 export { HeroSection } from './HeroSection';
 export { LastWatchingCard, LastWatchingSection } from './LastWatchingSection';
