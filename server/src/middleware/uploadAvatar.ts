@@ -33,9 +33,34 @@ export const deleteOldAvatar = (avatarPath: string): void => {
     return;
   }
 
+  // Security: Reject any path traversal attempts
+  if (avatarPath.includes('..') || avatarPath.includes('\\')) {
+    logger.warn({ avatarPath }, 'Rejected avatar deletion attempt with path traversal');
+    return;
+  }
+
+  // Security: Only allow paths under /uploads/avatars/
+  if (!avatarPath.startsWith('/uploads/avatars/') && !avatarPath.startsWith('uploads/avatars/')) {
+    logger.warn({ avatarPath }, 'Rejected avatar deletion attempt outside allowed directory');
+    return;
+  }
+
   // Normalize to a relative path so path.join resolves under the project root
   const normalizedAvatarPath = avatarPath.startsWith('/') ? avatarPath.slice(1) : avatarPath;
   const fullPath = path.join(__dirname, '../../', normalizedAvatarPath);
+
+  // Security: Verify the resolved path is still under the uploads/avatars directory
+  const uploadsDir = path.join(__dirname, '../../uploads/avatars');
+  const resolvedPath = path.resolve(fullPath);
+  const resolvedUploadsDir = path.resolve(uploadsDir);
+
+  if (!resolvedPath.startsWith(resolvedUploadsDir)) {
+    logger.error(
+      { avatarPath, fullPath, resolvedPath, resolvedUploadsDir },
+      'Path traversal attempt detected',
+    );
+    return;
+  }
 
   // Fire-and-forget asynchronous deletion to avoid blocking the event loop
   fs.promises.unlink(fullPath).catch((error: unknown) => {

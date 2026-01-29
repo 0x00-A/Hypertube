@@ -70,11 +70,17 @@ export const UpdateProfileSchema = z.object({
       .string()
       .refine(
         (val) => {
-          // Allow file paths (starts with /uploads/ or uploads/)
-          if (val.startsWith('/uploads/') || val.startsWith('uploads/')) {
+          // Reject any path traversal attempts
+          if (val.includes('..') || val.includes('\\')) {
+            return false;
+          }
+
+          // Only allow paths under /uploads/avatars/ (from multer)
+          if (val.startsWith('/uploads/avatars/') || val.startsWith('uploads/avatars/')) {
             return true;
           }
-          // Otherwise validate as URL
+
+          // Otherwise validate as external URL (for OAuth avatars)
           try {
             const url = new URL(val);
             return url.protocol === 'http:' || url.protocol === 'https:';
