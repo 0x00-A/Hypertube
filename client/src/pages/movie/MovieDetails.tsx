@@ -388,7 +388,7 @@ export default function MovieDetails() {
                                         <div className="flex items-center gap-2">
                                             {movie.director.profilePath && (
                                                 <img
-                                                    src={`https://image.tmdb.org/t/p/w45${movie.director.profilePath}`}
+                                                    src={movie.director.profilePath}
                                                     alt={`${movie.director.name} - Director`}
                                                     className="w-6 h-6 rounded-full object-cover"
                                                 />
@@ -434,7 +434,7 @@ export default function MovieDetails() {
                                         <div className="flex items-center gap-2">
                                             {movie.producer.profilePath && (
                                                 <img
-                                                    src={`https://image.tmdb.org/t/p/w45${movie.producer.profilePath}`}
+                                                    src={movie.producer.profilePath}
                                                     alt={`${movie.producer.name} - Producer`}
                                                     className="w-6 h-6 rounded-full object-cover"
                                                 />

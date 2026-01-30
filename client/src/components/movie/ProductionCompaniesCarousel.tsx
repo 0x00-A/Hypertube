@@ -154,7 +154,7 @@ export const ProductionCompaniesCarousel = ({
               <div className="w-[100px] h-[100px] rounded-lg overflow-hidden border border-white/10 bg-white/95 hover:bg-white flex items-center justify-center p-3 transition-all duration-300 shadow-md hover:shadow-lg">
                 {company.logoPath ? (
                   <img
-                    src={`https://image.tmdb.org/t/p/w200${company.logoPath}`}
+                    src={company.logoPath}
                     alt={`${company.name} logo`}
                     className="w-full h-full object-contain"
                   />
