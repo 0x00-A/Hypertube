@@ -1,26 +1,26 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
-import type { ICastMember } from '../../types/movie.types';
+import type { IProductionCompany } from '../../types/movie.types';
 import { clsx } from 'clsx';
 
-export interface CastCarouselProps {
+export interface ProductionCompaniesCarouselProps {
   title: string;
-  cast: ICastMember[];
+  companies: IProductionCompany[];
   maxItems?: number;
   className?: string;
 }
 
-export const CastCarousel = ({
+export const ProductionCompaniesCarousel = ({
   title,
-  cast,
-  maxItems = 10,
+  companies,
+  maxItems = 20,
   className,
-}: CastCarouselProps) => {
+}: ProductionCompaniesCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const displayedCast = cast.slice(0, maxItems);
+  const displayedCompanies = companies.slice(0, maxItems);
 
   const checkScrollPosition = () => {
     if (!scrollContainerRef.current) return;
@@ -40,17 +40,17 @@ export const CastCarousel = ({
     const scrollWidth = container.scrollWidth;
 
     // Calculate card width based on viewport
-    const gap = 24; // gap-6 in Tailwind
+    const gap = 16; // gap-4 in Tailwind
     let cardsVisible = 2;
 
     if (window.innerWidth >= 1280) { // xl
-      cardsVisible = 10;
-    } else if (window.innerWidth >= 1024) { // lg
       cardsVisible = 8;
-    } else if (window.innerWidth >= 768) { // md
+    } else if (window.innerWidth >= 1024) { // lg
       cardsVisible = 6;
+    } else if (window.innerWidth >= 768) { // md
+      cardsVisible = 5;
     } else if (window.innerWidth >= 640) { // sm
-      cardsVisible = 4;
+      cardsVisible = 3;
     }
 
     const cardWidth = (containerWidth - (gap * (cardsVisible - 1))) / cardsVisible;
@@ -80,7 +80,7 @@ export const CastCarousel = ({
 
     container.addEventListener('scroll', checkScrollPosition);
     return () => container.removeEventListener('scroll', checkScrollPosition);
-  }, [cast]);
+  }, [companies]);
 
   useEffect(() => {
     const handleResize = () => checkScrollPosition();
@@ -88,21 +88,14 @@ export const CastCarousel = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!cast || cast.length === 0) {
+  if (!companies || companies.length === 0) {
     return null;
   }
 
   return (
     <div className={clsx('relative w-full', className)}>
       <div className="flex items-center gap-2 mb-6">
-        <div className="text-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </div>
+        <Film className="w-5 h-5 text-primary" />
         <h3 className="text-xl font-bold text-white">{title}</h3>
       </div>
 
@@ -112,7 +105,7 @@ export const CastCarousel = ({
             type="button"
             onClick={() => scroll('left')}
             className={clsx(
-              'absolute left-0 top-[40px] -translate-y-1/2 z-30',
+              'absolute left-0 top-[50px] -translate-y-1/2 z-30',
               'w-10 h-10 sm:w-12 sm:h-12 rounded-full',
               'bg-primary/80 backdrop-blur-sm',
               'flex items-center justify-center',
@@ -132,7 +125,7 @@ export const CastCarousel = ({
             type="button"
             onClick={() => scroll('right')}
             className={clsx(
-              'absolute right-0 top-[40px] -translate-y-1/2 z-30',
+              'absolute right-0 top-[50px] -translate-y-1/2 z-30',
               'w-10 h-10 sm:w-12 sm:h-12 rounded-full',
               'bg-primary/80 backdrop-blur-sm',
               'flex items-center justify-center',
@@ -149,31 +142,34 @@ export const CastCarousel = ({
 
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto gap-6 pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden"
+          className="flex overflow-x-auto gap-4 pb-4 scroll-smooth [&::-webkit-scrollbar]:hidden"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {displayedCast.map((member) => (
-            <div key={member.id} className="flex flex-col items-center gap-3 min-w-[100px] shrink-0">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
-                {member.profilePath ? (
+          {displayedCompanies.map((company) => (
+            <div key={company.id} className="flex flex-col items-center gap-2 w-[100px] shrink-0">
+              <div className="w-[100px] h-[100px] rounded-lg overflow-hidden border border-white/10 bg-white/95 hover:bg-white flex items-center justify-center p-3 transition-all duration-300 shadow-md hover:shadow-lg">
+                {company.logoPath ? (
                   <img
-                    src={`https://image.tmdb.org/t/p/w200${member.profilePath}`}
-                    alt={`${member.name} - Cast member`}
-                    className="w-full h-full object-cover"
+                    src={`https://image.tmdb.org/t/p/w200${company.logoPath}`}
+                    alt={`${company.name} logo`}
+                    className="w-full h-full object-contain"
                   />
                 ) : (
-                  <div className="w-full h-full bg-card flex items-center justify-center text-text-muted text-xs">
-                    N/A
+                  <div className="text-center">
+                    <Film className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                    <p className="text-gray-600 text-[10px] font-medium px-1 line-clamp-2">{company.name}</p>
                   </div>
                 )}
               </div>
-              <div className="text-center">
-                <p className="text-white text-sm font-medium leading-tight mb-1">{member.name}</p>
-                <p className="text-text-secondary text-xs">{member.character}</p>
+              <div className="text-center w-full px-1">
+                <p className="text-white text-xs font-medium leading-tight line-clamp-2">{company.name}</p>
+                {company.originCountry && (
+                  <p className="text-text-secondary text-[10px] mt-0.5">{company.originCountry}</p>
+                )}
               </div>
             </div>
           ))}

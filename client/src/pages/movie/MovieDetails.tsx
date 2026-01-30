@@ -6,7 +6,7 @@ import { useMovieDetails } from '../../hooks/useMovieDetails';
 import { useUserRating } from '../../hooks/useUserRating';
 import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
-import { MovieRating, MovieCarousel, CastCarousel } from '../../components/movie';
+import { MovieRating, MovieCarousel, CastCarousel, ProductionCompaniesCarousel } from '../../components/movie';
 import { Sparkles } from 'lucide-react';
 import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
@@ -266,7 +266,9 @@ export default function MovieDetails() {
                                         {(isAdding || isRemoving) ? (
                                             <>
                                                 <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                                
+                                                <span className="sr-only" aria-live="polite">
+                                                    Updating watchlist…
+                                                </span>
                                             </>
                                         ) : movie.inWatchlist ? (
                                             <>
@@ -387,7 +389,7 @@ export default function MovieDetails() {
                                             {movie.director.profilePath && (
                                                 <img
                                                     src={`https://image.tmdb.org/t/p/w45${movie.director.profilePath}`}
-                                                    alt={movie.director.name}
+                                                    alt={`${movie.director.name} - Director`}
                                                     className="w-6 h-6 rounded-full object-cover"
                                                 />
                                             )}
@@ -433,7 +435,7 @@ export default function MovieDetails() {
                                             {movie.producer.profilePath && (
                                                 <img
                                                     src={`https://image.tmdb.org/t/p/w45${movie.producer.profilePath}`}
-                                                    alt={movie.producer.name}
+                                                    alt={`${movie.producer.name} - Producer`}
                                                     className="w-6 h-6 rounded-full object-cover"
                                                 />
                                             )}
@@ -446,38 +448,12 @@ export default function MovieDetails() {
 
                         {/* Production Companies Section */}
                         {movie.productionCompanies && movie.productionCompanies.length > 0 && (
-                            <div className="mt-8">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Film className="w-5 h-5 text-primary" />
-                                    <h3 className="text-lg font-bold text-white">Production Companies</h3>
-                                </div>
-                                <div className="flex flex-wrap gap-4">
-                                    {movie.productionCompanies.map((company) => (
-                                        <div key={company.id} className="flex flex-col items-center gap-2 w-[100px]">
-                                            <div className="w-full aspect-square rounded-lg overflow-hidden border border-white/10 bg-white/95 hover:bg-white flex items-center justify-center p-3 transition-all duration-300 shadow-md hover:shadow-lg">
-                                                {company.logoPath ? (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w200${company.logoPath}`}
-                                                        alt={company.name}
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                ) : (
-                                                    <div className="text-center">
-                                                        <Film className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                                                        <p className="text-gray-600 text-[10px] font-medium px-1 line-clamp-2">{company.name}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="text-center w-full px-1">
-                                                <p className="text-white text-xs font-medium leading-tight line-clamp-2">{company.name}</p>
-                                                {company.originCountry && (
-                                                    <p className="text-text-secondary text-[10px] mt-0.5">{company.originCountry}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <ProductionCompaniesCarousel
+                                title="Production Companies"
+                                companies={movie.productionCompanies}
+                                maxItems={20}
+                                className="mt-12"
+                            />
                         )}
 
                         {/* Cast Section */}
