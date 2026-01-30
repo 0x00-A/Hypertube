@@ -11,8 +11,24 @@ export interface ICastMember {
   order: number;
 }
 
+export interface ICrewMember {
+  id: number;
+  name: string;
+  profilePath?: string;
+}
+
+export interface IProductionCompany {
+  id: number;
+  name: string;
+  logoPath?: string;
+  originCountry?: string;
+}
+
 export interface IMovieDetails extends IMovie {
   cast?: ICastMember[];
+  director?: ICrewMember | null;
+  producer?: ICrewMember | null;
+  productionCompanies?: IProductionCompany[];
 }
 
 export interface IMovie {

@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Star, Clock, Calendar, Languages, Play, PlayCircle, Plus, Check } from 'lucide-react';
+import { Star, Clock, Calendar, Languages, Play, PlayCircle, Plus, Check, Film, User } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMovieDetails } from '../../hooks/useMovieDetails';
 import { useUserRating } from '../../hooks/useUserRating';
 import { useRecommendedMovies } from '../../hooks/useRecommendedMovies';
 import { formatRuntime } from '../../utils/movieHelpers';
-import { MovieRating, MovieCarousel } from '../../components/movie';
+import { MovieRating, MovieCarousel, CastCarousel, ProductionCompaniesCarousel } from '../../components/movie';
 import { Sparkles } from 'lucide-react';
 import TrailerModal from '../../components/movie/TrailerModal';
 import { CommentSection } from '../../components/comments';
-import type { ICastMember } from '../../types/movie.types';
 import { MovieDetailsSkeleton } from '../../components/movie/MovieDetailsSkeleton';
 import { useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useMovieInteractions';
 import toast from 'react-hot-toast';
@@ -262,12 +261,14 @@ export default function MovieDetails() {
                                     <button
                                         onClick={handleWatchlistClick}
                                         disabled={isAdding || isRemoving}
-                                        className="flex items-center gap-2 bg-primary text-black hover:bg-primary/90 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex items-center justify-center gap-2 bg-primary text-black hover:bg-primary/90 px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl font-bold text-sm md:text-base transition-all active:scale-95 backdrop-blur-sm group disabled:opacity-50 disabled:cursor-not-allowed min-w-[180px] md:min-w-[220px]"
                                     >
                                         {(isAdding || isRemoving) ? (
                                             <>
                                                 <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                                <span>Loading...</span>
+                                                <span className="sr-only" aria-live="polite">
+                                                    Updating watchlist…
+                                                </span>
                                             </>
                                         ) : movie.inWatchlist ? (
                                             <>
@@ -377,6 +378,26 @@ export default function MovieDetails() {
                                         <span className="text-text-secondary uppercase">{movie.originalLanguage}</span>
                                     </div>
                                 )}
+
+                                {movie.director && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <User className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Director</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {movie.director.profilePath && (
+                                                <img
+                                                    src={movie.director.profilePath}
+                                                    alt={`${movie.director.name} - Director`}
+                                                    className="w-6 h-6 rounded-full object-cover"
+                                                />
+                                            )}
+                                            <span className="text-text-secondary">{movie.director.name}</span>
+                                        </div>
+                                    </div>
+                                )}
+
                             </div>
 
                             {/* Right Column */}
@@ -404,42 +425,45 @@ export default function MovieDetails() {
                                         </div>
                                     </div>
                                 )}
+                                {movie.producer && (
+                                    <div className="flex items-center justify-between py-4 border-b border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Film className="w-5 h-5 text-primary" />
+                                            <span className="text-white font-medium">Producer</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {movie.producer.profilePath && (
+                                                <img
+                                                    src={movie.producer.profilePath}
+                                                    alt={`${movie.producer.name} - Producer`}
+                                                    className="w-6 h-6 rounded-full object-cover"
+                                                />
+                                            )}
+                                            <span className="text-text-secondary">{movie.producer.name}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        {/* Production Companies Section */}
+                        {movie.productionCompanies && movie.productionCompanies.length > 0 && (
+                            <ProductionCompaniesCarousel
+                                title="Production Companies"
+                                companies={movie.productionCompanies}
+                                maxItems={20}
+                                className="mt-12"
+                            />
+                        )}
+
                         {/* Cast Section */}
                         {movie.cast && movie.cast.length > 0 && (
-                            <div className="mt-12">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                                    </div>
-                                    <h3 className="text-xl font-bold text-white">Stars</h3>
-                                </div>
-                                <div className="flex overflow-x-auto gap-6 pb-4 custom-scrollbar">
-                                    {movie.cast.slice(0, 10).map((member: ICastMember) => (
-                                        <div key={member.id} className="flex flex-col items-center gap-3 min-w-[100px]">
-                                            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
-                                                {member.profilePath ? (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w200${member.profilePath}`}
-                                                        alt={member.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-card flex items-center justify-center text-text-muted text-xs">
-                                                        N/A
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-white text-sm font-medium leading-tight mb-1">{member.name}</p>
-                                                <p className="text-text-secondary text-xs">{member.character}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <CastCarousel
+                                title="Stars"
+                                cast={movie.cast}
+                                maxItems={10}
+                                className="mt-12"
+                            />
                         )}
                     </div>
                 </section>
