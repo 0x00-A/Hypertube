@@ -796,10 +796,51 @@ paths:
         - bearerAuth: []
       description: |
         Updates the authenticated user's profile information. All fields are optional - only provided fields will be updated.
-        Requires valid JWT token in cookie. Users can update their username, email, bio, and avatar URL.
+        Requires valid JWT token in cookie. Users can update their username, email, name, language, and avatar.
+
+        **Avatar Upload:**
+        - Supports direct file upload via multipart/form-data (recommended for file uploads)
+        - Alternatively, accepts an external URL (https://) for OAuth-linked avatars
+        - Accepted formats: JPEG, PNG, GIF, WebP
+        - Maximum file size: 5MB
+        - When uploading a new avatar, the old avatar file is automatically deleted
       requestBody:
-        required: true
+        required: false
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Avatar image file (JPEG, PNG, GIF, or WebP, max 5MB)
+                email:
+                  type: string
+                  format: email
+                  description: New email address
+                  example: newemail@example.com
+                username:
+                  type: string
+                  minLength: 3
+                  description: New username (minimum 3 characters)
+                  example: newusername
+                firstName:
+                  type: string
+                  description: User's first name
+                  example: John
+                lastName:
+                  type: string
+                  description: User's last name
+                  example: Doe
+                language:
+                  type: string
+                  enum: [en, fr, es, de, it, pt, ru, ja, zh, ar, nl, sv, no, da, fi, pl, tr, ko, hi]
+                  description: User's preferred language (ISO 639-1 code)
+                  example: en
+            encoding:
+              avatar:
+                contentType: image/jpeg, image/png, image/gif, image/webp
           application/json:
             schema:
               type: object
@@ -829,12 +870,11 @@ paths:
                   example: en
                 avatarUrl:
                   type: string
-                  format: uri
-                  description: URL to user's avatar image (must be valid http/https URL)
+                  description: URL to user's avatar image (must be valid http/https URL, or local path /uploads/avatars/*)
                   example: https://example.com/avatar.jpg
             examples:
               updateAll:
-                summary: Update all fields
+                summary: Update all fields (JSON)
                 value:
                   email: newemail@example.com
                   username: newusername
@@ -929,6 +969,16 @@ paths:
                     validationErrors:
                       - path: body.language
                         message: "Invalid enum value. Expected 'en' | 'fr' | 'es' | 'de' | 'it' | 'pt' | 'ru' | 'ja' | 'zh' | 'ar' | 'nl' | 'sv' | 'no' | 'da' | 'fi' | 'pl' | 'tr' | 'ko' | 'hi', received 'xx'"
+                invalidFileType:
+                  summary: Invalid file type for avatar
+                  value:
+                    status: fail
+                    message: Only image files are allowed (JPEG, PNG, GIF, WebP)
+                fileTooLarge:
+                  summary: Avatar file exceeds size limit
+                  value:
+                    status: fail
+                    message: File size exceeds 5MB limit
         '401':
           description: Not authenticated or invalid token
           content:
@@ -979,13 +1029,13 @@ paths:
       description: |
         Changes the password for the authenticated user. Requires the current password for verification
         and a new password that meets minimum security requirements.
-        
+
         **Requirements:**
         - User must be authenticated (JWT token in cookie)
         - Current password must be correct
         - New password must be at least 8 characters long
         - OAuth users without a password set cannot use this endpoint
-        
+
         **Security Notes:**
         - The new password is hashed before storage using bcrypt/argon2
         - Current JWT tokens remain valid after password change (consider re-authentication)

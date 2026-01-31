@@ -4,6 +4,8 @@ import { connectDatabase, disconnectDatabase } from '../../src/config/database';
 import { UserModel } from '../../src/models/User';
 import { PasswordService } from '../../src/services/password.service';
 import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
 
 describe('User Profile Integration Tests', () => {
   const app = createApp();
@@ -1246,6 +1248,366 @@ describe('User Profile Integration Tests', () => {
     });
   });
 
+  describe('POST /api/v1/users/update-profile (Avatar Upload)', () => {
+    const testImagePath = path.join(__dirname, '../fixtures/test-avatar.png');
+    const uploadsDir = path.join(__dirname, '../../uploads/avatars');
+
+    beforeAll(() => {
+      // Ensure uploads directory exists
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+    });
+
+    afterEach(async () => {
+      // Clean up uploaded files after each test
+      try {
+        const files = fs.readdirSync(uploadsDir);
+        for (const file of files) {
+          if (file.includes('-')) {
+            // Only delete test-generated files (uuid-timestamp pattern)
+            fs.unlinkSync(path.join(uploadsDir, file));
+          }
+        }
+      } catch {
+        // Ignore errors if directory doesn't exist
+      }
+    });
+
+    it('should successfully upload avatar image', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Profile updated successfully',
+      });
+
+      // Verify avatar URL was saved in database
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.(png|jpg|jpeg|gif|webp)$/);
+    });
+
+    it('should upload avatar and update other fields simultaneously', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath)
+        .field('firstName', 'AvatarTest')
+        .field('lastName', 'User');
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.firstName).toBe('AvatarTest');
+      expect(updatedUser?.lastName).toBe('User');
+      expect(updatedUser?.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.png$/);
+    });
+
+    it('should save uploaded file to disk', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      const avatarFilename = updatedUser?.avatarUrl?.split('/').pop();
+      const filePath = path.join(uploadsDir, avatarFilename || '');
+
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it('should generate unique filename for uploaded avatar', async () => {
+      // Upload first avatar
+      await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      const user1 = await UserModel.findOne({ username: testUser.username });
+      const firstAvatarUrl = user1?.avatarUrl;
+
+      // Upload second avatar
+      await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      const user2 = await UserModel.findOne({ username: testUser.username });
+      const secondAvatarUrl = user2?.avatarUrl;
+
+      // Filenames should be different (UUID-based)
+      expect(firstAvatarUrl).not.toBe(secondAvatarUrl);
+    });
+
+    it('should return 401 when uploading avatar without authentication', async () => {
+      // When sending multipart/form-data without auth, the server may close the connection
+      // before the upload completes. Test using field() instead of attach() to avoid this.
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .field('firstName', 'Unauthorized');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'Unauthorized: No access token provided',
+      });
+    });
+
+    it('should reject non-image files', async () => {
+      // Create a temporary text file
+      const textFilePath = path.join(__dirname, '../fixtures/test.txt');
+      fs.writeFileSync(textFilePath, 'This is not an image');
+
+      try {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .attach('avatar', textFilePath);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toMatchObject({
+          status: 'fail',
+        });
+        expect(res.body.message).toMatch(/image|allowed/i);
+      } finally {
+        // Clean up
+        fs.unlinkSync(textFilePath);
+      }
+    });
+
+    it('should reject files exceeding size limit', async () => {
+      // Create a large file (>5MB)
+      const largeFilePath = path.join(__dirname, '../fixtures/large-file.png');
+      const largeBuffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
+      fs.writeFileSync(largeFilePath, largeBuffer);
+
+      try {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .attach('avatar', largeFilePath);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toMatchObject({
+          status: 'fail',
+        });
+        expect(res.body.message).toMatch(/5MB|size|large/i);
+      } finally {
+        // Clean up
+        fs.unlinkSync(largeFilePath);
+      }
+    });
+
+    it('should accept JPEG images', async () => {
+      // Create a minimal JPEG file
+      const jpegFilePath = path.join(__dirname, '../fixtures/test.jpg');
+      // Minimal valid JPEG (1x1 red pixel)
+      const jpegBytes = Buffer.from([
+        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43, 0x00, 0x08, 0x06, 0x06, 0x07, 0x06,
+        0x05, 0x08, 0x07, 0x07, 0x07, 0x09, 0x09, 0x08, 0x0a, 0x0c, 0x14, 0x0d, 0x0c, 0x0b, 0x0b,
+        0x0c, 0x19, 0x12, 0x13, 0x0f, 0x14, 0x1d, 0x1a, 0x1f, 0x1e, 0x1d, 0x1a, 0x1c, 0x1c, 0x20,
+        0x24, 0x2e, 0x27, 0x20, 0x22, 0x2c, 0x23, 0x1c, 0x1c, 0x28, 0x37, 0x29, 0x2c, 0x30, 0x31,
+        0x34, 0x34, 0x34, 0x1f, 0x27, 0x39, 0x3d, 0x38, 0x32, 0x3c, 0x2e, 0x33, 0x34, 0x32, 0xff,
+        0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xc4, 0x00,
+        0x1f, 0x00, 0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+        0xff, 0xc4, 0x00, 0xb5, 0x10, 0x00, 0x02, 0x01, 0x03, 0x03, 0x02, 0x04, 0x03, 0x05, 0x05,
+        0x04, 0x04, 0x00, 0x00, 0x01, 0x7d, 0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21,
+        0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08,
+        0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52, 0xd1, 0xf0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0a,
+        0x16, 0x17, 0x18, 0x19, 0x1a, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x3a, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x53, 0x54, 0x55, 0x56,
+        0x57, 0x58, 0x59, 0x5a, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x73, 0x74, 0x75,
+        0x76, 0x77, 0x78, 0x79, 0x7a, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x92, 0x93,
+        0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9,
+        0xaa, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6,
+        0xc7, 0xc8, 0xc9, 0xca, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe1, 0xe2,
+        0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+        0xf8, 0xf9, 0xfa, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0xfb, 0xd5,
+        0xdb, 0x20, 0xa8, 0xa0, 0x02, 0x80, 0x0a, 0x00, 0xff, 0xd9,
+      ]);
+      fs.writeFileSync(jpegFilePath, jpegBytes);
+
+      try {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .attach('avatar', jpegFilePath);
+
+        expect(res.status).toBe(200);
+
+        const updatedUser = await UserModel.findOne({ username: testUser.username });
+        expect(updatedUser?.avatarUrl).toMatch(/\.jpg$/);
+      } finally {
+        fs.unlinkSync(jpegFilePath);
+      }
+    });
+
+    it('should accept WebP images', async () => {
+      // Create a minimal WebP file
+      const webpFilePath = path.join(__dirname, '../fixtures/test.webp');
+      // Minimal valid WebP (1x1 pixel)
+      const webpBytes = Buffer.from([
+        0x52, 0x49, 0x46, 0x46, 0x1a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38,
+        0x4c, 0x0d, 0x00, 0x00, 0x00, 0x2f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+      ]);
+      fs.writeFileSync(webpFilePath, webpBytes);
+
+      try {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .attach('avatar', webpFilePath);
+
+        expect(res.status).toBe(200);
+
+        const updatedUser = await UserModel.findOne({ username: testUser.username });
+        expect(updatedUser?.avatarUrl).toMatch(/\.webp$/);
+      } finally {
+        fs.unlinkSync(webpFilePath);
+      }
+    });
+
+    it('should accept GIF images', async () => {
+      // Create a minimal GIF file
+      const gifFilePath = path.join(__dirname, '../fixtures/test.gif');
+      // Minimal valid GIF (1x1 pixel)
+      const gifBytes = Buffer.from([
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x21, 0xf9,
+        0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
+        0x00, 0x02, 0x01, 0x44, 0x00, 0x3b,
+      ]);
+      fs.writeFileSync(gifFilePath, gifBytes);
+
+      try {
+        const res = await request(app)
+          .post('/api/v1/users/update-profile')
+          .set('Cookie', [`accessToken=${authToken}`])
+          .attach('avatar', gifFilePath);
+
+        expect(res.status).toBe(200);
+
+        const updatedUser = await UserModel.findOne({ username: testUser.username });
+        expect(updatedUser?.avatarUrl).toMatch(/\.gif$/);
+      } finally {
+        fs.unlinkSync(gifFilePath);
+      }
+    });
+
+    it('should preserve file extension from original filename', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.avatarUrl).toMatch(/\.png$/);
+    });
+
+    it('should delete old avatar when uploading new one', async () => {
+      // Upload first avatar
+      await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      const user1 = await UserModel.findOne({ username: testUser.username });
+      const firstAvatarPath = user1?.avatarUrl;
+      const firstFilename = firstAvatarPath?.split('/').pop();
+      const firstFullPath = path.join(uploadsDir, firstFilename || '');
+
+      // Verify first file exists
+      expect(fs.existsSync(firstFullPath)).toBe(true);
+
+      // Upload second avatar
+      await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      // Wait a bit for async deletion
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // First file should be deleted
+      expect(fs.existsSync(firstFullPath)).toBe(false);
+
+      // Second file should exist
+      const user2 = await UserModel.findOne({ username: testUser.username });
+      const secondFilename = user2?.avatarUrl?.split('/').pop();
+      const secondFullPath = path.join(uploadsDir, secondFilename || '');
+      expect(fs.existsSync(secondFullPath)).toBe(true);
+    });
+
+    it('should not delete external URL avatars when uploading new file', async () => {
+      // Set an external URL avatar first
+      await UserModel.updateOne(
+        { username: testUser.username },
+        { avatarUrl: 'https://example.com/avatar.jpg' },
+      );
+
+      // Upload new avatar - should not try to delete external URL
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .attach('avatar', testImagePath);
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.png$/);
+    });
+
+    it('should handle request with no file gracefully', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .field('firstName', 'NoAvatar');
+
+      expect(res.status).toBe(200);
+
+      const updatedUser = await UserModel.findOne({ username: testUser.username });
+      expect(updatedUser?.firstName).toBe('NoAvatar');
+    });
+
+    it('should reject path traversal in avatarUrl field', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: '../../../etc/passwd' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('validationErrors');
+    });
+
+    it('should reject backslash path traversal in avatarUrl', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: '..\\..\\..\\etc\\passwd' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should allow valid uploads/avatars path in avatarUrl', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/update-profile')
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ avatarUrl: '/uploads/avatars/valid-uuid-12345.png' });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
   describe('POST /api/v1/users/change-password', () => {
     it('should successfully change password with valid credentials', async () => {
       const res = await request(app)
@@ -1280,12 +1642,10 @@ describe('User Profile Integration Tests', () => {
     });
 
     it('should return 401 when not authenticated', async () => {
-      const res = await request(app)
-        .post('/api/v1/users/change-password')
-        .send({
-          currentPassword: testUser.password,
-          newPassword: 'NewSecurePass456!',
-        });
+      const res = await request(app).post('/api/v1/users/change-password').send({
+        currentPassword: testUser.password,
+        newPassword: 'NewSecurePass456!',
+      });
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
@@ -1505,7 +1865,9 @@ describe('User Profile Integration Tests', () => {
       });
 
       const cookies = loginRes.headers['set-cookie'] as unknown as string[];
-      const newAccessTokenCookie = cookies.find((cookie: string) => cookie.startsWith('accessToken='));
+      const newAccessTokenCookie = cookies.find((cookie: string) =>
+        cookie.startsWith('accessToken='),
+      );
       const newAuthToken = newAccessTokenCookie?.split(';')[0].split('=')[1] || '';
 
       // Second password change
@@ -1537,7 +1899,9 @@ describe('User Profile Integration Tests', () => {
           newPassword: 'NewSecurePass456!',
         });
 
-      const updatedUser = await UserModel.findOne({ username: testUser.username }).select('+password');
+      const updatedUser = await UserModel.findOne({ username: testUser.username }).select(
+        '+password',
+      );
       expect(updatedUser?.password).toBeDefined();
       expect(updatedUser?.password).not.toBe('NewSecurePass456!');
       expect(updatedUser?.password?.length).toBeGreaterThan(20); // Hashed password is long
