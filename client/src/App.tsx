@@ -25,6 +25,7 @@ import UserProfile from './pages/user/UserProfile';
 import NotFound from './pages/notFound/NotFound';
 import Featured from './pages/featured/Featured';
 import Watch from './pages/watch/Watch';
+import Trending from './pages/trending/Trending';
 
 function NavigationSetup() {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ function App() {
             <Route path="/" element={<Navigate to="/browse" replace />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/featured" element={<Featured />} />
+            <Route path="/trending" element={<Trending />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/user/:id" element={<UserProfile />} />
 

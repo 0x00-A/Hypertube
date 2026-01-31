@@ -28,7 +28,7 @@ export default function Browse() {
   };
 
   const handleViewAllTrending = () => {
-    navigate('/library?filter=trending');
+    navigate('/trending');
   };
 
   const handleViewAllGenres = () => {
