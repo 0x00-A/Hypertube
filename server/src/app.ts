@@ -41,13 +41,11 @@ export const createApp = () => {
     }),
   );
   app.use(cors(corsOptions));
-  // Reduced limit since we're no longer sending base64 images
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
   app.use(passport.initialize());
 
-  // Serve static files for uploaded avatars
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   // Disable rate limiting in test environment to prevent 429 errors
@@ -83,6 +81,7 @@ export const createApp = () => {
     movieInteractionController,
     commentController,
   } = createControllers();
+
   app.use('/api/v1/auth', createAuthRoutes(authController));
   app.use('/api/v1/oauth', createOAuthRoutes(oauthController));
   app.use('/api/v1/movies', createMovieRouter(movieController));
@@ -94,11 +93,6 @@ export const createApp = () => {
   app.get('/api/v1/protected', auth, (_req, res) => {
     res.json({ status: 'success', message: 'Protected route accessed', data: { user: _req.user } });
   });
-
-  // Other routes (not protected by default)
-
-  // accounts routes
-  // app.use('/v1/accounts', usersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
