@@ -65,7 +65,32 @@ export const UpdateProfileSchema = z.object({
     username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
     firstName: z.string().nullish(),
     lastName: z.string().nullish(),
-    avatarUrl: z.string().url('Invalid URL format').nullish(),
+    // avatarUrl can be either a file path (from multer) or an external URL
+    avatarUrl: z
+      .string()
+      .refine(
+        (val) => {
+          // Reject any path traversal attempts
+          if (val.includes('..') || val.includes('\\')) {
+            return false;
+          }
+
+          // Only allow paths under /uploads/avatars/ (from multer)
+          if (val.startsWith('/uploads/avatars/') || val.startsWith('uploads/avatars/')) {
+            return true;
+          }
+
+          // Otherwise validate as external URL (for OAuth avatars)
+          try {
+            const url = new URL(val);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        },
+        { message: 'Invalid URL format' },
+      )
+      .nullish(),
     language: z
       .enum(SUPPORTED_LANGUAGES, {
         message: 'Language must be a valid ISO 639-1 code',

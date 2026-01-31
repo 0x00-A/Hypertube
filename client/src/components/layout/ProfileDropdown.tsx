@@ -4,6 +4,7 @@ import { User, Settings } from 'lucide-react';
 import { useLogout } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Avatar } from '../ui';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 interface ProfileDropdownProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export default function ProfileDropdown({ isOpen, onClose, userInitials, usernam
       <div className="px-4 py-4">
         <div className="flex items-center gap-3">
           <Avatar
-            src={avatarUrl}
+            src={getAvatarUrl(avatarUrl)}
             alt={username || 'User'}
             fallback={userInitials}
             size="lg"

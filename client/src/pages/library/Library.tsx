@@ -1,8 +1,12 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { AlertCircle, Library as LibraryIcon, SearchX } from 'lucide-react';
+import { AlertCircle, Library as LibraryIcon } from 'lucide-react';
 import { MovieCard, MovieCardSkeleton, LibraryFilterBar } from '../../components/movie';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import type { ApiError } from '../../types/api.types';
+import { EmptyState } from '../../components/common/EmptyState';
+import { useEmptyStateVisibility } from '../../hooks/useEmptyStateVisibility';
+import { useAppSelector } from '../../redux/hooks';
+import { hasActiveLibraryFilters } from '../../utils/filterHelpers';
 import clsx from 'clsx';
 
 export default function Library() {
@@ -17,11 +21,22 @@ export default function Library() {
   } = useWatchlist();
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  
+  // Get filter state to determine empty state visibility
+  const filters = useAppSelector((state) => state.libraryFilters);
+  const hasActiveFilters = hasActiveLibraryFilters(filters);
 
   // Flatten all pages into a single array of movies
   const movies = useMemo(() => {
     return data?.pages.flatMap(page => page.data) ?? [];
   }, [data]);
+
+  // Determine UI visibility
+  const { shouldShowControls, shouldShowEmptyState } = useEmptyStateVisibility({
+    isLoading,
+    hasData: movies.length > 0,
+    hasActiveFilters
+  });
 
   // Infinite scroll implementation
   useEffect(() => {
@@ -59,8 +74,8 @@ export default function Library() {
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <LibraryFilterBar />
+        {/* Search & Filter Bar - Only show when there's data or active filters */}
+        {shouldShowControls && <LibraryFilterBar />}
 
         {/* Error State */}
         {isError && (
@@ -78,17 +93,22 @@ export default function Library() {
         {/* Content Section */}
         {!isError && (
           <>
-            {/* Empty State */}
-            {!isLoading && movies.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="mb-6 p-6 bg-bg-tertiary rounded-full shadow-inner">
-                  <SearchX className="h-16 w-16 text-text-muted opacity-30" />
-                </div>
-                <h3 className="text-white text-2xl font-bold mb-3 tracking-tight">No movies found</h3>
-                <p className="text-text-secondary max-w-md mx-auto leading-relaxed">
-                  Your watchlist looks a bit empty. Add some movies to see them here or try adjusting your search/filters.
-                </p>
-              </div>
+            {/* Cinematic Empty State - Only show when no data and no filters */}
+            {shouldShowEmptyState && (
+              <EmptyState 
+                variant="library"
+                className="mt-8"
+              />
+            )}
+
+            {/* Search Results Empty State - Show when filters active but no results */}
+            {!isLoading && movies.length === 0 && hasActiveFilters && (
+              <EmptyState 
+                variant="search"
+                customHeadline="No Matches in Your Library"
+                customDescription="Try adjusting your filters or search terms to find what you're looking for."
+                className="mt-8"
+              />
             )}
 
             {/* Movies Grid */}

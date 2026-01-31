@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
@@ -8,6 +8,7 @@ import { clsx } from 'clsx';
 import { SaveButton } from '../../components/ui/SaveButton';
 import { LANGUAGES, SETTINGS_TABS } from '../../constants/settings';
 import type { TabId, SettingsFormData, PasswordData } from '../../types/settings.types';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 
 export default function Settings() {
@@ -28,6 +29,9 @@ export default function Settings() {
     lastName: user?.lastName || '',
     avatarUrl: user?.avatarUrl || '',
   });
+  
+  // Store the actual file for upload
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const [passwordData, setPasswordData] = useState<PasswordData>({
     currentPassword: '',
@@ -35,10 +39,18 @@ export default function Settings() {
     confirmPassword: '',
   });
 
-  const [previewAvatar, setPreviewAvatar] = useState<string>(user?.avatarUrl || '');
+  const [previewAvatar, setPreviewAvatar] = useState<string>(getAvatarUrl(user?.avatarUrl));
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Cleanup object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewAvatar && previewAvatar.startsWith('blob:')) {
+        URL.revokeObjectURL(previewAvatar);
+      }
+    };
+  }, [previewAvatar]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -49,9 +61,9 @@ export default function Settings() {
       formData.username !== user.username ||
       formData.firstName !== (user.firstName || '') ||
       formData.lastName !== (user.lastName || '') ||
-      formData.avatarUrl !== (user.avatarUrl || '')
+      avatarFile !== null // Check if new avatar file is selected
     );
-  }, [formData, user]);
+  }, [formData, user, avatarFile]);
 
   // Get initials for avatar fallback
   const initials = useMemo(() => {
@@ -78,13 +90,13 @@ export default function Settings() {
     fileInputRef.current?.click();
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please upload a valid image file');
+      setErrorMessage('Please upload a valid image file (JPEG, PNG, GIF, WebP)');
       return;
     }
 
@@ -94,48 +106,20 @@ export default function Settings() {
       return;
     }
 
-    try {
-      setUploadingImage(true);
-      setErrorMessage('');
+    setErrorMessage('');
+    setSuccessMessage('');
 
-      // Create preview using URL.createObjectURL for better performance
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewAvatar(previewUrl);
+    // Store the file for upload
+    setAvatarFile(file);
 
-      // Upload to server and get permanent URL
-      const imageUrl = await uploadImageToServer(file);
-      setFormData(prev => ({ ...prev, avatarUrl: imageUrl }));
-      
-      // Clean up object URL after successful upload
-      URL.revokeObjectURL(previewUrl);
-    } catch (error) {
-      setErrorMessage('Failed to upload image. Please try again.');
-      // Re-throw for proper error handling
-      throw error;
-    } finally {
-      setUploadingImage(false);
+    // Revoke previous preview URL (if any) to avoid memory leaks
+    if (previewAvatar && previewAvatar.startsWith('blob:')) {
+      URL.revokeObjectURL(previewAvatar);
     }
-  };
 
-  // Image upload function
-  const uploadImageToServer = async (file: File): Promise<string> => {
-    // Development-only mock implementation
-    // TODO: Replace with actual upload to server/cloud storage in production
-    if (import.meta.env.PROD) {
-      throw new Error('Image upload is not yet implemented. Please contact support.');
-    }
-    
-    // Simulate upload delay (development only)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Return data URL for development
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
+    // Create preview using URL.createObjectURL
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewAvatar(previewUrl);
   };
 
   const handleSaveProfile = () => {
@@ -166,12 +150,13 @@ export default function Settings() {
         username: formData.username,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        avatarUrl: formData.avatarUrl,
+        avatar: avatarFile || undefined, // Send file object instead of base64
         language: formData.language,
       },
       {
         onSuccess: () => {
           setSuccessMessage('Profile updated successfully!');
+          setAvatarFile(null); // Clear the file after successful upload
           setTimeout(() => setSuccessMessage(''), 3000);
         },
         onError: (error: unknown) => {
@@ -322,17 +307,10 @@ export default function Settings() {
                         initials
                       )}
                     </div>
-                    
-                    {uploadingImage && (
-                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                      </div>
-                    )}
 
                     <button
                       type="button"
                       onClick={handleImageClick}
-                      disabled={uploadingImage}
                       className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
                     >
                       <Camera className="w-6 h-6 text-white" />
@@ -345,15 +323,12 @@ export default function Settings() {
                     <button
                       type="button"
                       onClick={handleImageClick}
-                      disabled={uploadingImage}
                       className={clsx(
                         'px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 border',
-                        uploadingImage
-                          ? 'bg-bg-tertiary text-text-disabled border-border cursor-not-allowed'
-                          : 'bg-bg-tertiary text-text-primary border-border hover:border-primary'
+                        'bg-bg-tertiary text-text-primary border-border hover:border-primary'
                       )}
                     >
-                      {uploadingImage ? 'Uploading...' : 'Choose File'}
+                      Choose File
                     </button>
                     <input
                       ref={fileInputRef}

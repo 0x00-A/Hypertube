@@ -4,6 +4,7 @@ import { User, Film, Clock, Star, Settings, Calendar, Globe } from 'lucide-react
 import { Link, useNavigate } from 'react-router-dom';
 import { MovieCarousel } from '../../components/movie/MovieCarousel';
 import { useMemo, useState, useEffect } from 'react';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 
 export default function Profile() {
   const { user } = useAuthState();
@@ -139,16 +140,25 @@ export default function Profile() {
             opacity: curtainsOpen ? 1 : 0,
             transform: curtainsOpen ? 'scale(1)' : 'scale(0.95)'
           }}>
+          
+          {/* Settings Button - Top Right */}
+          <Link
+            to="/settings"
+            className="absolute top-6 right-6 sm:top-10 sm:right-10 w-10 h-10 rounded-full bg-bg-tertiary/80 backdrop-blur-sm hover:bg-primary/20 border border-border/50 hover:border-primary/50 flex items-center justify-center text-text-secondary hover:text-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/20 z-20"
+            aria-label="Settings"
+          >
+            <Settings className="w-5 h-5" />
+          </Link>
         
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             {/* Avatar */}
             <div className="relative group">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border-4 border-primary/50 flex items-center justify-center text-3xl sm:text-4xl font-bold text-primary shadow-xl shadow-primary/20">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border-4 border-primary/50 flex items-center justify-center text-3xl sm:text-4xl font-bold text-primary shadow-xl shadow-primary/20 overflow-hidden">
                 {user.avatarUrl ? (
                   <img 
-                    src={user.avatarUrl} 
+                    src={getAvatarUrl(user.avatarUrl)} 
                     alt={user.username}
-                    className="w-full h-full rounded-full object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   initials
@@ -188,15 +198,6 @@ export default function Profile() {
                 )}
               </div>
             </div>
-
-            {/* Settings Button */}
-            <Link
-              to="/settings"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20"
-            >
-              <Settings className="w-5 h-5" />
-              <span className="font-medium">Settings</span>
-            </Link>
           </div>
         </div>
       </div>

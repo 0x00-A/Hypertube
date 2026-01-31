@@ -2,13 +2,18 @@ import { BadRequestError } from '../core/errors/customErrors';
 import { IUser, IUserProfileUpdate } from '../interfaces/user.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from './password.service';
-
+import { deleteOldAvatar } from '../middleware/uploadAvatar';
 
 export class UserService {
+  constructor(
+    private _repo: UserRepository,
+    private _password_service: PasswordService,
+  ) {}
 
-  constructor(private _repo: UserRepository, private _password_service: PasswordService) {}
-
-  async list(page: number, limit: number): Promise<{
+  async list(
+    page: number,
+    limit: number,
+  ): Promise<{
     data: Partial<IUser>[];
     page: number;
     limit: number;
@@ -50,10 +55,21 @@ export class UserService {
   }
 
   async updateProfile(username: string, newData: IUserProfileUpdate): Promise<void> {
+    // If updating avatar, delete the old one first
+    if (newData.avatarUrl) {
+      const user = await this._repo.findByUsernameWithOauth(username);
+      if (user?.avatarUrl) {
+        deleteOldAvatar(user.avatarUrl);
+      }
+    }
     await this._repo.updateByUsername(username, newData);
   }
 
-  async changePassword(username: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    username: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await this._repo.findByUsernameWithPasswordOauth(username);
     if (!user || !user.password) {
       throw new BadRequestError('User not found');
