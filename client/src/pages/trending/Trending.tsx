@@ -1,62 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { TrendingUp, AlertCircle, SearchX } from 'lucide-react';
 import { MovieCard, MovieCardSkeleton } from '../../components/movie';
-import { movieService } from '../../services/movie.service';
-import type { IMovie } from '../../types/movie.types';
+import { useTrendingMovies } from '../../hooks/useTrendingMovies';
+import type { ApiError } from '../../types/api.types';
 import clsx from 'clsx';
 
 export default function Trending() {
-  const [movies, setMovies] = useState<IMovie[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(true);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useTrendingMovies();
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Fetch trending movies
-  const fetchMovies = async (pageNumber: number, append: boolean = false) => {
-    try {
-      if (append) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-      }
-
-      const response = await movieService.getTrendingMovies(pageNumber);
-      
-      if (append) {
-        setMovies(prev => [...prev, ...response.data]);
-      } else {
-        setMovies(response.data);
-      }
-      
-      setHasNextPage(response.pagination.hasNextPage);
-      setError(null);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load trending movies';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  };
-
-  // Initial load
-  useEffect(() => {
-    fetchMovies(1);
-  }, []);
+  // Flatten all pages into a single array of movies
+  const movies = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) ?? [];
+  }, [data]);
 
   // Infinite scroll implementation
   useEffect(() => {
-    if (!loadMoreRef.current || isLoading || !hasNextPage || isLoadingMore) return;
+    if (!loadMoreRef.current || isLoading || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isLoadingMore) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchMovies(nextPage, true);
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
       { threshold: 0.1 }
@@ -67,7 +41,7 @@ export default function Trending() {
     return () => {
       observer.disconnect();
     };
-  }, [isLoading, hasNextPage, isLoadingMore, page]);
+  }, [isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,20 +60,20 @@ export default function Trending() {
         </div>
 
         {/* Error State */}
-        {error && (
+        {isError && (
           <div className="flex items-center justify-center py-12">
             <div className="flex items-center gap-3 px-8 py-5 bg-red-500/10 border border-red-500/20 rounded-2xl shadow-xl">
               <AlertCircle className="w-6 h-6 text-red-500" />
               <div>
                 <p className="text-red-500 font-bold">Failed to load trending movies</p>
-                <p className="text-text-secondary text-sm mt-1">{error}</p>
+                <p className="text-text-secondary text-sm mt-1">{(error as ApiError)?.message || 'Please try again later'}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Content Section */}
-        {!error && (
+        {!isError && (
           <>
             {/* Empty State */}
             {!isLoading && movies.length === 0 && (
@@ -129,7 +103,7 @@ export default function Trending() {
                 ))}
 
                 {/* Skeleton Loading for more pages */}
-                {isLoadingMore && (
+                {isFetchingNextPage && (
                   <>
                     {Array.from({ length: 10 }).map((_, i) => (
                       <MovieCardSkeleton key={`loading-${i}`} />
