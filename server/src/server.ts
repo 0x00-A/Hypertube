@@ -5,6 +5,9 @@ import { logger } from './utils/logger';
 import http from 'http';
 import { scraperScheduler as scheduler } from './services/scraper/ScraperScheduler';
 import { cleanupService } from './services/cleanup.service';
+import { StreamingService } from './services/streaming.service';
+
+let streamingService: StreamingService | null = null;
 
 let server: http.Server | null = null;
 let isShuttingDown = false;
@@ -25,6 +28,11 @@ const shutdown = async (signal: string) => {
 
     cleanupService.stop();
     logger.info('CleanupService stopped');
+
+    if (streamingService) {
+      streamingService.destroyAll();
+      logger.info('Streaming engines destroyed');
+    }
 
     // Close server and wait for existing connections
     if (server) {
@@ -99,7 +107,8 @@ process.on('SIGTERM', () => {
 (async () => {
   try {
     await connectDatabase();
-    const app = createApp();
+    const { app, streamingService: sService } = createApp();
+    streamingService = sService;
     const port = env.PORT;
     server = app.listen(port, () => logger.info({ port }, 'Server started'));
 

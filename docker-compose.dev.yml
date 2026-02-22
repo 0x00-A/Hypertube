@@ -38,6 +38,7 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
+      - server_downloads:/app/downloads
     command: npm run dev
     networks:
       - hypertube-network
@@ -63,6 +64,7 @@ services:
 
 volumes:
   mongo_dev_data:
+  server_downloads:
 
 networks:
   hypertube-network:

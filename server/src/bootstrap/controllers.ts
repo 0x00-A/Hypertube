@@ -20,6 +20,9 @@ import { VerificationEmailRepository } from '../repositories/verificationEmail.r
 import { CommentRepository } from '../repositories/comment.repository';
 import { CommentService } from '../services/comment.service';
 import { CommentController } from '../controllers/comment.controller';
+import { SubtitleService } from '../services/SubtitleService';
+import { StreamingService } from '../services/streaming.service';
+import { StreamingController } from '../controllers/streaming.controller';
 
 export const createControllers = () => {
   // Shared repositories
@@ -59,6 +62,11 @@ export const createControllers = () => {
   const commentService = new CommentService(commentRepository, movieRepository, movieService);
   const commentController = new CommentController(commentService);
 
+  // Streaming dependencies
+  const subtitleService = new SubtitleService(movieRepository);
+  const streamingService = new StreamingService(movieRepository, subtitleService);
+  const streamingController = new StreamingController(streamingService);
+
   return {
     movieController,
     authController,
@@ -66,5 +74,7 @@ export const createControllers = () => {
     userController,
     movieInteractionController,
     commentController,
+    streamingController,
+    streamingService,
   };
 };

@@ -2,6 +2,8 @@
 FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=development
+# Install ffmpeg for video transcoding
+RUN apk add --no-cache ffmpeg
 # Install dependencies (includes dev deps)
 COPY package.json package-lock.json* ./
 RUN npm install

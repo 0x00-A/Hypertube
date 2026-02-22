@@ -47,4 +47,7 @@ export const env = cleanEnv(process.env, {
   EMAIL_PORT: num({ default: 1025 }),
   EMAIL_USER: str({ default: 'test@hypertube.test' }),
   EMAIL_PASS: str({ default: 'test-password' }),
+
+  // Streaming
+  DOWNLOADS_DIR: str({ default: './downloads' }),
 });
