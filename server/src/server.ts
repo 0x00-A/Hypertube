@@ -4,6 +4,7 @@ import { env } from './config/env';
 import { logger } from './utils/logger';
 import http from 'http';
 import { scraperScheduler as scheduler } from './services/scraper/ScraperScheduler';
+import { cleanupService } from './services/cleanup.service';
 
 let server: http.Server | null = null;
 let isShuttingDown = false;
@@ -21,6 +22,9 @@ const shutdown = async (signal: string) => {
       scheduler.stop();
       logger.info('Scheduler stopped');
     }
+
+    cleanupService.stop();
+    logger.info('CleanupService stopped');
 
     // Close server and wait for existing connections
     if (server) {
@@ -100,6 +104,7 @@ process.on('SIGTERM', () => {
     server = app.listen(port, () => logger.info({ port }, 'Server started'));
 
     scheduler.init();
+    cleanupService.init();
   } catch (err) {
     logger.error({ err }, 'Startup failure');
     process.exit(1);
