@@ -47,6 +47,7 @@ export const createApp = () => {
   app.use(passport.initialize());
 
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  app.use('/api/subtitles', express.static(path.join(__dirname, '../public/subtitles')));
 
   // Disable rate limiting in test environment to prevent 429 errors
   // if (env.NODE_ENV === 'production') {
