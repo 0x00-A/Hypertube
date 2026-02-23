@@ -16,6 +16,9 @@ import { ITorrent } from '../interfaces/movie.interface';
 // Types
 // ============================================================================
 
+/** How long an engine can sit idle before being destroyed (30 minutes) */
+const ENGINE_IDLE_TIMEOUT = 30 * 60 * 1_000;
+
 interface ActiveEngine {
   engine: ReturnType<typeof torrentStream>;
   movieId: string;
@@ -27,6 +30,10 @@ interface ActiveEngine {
   } | null;
   ready: boolean;
   readyPromise: Promise<void>;
+  /** Timestamp of last access (stream or status request) */
+  lastAccessed: number;
+  /** Whether this engine has been paused to yield bandwidth */
+  paused: boolean;
 }
 
 export interface StreamableFile {
@@ -65,6 +72,10 @@ export class StreamingService {
   private _subtitleService: SubtitleService;
   private _activeEngines: Map<string, ActiveEngine> = new Map();
   private _downloadsDir: string;
+  /** Tracks in-flight subtitle fetches to prevent duplicate concurrent calls */
+  private _subtitleFetchesInFlight: Set<string> = new Set();
+  /** Interval handle for the idle-engine reaper */
+  private _reaperInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(movieRepository: MovieRepository, subtitleService: SubtitleService) {
     this._movieRepository = movieRepository;
@@ -75,6 +86,17 @@ export class StreamingService {
     if (!fs.existsSync(this._downloadsDir)) {
       fs.mkdirSync(this._downloadsDir, { recursive: true });
     }
+
+    // Periodically destroy engines that have been idle too long
+    // .unref() prevents the timer from keeping the Node process alive on shutdown
+    this._reaperInterval = setInterval(() => this.reapIdleEngines(), 60_000);
+    if (
+      this._reaperInterval &&
+      typeof this._reaperInterval === 'object' &&
+      'unref' in this._reaperInterval
+    ) {
+      this._reaperInterval.unref();
+    }
   }
 
   /**
@@ -84,7 +106,7 @@ export class StreamingService {
    * 2. If movie is currently downloading (engine active), return the torrent stream.
    * 3. If movie is not downloaded, start a new torrent engine and return the stream.
    */
-  async getStreamableFile(movieId: string): Promise<StreamableFile> {
+  async getStreamableFile(movieId: string, language: string = 'en'): Promise<StreamableFile> {
     const movie = await this._movieRepository.findById(movieId);
     if (!movie) {
       throw new NotFoundError('Movie not found');
@@ -99,26 +121,48 @@ export class StreamingService {
       const filePath = path.resolve(movie.localPath);
       if (fs.existsSync(filePath)) {
         const stats = fs.statSync(filePath);
-        const ext = path.extname(filePath).toLowerCase();
-        const mimeType = VIDEO_MIME_TYPES[ext] || 'application/octet-stream';
-        const needsTranscoding = !BROWSER_PLAYABLE.has(ext);
 
-        // Update lastWatched
-        movie.lastWatched = new Date();
+        // Sanity check: a real movie file should be at least 10 MB.
+        // If it's smaller, the file was probably marked complete prematurely.
+        const MIN_MOVIE_SIZE = 10 * 1024 * 1024; // 10 MB
+        if (stats.size < MIN_MOVIE_SIZE) {
+          logger.warn(
+            { movieId, filePath, fileSize: stats.size },
+            'Downloaded file is suspiciously small — re-downloading',
+          );
+          movie.downloadStatus = 'not_downloaded';
+          movie.localPath = undefined;
+          await movie.save();
+        } else {
+          const ext = path.extname(filePath).toLowerCase();
+          const mimeType = VIDEO_MIME_TYPES[ext] || 'application/octet-stream';
+          const needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+
+          // Update lastWatched
+          movie.lastWatched = new Date();
+          await movie.save();
+
+          // Ensure subtitles for user's current language (non-blocking)
+          const torrent = this.selectTorrent(movie);
+          this.fetchSubtitlesInBackground(movie, torrent, language);
+
+          logger.info(
+            { movieId, filePath, ext, fileSize: stats.size },
+            'Serving already-downloaded movie',
+          );
+          return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
+        }
+      } else {
+        // File is gone — reset status and re-download
+        logger.warn({ movieId }, 'Local file missing, re-downloading');
+        movie.downloadStatus = 'not_downloaded';
+        movie.localPath = undefined;
         await movie.save();
-
-        logger.info({ movieId, filePath, ext }, 'Serving already-downloaded movie');
-        return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
       }
-      // File is gone — reset status and re-download
-      logger.warn({ movieId }, 'Local file missing, re-downloading');
-      movie.downloadStatus = 'not_downloaded';
-      movie.localPath = undefined;
-      await movie.save();
     }
 
     // Case 2 & 3: Use torrent engine (active or new)
-    const activeEngine = await this.getOrCreateEngine(movie);
+    const activeEngine = await this.getOrCreateEngine(movie, language);
 
     if (!activeEngine.file) {
       throw new BadRequestError('No suitable video file found in torrent');
@@ -177,8 +221,12 @@ export class StreamingService {
 
   /**
    * Get the status of a movie's streaming readiness.
+   * Optionally triggers subtitle fetch for the given language if not already available.
    */
-  async getStatus(movieId: string): Promise<{
+  async getStatus(
+    movieId: string,
+    language?: string,
+  ): Promise<{
     downloadStatus: string;
     hasActiveEngine: boolean;
     subtitles: Record<string, { language: string; label: string; url: string }[]>;
@@ -186,6 +234,15 @@ export class StreamingService {
     const movie = await this._movieRepository.findById(movieId);
     if (!movie) {
       throw new NotFoundError('Movie not found');
+    }
+
+    // If a language is requested and subs for it don't exist yet, trigger fetch
+    if (language && movie.torrents && movie.torrents.length > 0) {
+      const hasLang = movie.subtitles?.has(language) ?? false;
+      if (!hasLang) {
+        const torrent = this.selectTorrent(movie);
+        this.fetchSubtitlesInBackground(movie, torrent, language);
+      }
     }
 
     const subtitles: Record<string, { language: string; label: string; url: string }[]> = {};
@@ -199,6 +256,12 @@ export class StreamingService {
       }
     }
 
+    // Keep engine's lastAccessed fresh while user is on the watch page
+    const activeEngine = this._activeEngines.get(movieId);
+    if (activeEngine) {
+      activeEngine.lastAccessed = Date.now();
+    }
+
     return {
       downloadStatus: movie.downloadStatus,
       hasActiveEngine: this._activeEngines.has(movieId),
@@ -210,11 +273,69 @@ export class StreamingService {
    * Destroy all active torrent engines. Called on server shutdown.
    */
   destroyAll(): void {
+    if (this._reaperInterval) {
+      clearInterval(this._reaperInterval);
+      this._reaperInterval = null;
+    }
     for (const [movieId, active] of this._activeEngines) {
       logger.info({ movieId }, 'Destroying torrent engine on shutdown');
       active.engine.destroy();
     }
     this._activeEngines.clear();
+  }
+
+  /**
+   * Destroy a single engine by movieId.
+   */
+  private destroyEngine(movieId: string): void {
+    const active = this._activeEngines.get(movieId);
+    if (!active) return;
+    logger.info({ movieId }, 'Destroying idle torrent engine');
+    active.engine.destroy();
+    this._activeEngines.delete(movieId);
+  }
+
+  /**
+   * Pause all engines except the one for the given movieId.
+   * "Pausing" deselects the video file so the engine stops downloading pieces.
+   */
+  private pauseOtherEngines(currentMovieId: string): void {
+    for (const [id, active] of this._activeEngines) {
+      if (id === currentMovieId || active.paused || !active.ready) continue;
+      if (active.file) {
+        // Deselect the file — stops the engine from requesting new pieces
+        active.engine.files?.forEach((f) => f.deselect());
+      }
+      active.paused = true;
+      logger.info({ movieId: id }, 'Paused torrent engine to yield bandwidth');
+    }
+  }
+
+  /**
+   * Resume a previously-paused engine (re-select its video file).
+   */
+  private resumeEngine(active: ActiveEngine): void {
+    if (!active.paused || !active.file) return;
+    // Re-select only the video file
+    active.engine.files?.forEach((f) => {
+      if (f === active.file) {
+        f.select();
+      }
+    });
+    active.paused = false;
+    logger.info({ movieId: active.movieId }, 'Resumed torrent engine');
+  }
+
+  /**
+   * Destroy engines that have been idle for longer than ENGINE_IDLE_TIMEOUT.
+   */
+  private reapIdleEngines(): void {
+    const now = Date.now();
+    for (const [movieId, active] of this._activeEngines) {
+      if (now - active.lastAccessed > ENGINE_IDLE_TIMEOUT) {
+        this.destroyEngine(movieId);
+      }
+    }
   }
 
   // ============================================================================
@@ -242,13 +363,20 @@ export class StreamingService {
   /**
    * Get an existing active engine or create a new one for the movie.
    */
-  private async getOrCreateEngine(movie: IMovieDocument): Promise<ActiveEngine> {
+  private async getOrCreateEngine(
+    movie: IMovieDocument,
+    language: string = 'en',
+  ): Promise<ActiveEngine> {
     const movieId = movie._id.toString();
 
     // Reuse existing engine if available
     const existing = this._activeEngines.get(movieId);
     if (existing) {
       await existing.readyPromise;
+      existing.lastAccessed = Date.now();
+      // Resume if it was paused, and pause everything else
+      this.resumeEngine(existing);
+      this.pauseOtherEngines(movieId);
       return existing;
     }
 
@@ -297,9 +425,14 @@ export class StreamingService {
       file: null,
       ready: false,
       readyPromise,
+      lastAccessed: Date.now(),
+      paused: false,
     };
 
     this._activeEngines.set(movieId, activeEngine);
+
+    // Pause all other engines so the new one gets full bandwidth
+    this.pauseOtherEngines(movieId);
 
     // Handle engine ready event
     engine.on('ready', () => {
@@ -340,31 +473,61 @@ export class StreamingService {
       resolveReady!();
 
       // Trigger subtitle download in background (non-blocking)
-      this.fetchSubtitlesInBackground(movie, torrent);
+      this.fetchSubtitlesInBackground(movie, torrent, language);
     });
 
     // Handle download completion — mark as downloaded
+    // IMPORTANT: 'idle' fires whenever there are no pending piece requests,
+    // which also happens when we deselect files (pause). We must verify the
+    // file is actually complete by comparing its size on disk to the expected
+    // torrent file length before marking the movie as downloaded.
     engine.on('idle', () => {
-      const localPath = activeEngine.file ? path.join(movieDir, activeEngine.file.path) : undefined;
+      if (!activeEngine.file || activeEngine.paused) return;
 
-      if (localPath) {
-        this._movieRepository
-          .findById(movieId)
-          .then((freshMovie) => {
-            if (freshMovie) {
-              freshMovie.downloadStatus = 'downloaded';
-              freshMovie.localPath = localPath;
-              return freshMovie.save();
-            }
-          })
-          .then(() => {
-            logger.info({ movieId, localPath }, 'Torrent download complete');
-          })
-          .catch((err: unknown) => {
-            const error = err instanceof Error ? err : new Error(String(err));
-            logger.error({ err: error, movieId }, 'Failed to update movie after download');
-          });
+      const localPath = path.join(movieDir, activeEngine.file.path);
+      const expectedSize = activeEngine.file.length;
+
+      // Check actual file size on disk
+      let actualSize = 0;
+      try {
+        if (fs.existsSync(localPath)) {
+          actualSize = fs.statSync(localPath).size;
+        }
+      } catch {
+        // File may not exist yet
+        return;
       }
+
+      // Only mark as downloaded if file is fully written (within 1% tolerance
+      // to account for filesystem block alignment)
+      const completionRatio = actualSize / expectedSize;
+      if (completionRatio < 0.99) {
+        logger.debug(
+          { movieId, actualSize, expectedSize, completionRatio: completionRatio.toFixed(3) },
+          'Idle event fired but file is incomplete — ignoring',
+        );
+        return;
+      }
+
+      this._movieRepository
+        .findById(movieId)
+        .then((freshMovie) => {
+          if (freshMovie) {
+            freshMovie.downloadStatus = 'downloaded';
+            freshMovie.localPath = localPath;
+            return freshMovie.save();
+          }
+        })
+        .then(() => {
+          logger.info(
+            { movieId, localPath, actualSize, expectedSize },
+            'Torrent download complete',
+          );
+        })
+        .catch((err: unknown) => {
+          const error = err instanceof Error ? err : new Error(String(err));
+          logger.error({ err: error, movieId }, 'Failed to update movie after download');
+        });
     });
 
     // Wait for the engine to be ready before returning
@@ -375,15 +538,32 @@ export class StreamingService {
   /**
    * Fetch subtitles in the background. Non-blocking.
    */
-  private fetchSubtitlesInBackground(movie: IMovieDocument, torrent: ITorrent): void {
+  private fetchSubtitlesInBackground(
+    movie: IMovieDocument,
+    torrent: ITorrent,
+    language: string = 'en',
+  ): void {
+    const key = `${movie.imdbId}:${language}`;
+    if (this._subtitleFetchesInFlight.has(key)) {
+      logger.debug(
+        { imdbId: movie.imdbId, language },
+        'Subtitle fetch already in progress, skipping duplicate',
+      );
+      return;
+    }
+    this._subtitleFetchesInFlight.add(key);
+
     this._subtitleService
-      .ensureForMovie(movie.imdbId, 'en', torrent)
+      .ensureForMovie(movie.imdbId, language, torrent)
       .then(() => {
-        logger.info({ imdbId: movie.imdbId }, 'English subtitles fetched');
+        logger.info({ imdbId: movie.imdbId, language }, 'Subtitles fetched for user language');
       })
       .catch((err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));
         logger.warn({ err: error, imdbId: movie.imdbId }, 'Subtitle fetch failed (non-critical)');
+      })
+      .finally(() => {
+        this._subtitleFetchesInFlight.delete(key);
       });
   }
 }

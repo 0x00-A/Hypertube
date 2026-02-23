@@ -21,8 +21,10 @@ import {
   Check,
   Loader2,
   Subtitles,
+  AlertTriangle,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { useAuthState } from "../../hooks/useAuth";
 import { useMovieDetails } from "../../hooks/useMovieDetails";
 import {
   useAddToWatchlist,
@@ -34,7 +36,6 @@ import { MovieRating } from "../../components/movie";
 import ShareModal from "../../components/common/ShareModal";
 import { streamingService } from "../../services/streaming.service";
 import { movieInteractionService } from "../../services/movieInteraction.service";
-import toast from "react-hot-toast";
 import type { ISubtitleTrack } from "../../types/movie.types";
 
 // ============================================================================
@@ -75,6 +76,8 @@ export default function Watch() {
 
   // Get movie details
   const isTmdbMovie = location.state?.isTmdbMovie ?? true;
+  const { user } = useAuthState();
+  const userLanguage = user?.language || "en";
   const {
     data: movie,
     isLoading,
@@ -99,11 +102,9 @@ export default function Watch() {
   const [isBuffering, setIsBuffering] = useState(true);
   const [volume, setVolume] = useState(1);
   const [subtitleTracks, setSubtitleTracks] = useState<ISubtitleTrack[]>([]);
-  const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
-  const [activeSubtitleLang, setActiveSubtitleLang] = useState<string | null>(
-    "en",
-  );
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [activeCueText, setActiveCueText] = useState<string>("");
+  const [streamError, setStreamError] = useState<string | null>(null);
 
   // Derived stream URL — purely computed from movie._id, no state needed
   const movieId = movie?._id ?? "";
@@ -134,36 +135,54 @@ export default function Watch() {
   useEffect(() => {
     if (!movieId) return;
 
-    // Fetch saved progress to resume
-    movieInteractionService
-      .getWatchProgress(movieId)
-      .then((progress) => {
-        if (progress?.lastWatchedPosition && videoRef.current) {
-          videoRef.current.currentTime = progress.lastWatchedPosition;
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
+    // Poll for subtitles — they're fetched in the background after the torrent
+    // engine becomes ready, so they may not be available on the first request.
+    // Keep polling until the user's preferred language track is available.
+    let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 10;
+    const POLL_INTERVAL = 3_000; // 3 seconds
 
-    // Fetch subtitles from status endpoint
-    streamingService
-      .getStreamStatus(movieId)
-      .then((status) => {
-        const tracks: ISubtitleTrack[] = [];
-        for (const lang of Object.keys(status.subtitles)) {
-          for (const sub of status.subtitles[lang]) {
-            if (sub.url) {
-              tracks.push(sub);
+    const fetchSubtitles = () => {
+      streamingService
+        .getStreamStatus(movieId)
+        .then((status) => {
+          if (cancelled) return;
+          // Only collect subtitle tracks for the user's preferred language
+          const tracks: ISubtitleTrack[] = [];
+          const langSubs = status.subtitles[userLanguage];
+          if (langSubs) {
+            for (const sub of langSubs) {
+              if (sub.url) {
+                tracks.push(sub);
+              }
             }
           }
-        }
-        setSubtitleTracks(tracks);
-      })
-      .catch(() => {
-        /* subtitles not available yet */
-      });
-  }, [movieId]);
+          // Update tracks (may be empty if preferred language has no subs)
+          setSubtitleTracks(tracks);
+          // Keep polling if the user's preferred language isn't available yet
+          const hasPreferredLang = tracks.some(
+            (t) => t.language === userLanguage,
+          );
+          if (!hasPreferredLang && retries < MAX_RETRIES) {
+            retries++;
+            setTimeout(fetchSubtitles, POLL_INTERVAL);
+          }
+        })
+        .catch(() => {
+          if (!cancelled && retries < MAX_RETRIES) {
+            retries++;
+            setTimeout(fetchSubtitles, POLL_INTERVAL);
+          }
+        });
+    };
+
+    fetchSubtitles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [movieId, userLanguage]);
 
   // ========================================================================
   // Programmatically manage subtitle tracks on the <video> element
@@ -177,28 +196,33 @@ export default function Watch() {
     const existingTracks = video.querySelectorAll("track[data-managed]");
     existingTracks.forEach((t) => t.remove());
 
+    // Only use subtitles in the user's preferred language — no fallback
+    const preferredTrack = subtitleTracks.find(
+      (t) => t.language === userLanguage,
+    );
+
+    if (!preferredTrack) return;
+
+    // Add only the preferred subtitle as a <track> element
+    const trackEl = document.createElement("track");
+    trackEl.kind = "subtitles";
+    trackEl.label = preferredTrack.label;
+    trackEl.srclang = preferredTrack.language;
+    trackEl.src = `${BACKEND_ORIGIN}${preferredTrack.url}`;
+    trackEl.setAttribute("data-managed", "true");
+    video.appendChild(trackEl);
+
     // Store cuechange handlers for cleanup
     const cueChangeHandlers: Array<{ track: TextTrack; handler: () => void }> =
       [];
 
-    // Add each subtitle as a <track> element
-    subtitleTracks.forEach((sub) => {
-      const trackEl = document.createElement("track");
-      trackEl.kind = "subtitles";
-      trackEl.label = sub.label;
-      trackEl.srclang = sub.language;
-      trackEl.src = `${BACKEND_ORIGIN}${sub.url}`;
-      trackEl.setAttribute("data-managed", "true");
-      video.appendChild(trackEl);
-    });
-
-    // Set all tracks to 'hidden' (loads cues but no native rendering)
-    // and attach cuechange listener to the active language
+    // Set track to 'hidden' (loads cues but no native rendering)
+    // and attach cuechange listener when subtitles are enabled
     for (let i = 0; i < video.textTracks.length; i++) {
       const tt = video.textTracks[i];
       tt.mode = "hidden";
 
-      if (tt.language === activeSubtitleLang) {
+      if (subtitlesEnabled && tt.language === preferredTrack.language) {
         const handler = () => {
           if (!tt.activeCues || tt.activeCues.length === 0) {
             setActiveCueText("");
@@ -221,7 +245,7 @@ export default function Watch() {
         track.removeEventListener("cuechange", handler);
       });
     };
-  }, [subtitleTracks, activeSubtitleLang]);
+  }, [subtitleTracks, subtitlesEnabled, userLanguage]);
 
   // ========================================================================
   // Periodically save watch progress
@@ -274,7 +298,6 @@ export default function Watch() {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false);
-        setShowSubtitleMenu(false);
       }, CONTROLS_AUTO_HIDE_DELAY);
     }
     return () => {
@@ -336,6 +359,13 @@ export default function Watch() {
   const handleWaiting = () => setIsBuffering(true);
   const handleCanPlay = () => setIsBuffering(false);
 
+  const handleVideoError = () => {
+    setIsBuffering(false);
+    setStreamError(
+      "This movie is not available for streaming. It may not have any torrent sources.",
+    );
+  };
+
   const handleEnded = () => {
     setIsPlaying(false);
     saveProgress();
@@ -392,36 +422,22 @@ export default function Watch() {
     setCurrentTime(video.currentTime);
   };
 
-  const handleMouseMove = () => {
-    setShowControls(true);
-  };
-
-  const handleSubtitleSelect = (lang: string | null) => {
-    setActiveSubtitleLang(lang);
-    setShowSubtitleMenu(false);
-    if (!lang) setActiveCueText("");
+  const toggleSubtitles = () => {
+    setSubtitlesEnabled((prev) => {
+      if (prev) setActiveCueText("");
+      return !prev;
+    });
   };
 
   // Handle watchlist toggle
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!movie) return;
+    if (!movie?._id) return;
 
     if (movie.inWatchlist) {
-      if (movie._id) {
-        removeFromWatchlist(movie._id);
-      } else {
-        toast.error("Cannot remove from watchlist: Missing movie ID");
-      }
+      removeFromWatchlist(movie._id);
     } else {
-      const movieId = movie._id || movie.tmdbId;
-      const isTmdb = !movie._id;
-
-      if (movieId) {
-        addToWatchlist({ id: movieId, isTmdbMovie: isTmdb });
-      } else {
-        toast.error("Cannot add to watchlist: Missing movie identifier");
-      }
+      addToWatchlist({ id: movie._id, isTmdbMovie: false });
     }
   };
 
@@ -477,7 +493,7 @@ export default function Watch() {
         <div
           ref={videoContainerRef}
           className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border-2 border-primary/30 cursor-pointer group"
-          onMouseMove={handleMouseMove}
+          onMouseMove={() => setShowControls(true)}
           onClick={togglePlay}
         >
           {/* Native Video Element */}
@@ -495,6 +511,7 @@ export default function Watch() {
               onWaiting={handleWaiting}
               onCanPlay={handleCanPlay}
               onEnded={handleEnded}
+              onError={handleVideoError}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -502,15 +519,34 @@ export default function Watch() {
             </div>
           )}
 
+          {/* Stream error overlay */}
+          {streamError && (
+            <div
+              className="absolute inset-0 flex items-center justify-center bg-black/80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
+                <AlertTriangle className="w-14 h-14 text-yellow-500" />
+                <p className="text-white text-lg font-medium">{streamError}</p>
+                <button
+                  onClick={() => navigate("/movies")}
+                  className="px-5 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors"
+                >
+                  Back to Movies
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Buffering indicator */}
-          {isBuffering && streamUrl && (
+          {isBuffering && !streamError && streamUrl && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <Loader2 className="w-16 h-16 text-primary animate-spin" />
             </div>
           )}
 
           {/* Play button overlay when paused and not buffering */}
-          {!isPlaying && !isBuffering && streamUrl && (
+          {!isPlaying && !isBuffering && !streamError && streamUrl && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
               <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:border-primary">
                 <Play className="w-10 h-10 text-white fill-white ml-1" />
@@ -611,55 +647,25 @@ export default function Watch() {
               {/* Right Controls */}
               <div className="flex items-center gap-2">
                 {/* Subtitles toggle */}
-                <div className="relative">
-                  <button
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded transition-colors",
-                      activeSubtitleLang
-                        ? "text-primary bg-white/10"
-                        : "text-white hover:bg-white/10 hover:text-primary",
-                    )}
-                    onClick={() =>
-                      subtitleTracks.length > 0 &&
-                      setShowSubtitleMenu(!showSubtitleMenu)
-                    }
-                    title={
-                      subtitleTracks.length === 0
-                        ? "No subtitles available"
-                        : "Subtitles"
-                    }
-                  >
-                    <Subtitles className="w-5 h-5" />
-                  </button>
-
-                  {showSubtitleMenu && subtitleTracks.length > 0 && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg border border-white/20 py-1 min-w-[140px]">
-                      <button
-                        className={clsx(
-                          "w-full px-3 py-1.5 text-left text-sm hover:bg-white/10 transition-colors",
-                          !activeSubtitleLang ? "text-primary" : "text-white",
-                        )}
-                        onClick={() => handleSubtitleSelect(null)}
-                      >
-                        Off
-                      </button>
-                      {subtitleTracks.map((track) => (
-                        <button
-                          key={track.language}
-                          className={clsx(
-                            "w-full px-3 py-1.5 text-left text-sm hover:bg-white/10 transition-colors",
-                            activeSubtitleLang === track.language
-                              ? "text-primary"
-                              : "text-white",
-                          )}
-                          onClick={() => handleSubtitleSelect(track.language)}
-                        >
-                          {track.label}
-                        </button>
-                      ))}
-                    </div>
+                <button
+                  className={clsx(
+                    "w-9 h-9 flex items-center justify-center rounded transition-colors",
+                    subtitlesEnabled && subtitleTracks.length > 0
+                      ? "text-primary bg-white/10"
+                      : "text-white hover:bg-white/10 hover:text-primary",
                   )}
-                </div>
+                  onClick={toggleSubtitles}
+                  title={
+                    subtitleTracks.length === 0
+                      ? "No subtitles available"
+                      : subtitlesEnabled
+                        ? "Turn off subtitles"
+                        : "Turn on subtitles"
+                  }
+                  disabled={subtitleTracks.length === 0}
+                >
+                  <Subtitles className="w-5 h-5" />
+                </button>
 
                 <button
                   className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"

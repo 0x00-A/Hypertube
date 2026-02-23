@@ -162,19 +162,27 @@ export class SubtitleService {
         order_direction: 'desc',
       },
     });
+
+    if (!response.data.data || response.data.data.length === 0) {
+      logger.info(`No subtitles found on OpenSubtitles for ${imdbId} in ${language}`);
+      return [];
+    }
+
     logger.info(
-      `OpenSubtitles response data: ${JSON.stringify(response.data.data[0].attributes.files)}`,
+      `OpenSubtitles found ${response.data.data.length} results for ${imdbId} in ${language}`,
     );
 
-    return response.data.data.map((item) => {
-      const attrs = item.attributes;
-      return {
-        id: attrs.subtitle_id,
-        fileName: attrs.files[0].file_name,
-        fileId: attrs.files[0].file_id,
-        language: attrs.language,
-      };
-    });
+    return response.data.data
+      .filter((item) => item.attributes?.files?.length > 0)
+      .map((item) => {
+        const attrs = item.attributes;
+        return {
+          id: attrs.subtitle_id,
+          fileName: attrs.files[0].file_name,
+          fileId: attrs.files[0].file_id,
+          language: attrs.language,
+        };
+      });
   }
 
   public async getDownloadLink(fileId: number) {

@@ -28,8 +28,9 @@ export class StreamingController {
    */
   stream = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
+    const userLanguage = req.user?.language || 'en';
 
-    const streamable = await this._streamingService.getStreamableFile(movieId);
+    const streamable = await this._streamingService.getStreamableFile(movieId, userLanguage);
 
     // --- Case A: Needs transcoding (MKV/AVI) ---
     if (streamable.needsTranscoding) {
@@ -127,8 +128,9 @@ export class StreamingController {
    */
   getStatus = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
+    const userLanguage = req.user?.language || 'en';
 
-    const status = await this._streamingService.getStatus(movieId);
+    const status = await this._streamingService.getStatus(movieId, userLanguage);
 
     res.json({
       status: 'success',

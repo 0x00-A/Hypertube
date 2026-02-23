@@ -60,7 +60,7 @@ jest.mock('fs', () => {
   return {
     ...actual,
     existsSync: jest.fn().mockReturnValue(true),
-    statSync: jest.fn().mockReturnValue({ size: 5_000_000 }),
+    statSync: jest.fn().mockReturnValue({ size: 800_000_000 }),
     mkdirSync: jest.fn(),
   };
 });
@@ -128,6 +128,11 @@ describe('StreamingService', () => {
     await MovieModel.deleteMany({});
   });
 
+  afterAll(() => {
+    // Ensure any remaining reaper intervals are cleaned up
+    streamingService?.destroyAll();
+  });
+
   // --------------------------------------------------------------------------
   // getStreamableFile
   // --------------------------------------------------------------------------
@@ -154,7 +159,7 @@ describe('StreamingService', () => {
       const result = await streamingService.getStreamableFile(movie._id.toString());
 
       expect(result.filePath).toBe(path.resolve(localPath));
-      expect(result.fileSize).toBe(5_000_000); // From mocked statSync
+      expect(result.fileSize).toBe(800_000_000); // From mocked statSync
       expect(result.mimeType).toBe('video/mp4');
       expect(result.needsTranscoding).toBe(false);
       expect(result.createTorrentStream).toBeUndefined();
