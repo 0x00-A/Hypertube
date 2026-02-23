@@ -1,0 +1,231 @@
+paths:
+  /api/v1/stream/{movieId}:
+    get:
+      tags:
+        - Streaming
+      summary: Stream a movie
+      description: |
+        Stream a movie to the client with HTTP Range support for seeking.
+
+        **Behavior depends on the file format and download status:**
+        - **Downloaded MP4/WebM:** Serves the file directly from disk with Range support (206).
+        - **Active torrent (MP4/WebM):** Pipes the torrent read stream with Range support (206).
+        - **MKV/AVI (needs transcoding):** Pipes through ffmpeg to MP4 via Transfer-Encoding: chunked (200).
+
+        If the movie has not started downloading, a torrent engine is created on-the-fly.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          description: The MongoDB ObjectId of the movie to stream
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+            example: '507f1f77bcf86cd799439011'
+        - name: Range
+          in: header
+          required: false
+          description: |
+            HTTP Range header for partial content requests (seeking).
+            Format: `bytes=start-end`. Only respected for browser-playable formats (MP4/WebM).
+          schema:
+            type: string
+            example: 'bytes=0-1048575'
+      responses:
+        '200':
+          description: Full video stream (no Range header) or transcoded stream
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: video/mp4
+            Content-Length:
+              schema:
+                type: integer
+                description: Total file size (omitted for transcoded streams)
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+            Transfer-Encoding:
+              schema:
+                type: string
+                example: chunked
+                description: Present when transcoding (MKV/AVI → MP4)
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+            video/webm:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial content (Range request fulfilled)
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: video/mp4
+            Content-Range:
+              schema:
+                type: string
+                example: 'bytes 0-1048575/5242880'
+            Content-Length:
+              schema:
+                type: integer
+                description: Size of the returned chunk
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+            video/webm:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: No torrents available or no stream source
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: No torrents available for this movie
+        '401':
+          description: Unauthorized — not logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Movie not found
+        '416':
+          description: Range Not Satisfiable
+          headers:
+            Content-Range:
+              schema:
+                type: string
+                example: 'bytes */5242880'
+
+  /api/v1/stream/{movieId}/status:
+    get:
+      tags:
+        - Streaming
+      summary: Get streaming status for a movie
+      description: |
+        Returns the current download status, whether a torrent engine is active,
+        and any available subtitles (grouped by language).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          description: The MongoDB ObjectId of the movie
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+            example: '507f1f77bcf86cd799439011'
+      responses:
+        '200':
+          description: Stream status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      downloadStatus:
+                        type: string
+                        enum:
+                          - not_downloaded
+                          - downloading
+                          - downloaded
+                        example: downloading
+                      hasActiveEngine:
+                        type: boolean
+                        example: true
+                      subtitles:
+                        type: object
+                        description: Subtitles grouped by language code
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              language:
+                                type: string
+                                example: English
+                              label:
+                                type: string
+                                example: English (SRT)
+                              url:
+                                type: string
+                                example: /subtitles/tt1234567_en.vtt
+                        example:
+                          en:
+                            - language: English
+                              label: English (SRT)
+                              url: /subtitles/tt1234567_en.vtt
+        '401':
+          description: Unauthorized — not logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Unauthorized
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: Movie not found
