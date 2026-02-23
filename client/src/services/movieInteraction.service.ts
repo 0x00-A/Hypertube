@@ -1,5 +1,9 @@
 import { httpClient } from "./http";
-import type { IResponse, IMovieInteraction } from "../types/movie.types";
+import type {
+  IResponse,
+  IMovieInteraction,
+  IMoviesResponse,
+} from "../types/movie.types";
 
 class MovieInteractionService {
   private readonly BASE_PATH = "/interactions";
@@ -58,6 +62,25 @@ class MovieInteractionService {
     } catch {
       return null;
     }
+  }
+  /**
+   * Get user's watch history with pagination and filters
+   */
+  async getWatchHistory(params: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    search?: string;
+    genre?: string;
+    minRating?: number;
+    year?: number;
+  }): Promise<IMoviesResponse> {
+    const response = await httpClient.get<IMoviesResponse>(
+      `${this.BASE_PATH}/history`,
+      { params },
+    );
+    return response;
   }
 }
 

@@ -66,6 +66,11 @@ export const queryKeys = {
     byMovie: (tmdbId: number) =>
       [...queryKeys.comments.all, "movie", tmdbId] as const,
   },
+  history: {
+    all: ["history"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.history.all, filters] as const,
+  },
   streaming: {
     all: ["streaming"] as const,
     status: (movieId: string) =>

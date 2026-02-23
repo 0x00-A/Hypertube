@@ -69,8 +69,16 @@ export class MovieInteractionService {
     }
   }
 
-  async getWatchHistory(userId: Types.ObjectId, limit = 20): Promise<IMovie[]> {
-    const history = await this._repository.getUserWatchHistory(userId, limit);
+  async getWatchHistory(
+    userId: Types.ObjectId,
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+  ): Promise<IPaginatedResponse<IMovie>> {
+    const history = await this._repository.getUserWatchHistory(
+      userId,
+      paginationOptions,
+      filterOptions,
+    );
     return history;
   }
 

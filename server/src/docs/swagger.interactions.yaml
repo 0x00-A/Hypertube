@@ -364,12 +364,19 @@ paths:
 
   /api/v1/interactions/history:
     get:
-      summary: Get user's watch history
+      summary: Get user's watch history with pagination and filters
       tags:
         - Movie Interactions
       security:
         - cookieAuth: []
       parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
         - in: query
           name: limit
           schema:
@@ -377,10 +384,46 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
-          description: Maximum number of items to return
+          description: Number of items per page
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [title, year, rating, lastUpdated]
+            default: lastUpdated
+          description: Field to sort by. 'lastUpdated' sorts by when the movie was last watched
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order (ascending or descending)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search movie titles
+        - in: query
+          name: genre
+          schema:
+            type: string
+          description: Filter by genre
+        - in: query
+          name: minRating
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+          description: Minimum rating filter
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: Filter by release year
       responses:
         '200':
-          description: Watch history retrieved successfully
+          description: Watch history retrieved successfully with pagination
           content:
             application/json:
               schema:
@@ -390,6 +433,27 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Movie'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 15
+                      totalPages:
+                        type: integer
+                        example: 1
+                      hasNextPage:
+                        type: boolean
+                        example: false
+                      hasPrevPage:
+                        type: boolean
+                        example: false
                   message:
                     type: string
                     example: User watch history fetched successfully.
