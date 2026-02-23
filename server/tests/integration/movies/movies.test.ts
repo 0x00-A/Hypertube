@@ -15,7 +15,7 @@ afterEach(async () => {
 });
 
 describe('Movies API Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {

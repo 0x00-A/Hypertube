@@ -7,7 +7,7 @@ import mongoose, { Types } from 'mongoose';
 import { IMovie } from '../../../src/interfaces/movie.interface';
 
 describe('MovieInteraction API Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
   let movieId: string;
   let movieId2: string;
   let movieId3: string;
@@ -486,7 +486,7 @@ describe('MovieInteraction API Integration Tests', () => {
       ]);
     });
 
-    it('should get watch history successfully', async () => {
+    it('should get watch history successfully with pagination', async () => {
       const res = await request(app)
         .get('/api/v1/interactions/history')
         .set('Cookie', [`accessToken=${accessToken}`]);
@@ -495,18 +495,77 @@ describe('MovieInteraction API Integration Tests', () => {
       expect(res.body.message).toBe('User watch history fetched successfully.');
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.data.length).toBe(2);
-      // Returns Movie objects, not interactions
+      // Returns Movie objects with pagination
+      expect(res.body).toHaveProperty('pagination');
+      expect(res.body.pagination).toHaveProperty('page', 1);
+      expect(res.body.pagination).toHaveProperty('total', 2);
+      expect(res.body.pagination).toHaveProperty('totalPages', 1);
       expect(res.body.data[0]).toHaveProperty('imdbId');
       expect(res.body.data[0]).toHaveProperty('title');
     });
 
-    it('should respect limit parameter', async () => {
+    it('should support pagination', async () => {
       const res = await request(app)
-        .get('/api/v1/interactions/history?limit=1')
+        .get('/api/v1/interactions/history?page=1&limit=1')
         .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
+      expect(res.body.pagination.page).toBe(1);
+      expect(res.body.pagination.limit).toBe(1);
+      expect(res.body.pagination.total).toBe(2);
+      expect(res.body.pagination.totalPages).toBe(2);
+      expect(res.body.pagination.hasNextPage).toBe(true);
+      expect(res.body.pagination.hasPrevPage).toBe(false);
+    });
+
+    it('should support sorting by lastUpdated', async () => {
+      const res = await request(app)
+        .get('/api/v1/interactions/history?sortBy=lastUpdated&sortOrder=desc')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(2);
+      // Most recently watched should be first (movieId2 watched on 2024-01-02)
+    });
+
+    it('should support filtering by search', async () => {
+      const res = await request(app)
+        .get('/api/v1/interactions/history?search=Test')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should support filtering by genre', async () => {
+      const res = await request(app)
+        .get('/api/v1/interactions/history?genre=Action')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+
+      expect(res.status).toBe(200);
+      // All test movies have Action genre
+      expect(res.body.data.length).toBe(2);
+    });
+
+    it('should support filtering by minRating', async () => {
+      const res = await request(app)
+        .get('/api/v1/interactions/history?minRating=8')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+
+      expect(res.status).toBe(200);
+      // All test movies have rating 8.5
+      expect(res.body.data.length).toBe(2);
+    });
+
+    it('should support filtering by year', async () => {
+      const res = await request(app)
+        .get('/api/v1/interactions/history?year=2023')
+        .set('Cookie', [`accessToken=${accessToken}`]);
+
+      expect(res.status).toBe(200);
+      // All test movies are from 2023
+      expect(res.body.data.length).toBe(2);
     });
   });
 

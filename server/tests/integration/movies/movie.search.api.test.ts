@@ -32,7 +32,7 @@ class MockYtsProvider extends BaseProvider {
 }
 
 describe('Movie Search API', () => {
-  let app: ReturnType<typeof createApp>;
+  let app: ReturnType<typeof createApp>['app'];
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
@@ -87,7 +87,7 @@ describe('Movie Search API', () => {
     await mongoose.connection.dropDatabase();
     // Replace providers in the singleton
     (scraperEngine as any)._providers = [new MockYtsProvider()];
-    app = createApp();
+    app = createApp().app;
   });
 
   it('should return movies from the search endpoint', async () => {

@@ -72,7 +72,7 @@ const createFortyTwoProfile = (
 });
 
 describe('OAuth Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
   let userRepo: UserRepository;
   let oauthService: OAuthService;
 
@@ -286,7 +286,14 @@ describe('OAuth Integration Tests', () => {
       const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       const login = `jdoe_${unique}`;
       const email = `${login}@student.42.fr`;
-      const mockFortyTwoProfile = createFortyTwoProfile(12345, email, login, 'John', 'Doe', `https://example.com/avatar_${unique}.jpg`);
+      const mockFortyTwoProfile = createFortyTwoProfile(
+        12345,
+        email,
+        login,
+        'John',
+        'Doe',
+        `https://example.com/avatar_${unique}.jpg`,
+      );
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       expect(user).toBeDefined();
       expect(user._id).toBeDefined();
@@ -372,14 +379,7 @@ describe('OAuth Integration Tests', () => {
       const unique = Math.random().toString(36).substring(2, 8) + Date.now();
       const login = `noavatar_${unique}`;
       const email = `${login}@student.42.fr`;
-      const mockFortyTwoProfile = createFortyTwoProfile(
-        88888,
-        email,
-        login,
-        'No',
-        'Avatar',
-        '',
-      );
+      const mockFortyTwoProfile = createFortyTwoProfile(88888, email, login, 'No', 'Avatar', '');
 
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
 
@@ -402,7 +402,14 @@ describe('OAuth Integration Tests', () => {
       const login = `jsmith_${unique}`;
       const email = `${login}@student.42.fr`;
       const image_url = `https://example.com/avatar_${unique}.jpg`;
-      const mockFortyTwoProfile = createFortyTwoProfile(67890, email, login, 'Jane', 'Smith', image_url);
+      const mockFortyTwoProfile = createFortyTwoProfile(
+        67890,
+        email,
+        login,
+        'Jane',
+        'Smith',
+        image_url,
+      );
       const user = await oauthService.handleFortyTwoOAuth(mockFortyTwoProfile);
       expect(user.username).toBe(`${login}2`); // Should append number to avoid collision
       expect(user.email).toBe(email);
