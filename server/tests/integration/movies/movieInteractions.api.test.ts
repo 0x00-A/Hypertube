@@ -721,10 +721,14 @@ describe('MovieInteraction API Integration Tests', () => {
       expect(res.body.message).toBe('Continue watching list fetched successfully.');
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.data.length).toBe(1);
-      // Returns Movie objects with watchProgress property
-      expect(res.body.data[0]).toHaveProperty('imdbId');
-      expect(res.body.data[0]).toHaveProperty('title');
-      expect(res.body.data[0]).toHaveProperty('watchProgress', 25);
+      // Returns nested shape: { movie, watchedDuration, totalDuration, percentage, lastWatchedAt }
+      expect(res.body.data[0]).toHaveProperty('movie');
+      expect(res.body.data[0].movie).toHaveProperty('imdbId');
+      expect(res.body.data[0].movie).toHaveProperty('title');
+      expect(res.body.data[0]).toHaveProperty('watchedDuration', 1800);
+      expect(res.body.data[0]).toHaveProperty('totalDuration', 7200);
+      expect(res.body.data[0]).toHaveProperty('percentage', 25);
+      expect(res.body.data[0]).toHaveProperty('lastWatchedAt');
     });
 
     it('should respect limit parameter', async () => {

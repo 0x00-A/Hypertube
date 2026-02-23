@@ -594,16 +594,31 @@ paths:
                   data:
                     type: array
                     items:
-                      allOf:
-                        - $ref: '#/components/schemas/Movie'
-                        - type: object
-                          properties:
-                            watchProgress:
-                              type: number
-                              minimum: 0
-                              maximum: 100
-                              description: Watch progress percentage
-                              example: 45.5
+                      type: object
+                      properties:
+                        movie:
+                          $ref: '#/components/schemas/Movie'
+                        watchedDuration:
+                          type: number
+                          minimum: 0
+                          description: Last playback position in seconds
+                          example: 1800
+                        totalDuration:
+                          type: number
+                          minimum: 0
+                          description: Total movie duration in seconds
+                          example: 7200
+                        percentage:
+                          type: number
+                          minimum: 0
+                          maximum: 100
+                          description: Watch progress percentage (0-100)
+                          example: 45.5
+                        lastWatchedAt:
+                          type: string
+                          format: date-time
+                          description: When the user last watched this movie
+                          example: '2024-01-15T10:30:00.000Z'
                   message:
                     type: string
                     example: Continue watching list fetched successfully.

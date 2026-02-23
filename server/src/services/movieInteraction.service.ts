@@ -4,6 +4,7 @@ import {
   IMovieInteraction,
   IUpdateWatchProgress,
   IMovieInteractionStats,
+  IContinueWatchingItem,
 } from '../interfaces/movieInteraction.interface';
 import { BadRequestError, NotFoundError } from '../core/errors/customErrors';
 import { IMovie } from '../interfaces/movie.interface';
@@ -95,10 +96,7 @@ export class MovieInteractionService {
     return watchlist;
   }
 
-  async getContinueWatching(
-    userId: Types.ObjectId,
-    limit = 10,
-  ): Promise<({ watchProgress: number } & IMovie)[]> {
+  async getContinueWatching(userId: Types.ObjectId, limit = 10): Promise<IContinueWatchingItem[]> {
     const continueWatching = await this._repository.getUserContinueWatching(userId, limit);
     return continueWatching;
   }

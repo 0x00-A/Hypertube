@@ -3,6 +3,7 @@ import type {
   IResponse,
   IMovieInteraction,
   IMoviesResponse,
+  IWatchProgress,
 } from "../types/movie.types";
 
 class MovieInteractionService {
@@ -81,6 +82,17 @@ class MovieInteractionService {
       { params },
     );
     return response;
+  }
+
+  /**
+   * Get user's continue watching list
+   */
+  async getContinueWatching(limit = 10): Promise<IWatchProgress[]> {
+    const response = await httpClient.get<IResponse<IWatchProgress[]>>(
+      `${this.BASE_PATH}/continue-watching`,
+      { params: { limit } },
+    );
+    return response.data;
   }
 }
 

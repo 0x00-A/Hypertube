@@ -71,6 +71,11 @@ export const queryKeys = {
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.history.all, filters] as const,
   },
+  continueWatching: {
+    all: ["continueWatching"] as const,
+    list: (limit: number) =>
+      [...queryKeys.continueWatching.all, limit] as const,
+  },
   streaming: {
     all: ["streaming"] as const,
     status: (movieId: string) =>

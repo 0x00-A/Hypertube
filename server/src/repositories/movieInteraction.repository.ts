@@ -4,6 +4,7 @@ import {
   IUpdateWatchProgress,
   IMovieInteractionStats,
   IUserInteractionStats,
+  IContinueWatchingItem,
 } from '../interfaces/movieInteraction.interface';
 import { Types, PipelineStage } from 'mongoose';
 import { IMovieInteractionDocument } from '../models/movieInteraction.model.types';
@@ -368,7 +369,7 @@ export class MovieInteractionRepository {
   async getUserContinueWatching(
     userId: Types.ObjectId,
     limit = 10,
-  ): Promise<({ watchProgress: number } & IMovie)[]> {
+  ): Promise<IContinueWatchingItem[]> {
     const interactions = await MovieInteractionModel.find({
       userId,
       interactionType: 'watched',
@@ -393,8 +394,11 @@ export class MovieInteractionRepository {
         const interactionData = interaction.toObject();
 
         return {
-          ...movieData,
-          watchProgress: interactionData.watchProgress,
+          movie: movieData,
+          watchedDuration: interactionData.lastWatchedPosition ?? 0,
+          totalDuration: interactionData.duration ?? 0,
+          percentage: interactionData.watchProgress ?? 0,
+          lastWatchedAt: interactionData.watchedAt ?? interactionData.updatedAt,
         };
       });
   }
