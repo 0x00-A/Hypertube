@@ -174,3 +174,12 @@ body {
     transform: translateX(-100%);
   }
 }
+
+/* ============================================================================
+   VIDEO SUBTITLE STYLING
+   ============================================================================ */
+
+video::cue {
+  background: transparent;
+  color: transparent;
+}

@@ -1,4 +1,4 @@
-import { QueryClient, type DefaultOptions } from '@tanstack/react-query';
+import { QueryClient, type DefaultOptions } from "@tanstack/react-query";
 
 // ============================================================================
 // Query Client Configuration
@@ -9,7 +9,8 @@ const queryConfig: DefaultOptions = {
     // Default options for all queries
     retry: (failureCount, error) => {
       // Don't retry on 4xx errors (client errors)
-      const status = (error as { response?: { status?: number } })?.response?.status;
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status;
       if (status && status >= 400 && status < 500) {
         return false;
       }
@@ -38,25 +39,38 @@ export const queryClient = new QueryClient({
 
 export const queryKeys = {
   auth: {
-    all: ['auth'] as const,
-    currentUser: () => [...queryKeys.auth.all, 'current-user'] as const,
-    profile: (userId: string) => [...queryKeys.auth.all, 'profile', userId] as const,
+    all: ["auth"] as const,
+    currentUser: () => [...queryKeys.auth.all, "current-user"] as const,
+    profile: (userId: string) =>
+      [...queryKeys.auth.all, "profile", userId] as const,
   },
   movies: {
-    all: ['movies'] as const,
-    lists: () => [...queryKeys.movies.all, 'list'] as const,
-    list: (filters: Record<string, unknown>) => [...queryKeys.movies.lists(), filters] as const,
-    details: () => [...queryKeys.movies.all, 'detail'] as const,
+    all: ["movies"] as const,
+    lists: () => [...queryKeys.movies.all, "list"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.movies.lists(), filters] as const,
+    details: () => [...queryKeys.movies.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.movies.details(), id] as const,
-    recommended: (tmdbId?: number) => ['movies', 'recommended', tmdbId] as const,
-    search: (query: string) => [...queryKeys.movies.all, 'search', query] as const,
+    recommended: (tmdbId?: number) =>
+      ["movies", "recommended", tmdbId] as const,
+    search: (query: string) =>
+      [...queryKeys.movies.all, "search", query] as const,
   },
   watchlist: {
-    all: ['watchlist'] as const,
-    list: (filters: Record<string, unknown>) => [...queryKeys.watchlist.all, filters] as const,
+    all: ["watchlist"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.watchlist.all, filters] as const,
   },
   comments: {
-    all: ['comments'] as const,
-    byMovie: (tmdbId: number) => [...queryKeys.comments.all, 'movie', tmdbId] as const,
+    all: ["comments"] as const,
+    byMovie: (tmdbId: number) =>
+      [...queryKeys.comments.all, "movie", tmdbId] as const,
+  },
+  streaming: {
+    all: ["streaming"] as const,
+    status: (movieId: string) =>
+      [...queryKeys.streaming.all, "status", movieId] as const,
+    progress: (movieId: string) =>
+      [...queryKeys.streaming.all, "progress", movieId] as const,
   },
 } as const;
