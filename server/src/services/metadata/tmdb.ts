@@ -60,12 +60,22 @@ export async function getMetadata(imdbId: string) {
 
   // fetch Details, Trailer, and Cast
   const detailUrl = `${TMDB_BASE}/movie/${tmdbMovie.id}?append_to_response=videos,credits`;
-  const detailRes = await axios.get(detailUrl, {
-    headers: {
-      Authorization: `Bearer ${TMDB_KEY}`,
-    },
-  });
-  const details = detailRes.data;
+  let details: Record<string, unknown>;
+  try {
+    const detailRes = await axios.get(detailUrl, {
+      headers: {
+        Authorization: `Bearer ${TMDB_KEY}`,
+      },
+    });
+    details = detailRes.data as Record<string, unknown>;
+  } catch (err: unknown) {
+    const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+    logger.warn(
+      { imdbId, tmdbId: tmdbMovie.id, status },
+      'TMDB detail fetch failed, skipping movie',
+    );
+    return null;
+  }
 
   // helpers for null/invalid fields
   const parseDuration = (runtime: unknown): number | null => {

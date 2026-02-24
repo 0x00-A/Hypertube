@@ -128,11 +128,6 @@ describe('StreamingService', () => {
     await MovieModel.deleteMany({});
   });
 
-  afterAll(() => {
-    // Ensure any remaining reaper intervals are cleaned up
-    streamingService?.destroyAll();
-  });
-
   // --------------------------------------------------------------------------
   // getStreamableFile
   // --------------------------------------------------------------------------

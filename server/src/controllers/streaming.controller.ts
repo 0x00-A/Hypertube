@@ -6,12 +6,6 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { logger } from '../utils/logger';
 import { BadRequestError } from '../core/errors/customErrors';
 
-/**
- * StreamingController — Handles video streaming with HTTP Range support.
- *
- * GET /api/v1/stream/:movieId       → Stream video with 206 Partial Content
- * GET /api/v1/stream/:movieId/status → Get download status + subtitles
- */
 export class StreamingController {
   private _streamingService: StreamingService;
 
@@ -19,20 +13,12 @@ export class StreamingController {
     this._streamingService = streamingService;
   }
 
-  /**
-   * Stream a movie to the client. Supports HTTP Range headers for seeking.
-   *
-   * - For downloaded MP4/WebM: serve file directly with Range support.
-   * - For active torrent streams (MP4/WebM): pipe torrent read stream with Range.
-   * - For MKV/AVI: pipe through ffmpeg transcoding (no Range, Transfer-Encoding: chunked).
-   */
   stream = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
     const userLanguage = req.user?.language || 'en';
 
     const streamable = await this._streamingService.getStreamableFile(movieId, userLanguage);
 
-    // --- Case A: Needs transcoding (MKV/AVI) ---
     if (streamable.needsTranscoding) {
       logger.info({ movieId }, 'Transcoding required — streaming via ffmpeg');
 
@@ -59,7 +45,7 @@ export class StreamingController {
       return;
     }
 
-    // --- Case B: Direct serve (MP4/WebM) with Range support ---
+    // Direct serve (MP4/WebM) with Range support ---
     const fileSize = streamable.fileSize;
     const rangeHeader = req.headers.range;
 
@@ -123,9 +109,6 @@ export class StreamingController {
     }
   });
 
-  /**
-   * Get the streaming status for a movie (download status + available subtitles).
-   */
   getStatus = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
     const userLanguage = req.user?.language || 'en';

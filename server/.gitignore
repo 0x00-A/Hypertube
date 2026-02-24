@@ -72,3 +72,4 @@ uploads/avatars/*
 !uploads/avatars/.gitkeep
 
 public/subtitles/*
+downloads/*

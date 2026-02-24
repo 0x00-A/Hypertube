@@ -16,9 +16,6 @@ import { ITorrent } from '../interfaces/movie.interface';
 // Types
 // ============================================================================
 
-/** How long an engine can sit idle before being destroyed (30 minutes) */
-const ENGINE_IDLE_TIMEOUT = 30 * 60 * 1_000;
-
 interface ActiveEngine {
   engine: ReturnType<typeof torrentStream>;
   movieId: string;
@@ -30,10 +27,6 @@ interface ActiveEngine {
   } | null;
   ready: boolean;
   readyPromise: Promise<void>;
-  /** Timestamp of last access (stream or status request) */
-  lastAccessed: number;
-  /** Whether this engine has been paused to yield bandwidth */
-  paused: boolean;
 }
 
 export interface StreamableFile {
@@ -74,8 +67,6 @@ export class StreamingService {
   private _downloadsDir: string;
   /** Tracks in-flight subtitle fetches to prevent duplicate concurrent calls */
   private _subtitleFetchesInFlight: Set<string> = new Set();
-  /** Interval handle for the idle-engine reaper */
-  private _reaperInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(movieRepository: MovieRepository, subtitleService: SubtitleService) {
     this._movieRepository = movieRepository;
@@ -85,17 +76,6 @@ export class StreamingService {
     // Ensure downloads directory exists
     if (!fs.existsSync(this._downloadsDir)) {
       fs.mkdirSync(this._downloadsDir, { recursive: true });
-    }
-
-    // Periodically destroy engines that have been idle too long
-    // .unref() prevents the timer from keeping the Node process alive on shutdown
-    this._reaperInterval = setInterval(() => this.reapIdleEngines(), 60_000);
-    if (
-      this._reaperInterval &&
-      typeof this._reaperInterval === 'object' &&
-      'unref' in this._reaperInterval
-    ) {
-      this._reaperInterval.unref();
     }
   }
 
@@ -256,12 +236,6 @@ export class StreamingService {
       }
     }
 
-    // Keep engine's lastAccessed fresh while user is on the watch page
-    const activeEngine = this._activeEngines.get(movieId);
-    if (activeEngine) {
-      activeEngine.lastAccessed = Date.now();
-    }
-
     return {
       downloadStatus: movie.downloadStatus,
       hasActiveEngine: this._activeEngines.has(movieId),
@@ -273,69 +247,11 @@ export class StreamingService {
    * Destroy all active torrent engines. Called on server shutdown.
    */
   destroyAll(): void {
-    if (this._reaperInterval) {
-      clearInterval(this._reaperInterval);
-      this._reaperInterval = null;
-    }
     for (const [movieId, active] of this._activeEngines) {
       logger.info({ movieId }, 'Destroying torrent engine on shutdown');
       active.engine.destroy();
     }
     this._activeEngines.clear();
-  }
-
-  /**
-   * Destroy a single engine by movieId.
-   */
-  private destroyEngine(movieId: string): void {
-    const active = this._activeEngines.get(movieId);
-    if (!active) return;
-    logger.info({ movieId }, 'Destroying idle torrent engine');
-    active.engine.destroy();
-    this._activeEngines.delete(movieId);
-  }
-
-  /**
-   * Pause all engines except the one for the given movieId.
-   * "Pausing" deselects the video file so the engine stops downloading pieces.
-   */
-  private pauseOtherEngines(currentMovieId: string): void {
-    for (const [id, active] of this._activeEngines) {
-      if (id === currentMovieId || active.paused || !active.ready) continue;
-      if (active.file) {
-        // Deselect the file — stops the engine from requesting new pieces
-        active.engine.files?.forEach((f) => f.deselect());
-      }
-      active.paused = true;
-      logger.info({ movieId: id }, 'Paused torrent engine to yield bandwidth');
-    }
-  }
-
-  /**
-   * Resume a previously-paused engine (re-select its video file).
-   */
-  private resumeEngine(active: ActiveEngine): void {
-    if (!active.paused || !active.file) return;
-    // Re-select only the video file
-    active.engine.files?.forEach((f) => {
-      if (f === active.file) {
-        f.select();
-      }
-    });
-    active.paused = false;
-    logger.info({ movieId: active.movieId }, 'Resumed torrent engine');
-  }
-
-  /**
-   * Destroy engines that have been idle for longer than ENGINE_IDLE_TIMEOUT.
-   */
-  private reapIdleEngines(): void {
-    const now = Date.now();
-    for (const [movieId, active] of this._activeEngines) {
-      if (now - active.lastAccessed > ENGINE_IDLE_TIMEOUT) {
-        this.destroyEngine(movieId);
-      }
-    }
   }
 
   // ============================================================================
@@ -373,10 +289,6 @@ export class StreamingService {
     const existing = this._activeEngines.get(movieId);
     if (existing) {
       await existing.readyPromise;
-      existing.lastAccessed = Date.now();
-      // Resume if it was paused, and pause everything else
-      this.resumeEngine(existing);
-      this.pauseOtherEngines(movieId);
       return existing;
     }
 
@@ -425,14 +337,9 @@ export class StreamingService {
       file: null,
       ready: false,
       readyPromise,
-      lastAccessed: Date.now(),
-      paused: false,
     };
 
     this._activeEngines.set(movieId, activeEngine);
-
-    // Pause all other engines so the new one gets full bandwidth
-    this.pauseOtherEngines(movieId);
 
     // Handle engine ready event
     engine.on('ready', () => {
@@ -482,7 +389,7 @@ export class StreamingService {
     // file is actually complete by comparing its size on disk to the expected
     // torrent file length before marking the movie as downloaded.
     engine.on('idle', () => {
-      if (!activeEngine.file || activeEngine.paused) return;
+      if (!activeEngine.file) return;
 
       const localPath = path.join(movieDir, activeEngine.file.path);
       const expectedSize = activeEngine.file.length;
