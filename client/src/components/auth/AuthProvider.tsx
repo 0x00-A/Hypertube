@@ -3,9 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAppDispatch } from '../../redux/hooks';
-import { clearUser } from '../../redux/slices/authSlice';
+import { clearUser, setUser } from '../../redux/slices/authSlice';
 import { useInitializeAuth } from '../../hooks/useAuth';
 import { REDIRECT_KEY } from '../../constants/auth';
+import { authService } from '../../services/auth.service';
+import { queryKeys } from '../../config/queryClient';
 
 // ============================================================================
 // Auth Provider Component
@@ -48,20 +50,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const redirectPath = sessionStorage.getItem(REDIRECT_KEY);
       sessionStorage.removeItem(REDIRECT_KEY);
 
-      toast.success('Successfully logged in!');
-
       // Clean up query params
       setSearchParams({});
 
-      // Navigate to saved path or browse
-      navigate(redirectPath || '/browse', { replace: true });
+      // Fetch user data after OAuth success and update state
+      (async () => {
+        try {
+          const userData = await authService.getCurrentUser();
+          // Update Redux state with user data (including avatarUrl)
+          dispatch(setUser(userData));
+          // Cache user data in React Query
+          queryClient.setQueryData(queryKeys.auth.currentUser(), userData);
+          toast.success('Successfully logged in!');
+        } catch {
+          toast.error('Failed to fetch user data. Please try again.');
+        }
+        // Navigate to saved path or browse
+        navigate(redirectPath || '/browse', { replace: true });
+      })();
     } else if (error === 'oauth_failed') {
       oauthHandledRef.current = true;
       toast.error('OAuth authentication failed. Please try again.');
       // Clean up query params
       setSearchParams({});
     }
-  }, [searchParams, setSearchParams, navigate]);
+  }, [searchParams, setSearchParams, navigate, dispatch, queryClient]);
 
   // Listen for unauthorized events from HTTP client
   useEffect(() => {

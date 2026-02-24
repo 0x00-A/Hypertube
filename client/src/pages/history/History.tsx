@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from "react";
-import { AlertCircle, Clock } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { MovieCard, MovieCardSkeleton } from "../../components/movie";
 import { HistoryFilterBar } from "../../components/history/HistoryFilterBar";
 import { useWatchHistory } from "../../hooks/useWatchHistory";
@@ -64,20 +64,13 @@ export default function History() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-2xl">
-              <Clock className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-text-primary tracking-tight">
-                Watch History
-              </h1>
-              <p className="text-text-secondary font-medium">
-                Your recently watched movies
-              </p>
-            </div>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Watch History
+          </h1>
+          <p className="text-text-secondary text-base">
+            Your recently watched movies
+          </p>
         </div>
 
         {/* Search & Filter Bar - Only show when there's data or active filters */}

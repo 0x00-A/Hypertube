@@ -75,7 +75,8 @@ export default function Watch() {
   const navigate = useNavigate();
 
   // Get movie details
-  const isTmdbMovie = location.state?.isTmdbMovie ?? true;
+  // If ID is purely numeric, it's a TMDB ID; otherwise it's a MongoDB ObjectId
+  const isTmdbMovie = location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
   const { user } = useAuthState();
   const userLanguage = user?.language || "en";
   const {
@@ -488,12 +489,13 @@ export default function Watch() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
         {/* Video Player Section */}
         <div
           ref={videoContainerRef}
-          className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border-2 border-primary/30 cursor-pointer group"
+          className="relative w-full aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden border border-primary/20 sm:border-2 sm:border-primary/30 cursor-pointer group"
           onMouseMove={() => setShowControls(true)}
+          onTouchStart={() => setShowControls(true)}
           onClick={togglePlay}
         >
           {/* Native Video Element */}
@@ -556,8 +558,8 @@ export default function Watch() {
 
           {/* Custom Subtitle Overlay */}
           {activeCueText && (
-            <div className="absolute left-0 right-0 bottom-20 flex justify-center pointer-events-none px-8">
-              <span className="bg-black/80 text-white text-base md:text-lg px-3 py-1.5 rounded text-center leading-relaxed whitespace-pre-line max-w-[80%]">
+            <div className="absolute left-0 right-0 bottom-12 sm:bottom-14 flex justify-center pointer-events-none px-2 sm:px-8">
+              <span className="bg-black/75 text-white text-[13px] sm:text-base md:text-lg px-2 py-0.5 sm:px-3 sm:py-1.5 rounded text-center leading-snug whitespace-pre-line max-w-[95%] sm:max-w-[80%]">
                 {activeCueText}
               </span>
             </div>
@@ -566,30 +568,30 @@ export default function Watch() {
           {/* Video Controls */}
           <div
             className={clsx(
-              "absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/90 to-transparent transition-opacity duration-300",
+              "absolute bottom-0 left-0 right-0 px-3 pb-2 pt-3 sm:px-4 sm:pb-3 sm:pt-4 bg-gradient-to-t from-black/95 via-black/60 to-transparent transition-opacity duration-300",
               showControls ? "opacity-100" : "opacity-0 pointer-events-none",
             )}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Progress Bar */}
             <div
-              className="w-full py-2 cursor-pointer group/progress"
+              className="w-full py-1 sm:py-1.5 cursor-pointer group/progress touch-none"
               onClick={handleProgressClick}
             >
-              <div className="w-full h-1 bg-white/20 rounded-full relative group-hover/progress:h-1.5 transition-all">
+              <div className="w-full h-0.5 sm:h-1 bg-white/20 rounded-full relative group-hover/progress:h-1.5 transition-all">
                 {/* Buffered bar */}
                 <div
-                  className="absolute h-full bg-white/30 rounded-full"
+                  className="absolute h-full bg-white/30 rounded-full transition-all"
                   style={{ width: `${bufferedPercent}%` }}
                 />
                 {/* Progress bar */}
                 <div
-                  className="absolute h-full bg-primary rounded-full"
+                  className="absolute h-full bg-primary rounded-full transition-all"
                   style={{ width: `${progressPercent}%` }}
                 />
                 {/* Scrub handle */}
                 <div
-                  className="absolute w-3 h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity"
+                  className="absolute w-3 h-3 sm:w-3 sm:h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
                   style={{
                     left: `${progressPercent}%`,
                     top: "50%",
@@ -600,29 +602,31 @@ export default function Watch() {
             </div>
 
             {/* Controls Row */}
-            <div className="flex items-center justify-between mt-3">
-              {/* Left Controls */}
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between mt-1 sm:mt-2">
+              {/* Left: Play + Time */}
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
-                  className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
+                  className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full sm:rounded text-white bg-white/10 sm:bg-transparent hover:bg-white/20 active:bg-white/30 transition-colors"
                   onClick={togglePlay}
+                  aria-label={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? (
-                    <Pause className="w-6 h-6" />
+                    <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
                   ) : (
-                    <Play className="w-6 h-6 ml-0.5" />
+                    <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
                   )}
                 </button>
 
-                <span className="text-sm text-white/90 tabular-nums">
+                <span className="text-[11px] sm:text-sm text-white/80 tabular-nums">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
 
-                {/* Volume controls */}
-                <div className="flex items-center group/vol">
+                {/* Volume controls - Desktop only */}
+                <div className="hidden md:flex items-center group/vol">
                   <button
                     className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
                     onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
                   >
                     {isMuted || volume === 0 ? (
                       <VolumeX className="w-5 h-5" />
@@ -639,20 +643,34 @@ export default function Watch() {
                       value={isMuted ? 0 : volume}
                       onChange={handleVolumeChange}
                       className="w-24 ml-1 accent-primary cursor-pointer"
+                      aria-label="Volume"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Right Controls */}
-              <div className="flex items-center gap-2">
-                {/* Subtitles toggle */}
+              {/* Right: Actions */}
+              <div className="flex items-center gap-0.5 sm:gap-2">
+                {/* Volume - Mobile only */}
+                <button
+                  className="md:hidden w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white transition-colors"
+                  onClick={toggleMute}
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-5 h-5" />
+                  ) : (
+                    <Volume2 className="w-5 h-5" />
+                  )}
+                </button>
+
+                {/* Subtitles */}
                 <button
                   className={clsx(
                     "w-9 h-9 flex items-center justify-center rounded transition-colors",
                     subtitlesEnabled && subtitleTracks.length > 0
-                      ? "text-primary bg-white/10"
-                      : "text-white hover:bg-white/10 hover:text-primary",
+                      ? "text-primary"
+                      : "text-white/70 active:text-white sm:hover:bg-white/10 sm:hover:text-primary",
                   )}
                   onClick={toggleSubtitles}
                   title={
@@ -663,13 +681,16 @@ export default function Watch() {
                         : "Turn on subtitles"
                   }
                   disabled={subtitleTracks.length === 0}
+                  aria-label="Toggle subtitles"
                 >
                   <Subtitles className="w-5 h-5" />
                 </button>
 
+                {/* Fullscreen */}
                 <button
-                  className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white sm:hover:bg-white/10 sm:hover:text-primary transition-colors"
                   onClick={toggleFullscreen}
+                  aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
                 >
                   {isFullscreen ? (
                     <Minimize className="w-5 h-5" />
@@ -683,52 +704,54 @@ export default function Watch() {
         </div>
 
         {/* Movie Info Section */}
-        <div className="mt-6">
+        <div className="mt-3 sm:mt-6 px-2 sm:px-0">
           {/* Title Row */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
                 {movie.title}
                 {movie.year && (
-                  <span className="text-base text-text-secondary font-normal ml-2">
+                  <span className="text-sm sm:text-base text-text-secondary font-normal ml-2">
                     ({movie.year})
                   </span>
                 )}
               </h1>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setIsShareOpen(true)}
-                className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 active:bg-primary/20 transition-colors"
+                aria-label="Share"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               {movie.rating && (
-                <div className="flex items-center gap-2 ml-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   {/* IMDb Rating */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg">
-                    <span className="text-base font-bold text-white">
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white/5 rounded-lg">
+                    <span className="text-sm sm:text-base font-bold text-white">
                       {movie.rating.toFixed(1)}
                     </span>
-                    <span className="bg-[#F5C518] text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
+                    <span className="bg-[#F5C518] text-black text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded">
                       IMDb
                     </span>
                   </div>
                   {/* User Rating Button */}
                   <button
                     onClick={() => setIsRatingModalOpen(true)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all active:scale-95 group"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 active:bg-white/20 transition-all active:scale-95 group"
+                    aria-label="Rate movie"
                   >
                     <Star
                       className={clsx(
-                        "w-4 h-4 transition-colors",
+                        "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors",
                         currentRating
                           ? "fill-primary text-primary"
                           : "text-white/60 group-hover:text-white",
                       )}
                     />
-                    <span className="text-sm font-bold">
+                    <span className="text-xs sm:text-sm font-bold">
                       {currentRating ? `${currentRating}/10` : "Rate"}
                     </span>
                   </button>
@@ -738,16 +761,16 @@ export default function Watch() {
           </div>
 
           {/* Show Info Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/20 shrink-0">
                 <img
                   src={posterUrl}
                   alt={movie.title}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-base font-medium text-white">
+              <span className="text-sm sm:text-base font-medium text-white line-clamp-1">
                 {movie.title}
               </span>
             </div>
@@ -756,25 +779,26 @@ export default function Watch() {
               onClick={handleWatchlistClick}
               disabled={isWatchlistLoading}
               className={clsx(
-                "flex items-center gap-2 px-5 py-3 rounded-lg font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+                "flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto",
                 movie.inWatchlist
-                  ? "bg-primary text-black hover:bg-primary/90"
-                  : "border-2 border-primary text-primary hover:bg-primary hover:text-black",
+                  ? "bg-primary text-black hover:bg-primary/90 active:bg-primary/80"
+                  : "border-2 border-primary text-primary hover:bg-primary hover:text-black active:bg-primary/90",
               )}
+              aria-label={movie.inWatchlist ? "Remove from watchlist" : "Add to watchlist"}
             >
               {isWatchlistLoading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   <span>Loading...</span>
                 </>
               ) : movie.inWatchlist ? (
                 <>
-                  <Check className="w-5 h-5 stroke-3" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
                   <span>In Watchlist</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5 stroke-3" />
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
                   <span>Add to Watchlist</span>
                 </>
               )}
@@ -782,17 +806,18 @@ export default function Watch() {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-white/10 my-6" />
+          <div className="h-px bg-white/10 my-4 sm:my-6" />
 
           {/* Story Line Section */}
           <div>
-            <h3 className="text-base font-bold text-white mb-3">Story line:</h3>
-            <p className="text-sm md:text-base leading-relaxed text-white/80">
+            <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3">Story line:</h3>
+            <p className="text-sm sm:text-base leading-relaxed text-white/80">
               {isStoryExpanded ? storyline : truncatedStoryline}
               {storyline.length > 300 && (
                 <button
-                  className="text-primary font-semibold ml-2 hover:underline"
+                  className="text-primary font-semibold ml-2 hover:underline active:underline text-sm sm:text-base"
                   onClick={() => setIsStoryExpanded(!isStoryExpanded)}
+                  aria-label={isStoryExpanded ? "Show less" : "Read more"}
                 >
                   {isStoryExpanded ? "Show Less" : "Read More"}
                 </button>
@@ -801,7 +826,7 @@ export default function Watch() {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-white/10 my-6" />
+          <div className="h-px bg-white/10 my-4 sm:my-6" />
 
           {/* Comments Section */}
           {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
