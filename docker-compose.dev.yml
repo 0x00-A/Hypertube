@@ -44,23 +44,23 @@ services:
       - hypertube-network
 
   # Frontend Client (React + Vite)
-  # client:
-  #   build:
-  #     context: ./client
-  #     dockerfile: Dockerfile.dev
-  #   container_name: hypertube-client-dev
-  #   depends_on:
-  #     - server
-  #   env_file:
-  #     - ./client/.env
-  #   ports:
-  #     - '5173:5173'
-  #   volumes:
-  #     - ./client:/app
-  #     - /app/node_modules
-  #   command: npm run dev -- --host 0.0.0.0
-  #   networks:
-  #     - hypertube-network
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: hypertube-client-dev
+    depends_on:
+      - server
+    env_file:
+      - ./client/.env
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - hypertube-network
 
 volumes:
   # mongo_dev_data:
