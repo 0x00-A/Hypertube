@@ -221,12 +221,12 @@ export async function getMetadata(imdbId: string) {
     }
     return [];
   };
+  const videos = details.videos as
+    | { results?: Array<{ site?: string; type?: string; key?: string }> }
+    | undefined;
   const youtubeTrailer =
-    details.videos && details.videos.results && Array.isArray(details.videos.results)
-      ? details.videos.results.find(
-          (v: { site?: string; type?: string }) =>
-            v && v.site === 'YouTube' && v.type === 'Trailer',
-        )
+    videos && videos.results && Array.isArray(videos.results)
+      ? videos.results.find((v) => v && v.site === 'YouTube' && v.type === 'Trailer')
       : undefined;
   const trailerUrl =
     youtubeTrailer && youtubeTrailer.key
@@ -235,7 +235,7 @@ export async function getMetadata(imdbId: string) {
 
   return {
     title: parseString(details.title),
-    tmdbId: details.id,
+    tmdbId: typeof details.id === 'number' ? details.id : 0,
     year: parseYear(details.release_date),
     synopsis: parseString(details.overview),
     duration: parseDuration(details.runtime),
