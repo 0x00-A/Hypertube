@@ -1,0 +1,39 @@
+services:
+  # Backend Server (Express API)
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: hypertube-server
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - '3000:3000'
+    volumes:
+      - server_downloads:/app/downloads
+    networks:
+      - hypertube-network
+
+  # Frontend Client (React + Vite)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: hypertube-client
+    depends_on:
+      - server
+    env_file:
+      - ./client/.env
+    ports:
+      - '5173:5173'
+    networks:
+      - hypertube-network
+
+volumes:
+  server_downloads:
+
+networks:
+  hypertube-network:
+    driver: bridge

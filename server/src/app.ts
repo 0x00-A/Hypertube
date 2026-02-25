@@ -52,8 +52,9 @@ export const createApp = (): {
   app.use(cookieParser());
   app.use(passport.initialize());
 
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-  app.use('/api/subtitles', express.static(path.join(__dirname, '../public/subtitles')));
+  // Static file serving (use process.cwd() instead of __dirname for production compatibility)
+  app.use('/uploads', express.static(path.join(process.cwd(), '/uploads')));
+  app.use('/api/subtitles', express.static(path.join(process.cwd(), 'public/subtitles')));
 
   // Disable rate limiting in test environment to prevent 429 errors
   // if (env.NODE_ENV === 'production') {

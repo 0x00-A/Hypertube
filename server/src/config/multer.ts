@@ -7,7 +7,7 @@ import { BadRequestError } from '../core/errors/customErrors';
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     // Save files to uploads/avatars directory
-    cb(null, path.join(__dirname, '../../uploads/avatars'));
+    cb(null, path.join(process.cwd(), 'uploads/avatars'));
   },
   filename: (_req, file, cb) => {
     // Generate unique filename: uuid-timestamp.extension
