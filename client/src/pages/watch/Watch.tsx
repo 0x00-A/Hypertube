@@ -110,6 +110,19 @@ export default function Watch() {
   const [subtitleTracks, setSubtitleTracks] = useState<ISubtitleTrack[]>([]);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [activeCueText, setActiveCueText] = useState<string>("");
+  const [subtitleOffset, setSubtitleOffset] = useState(() => {
+    // Initialize from localStorage if movieId is available
+    // const urlParams = new URLSearchParams(window.location.search);
+    const pathMovieId = window.location.pathname.split("/").pop();
+    if (pathMovieId) {
+      const saved = localStorage.getItem(`subtitle-timing-${pathMovieId}`);
+      return saved ? parseInt(saved) : 0;
+    }
+    return 0;
+  }); // milliseconds
+  const [currentTextTrack, setCurrentTextTrack] = useState<TextTrack | null>(
+    null,
+  );
   const [streamError, setStreamError] = useState<string | null>(null);
 
   // Derived stream URL — purely computed from movie._id, no state needed
@@ -223,23 +236,18 @@ export default function Watch() {
       [];
 
     // Set track to 'hidden' (loads cues but no native rendering)
-    // and attach cuechange listener when subtitles are enabled
+    // Store the current track for subtitle timing in handleTimeUpdate
     for (let i = 0; i < video.textTracks.length; i++) {
       const tt = video.textTracks[i];
       tt.mode = "hidden";
 
       if (subtitlesEnabled && tt.language === preferredTrack.language) {
+        // Store the current track for subtitle timing
+        setCurrentTextTrack(tt);
+
+        // Simple handler just to keep track of cue changes
         const handler = () => {
-          if (!tt.activeCues || tt.activeCues.length === 0) {
-            setActiveCueText("");
-            return;
-          }
-          const texts: string[] = [];
-          for (let j = 0; j < tt.activeCues.length; j++) {
-            const cue = tt.activeCues[j] as VTTCue;
-            texts.push(cue.text);
-          }
-          setActiveCueText(texts.join("\n"));
+          // Subtitle timing is now handled in handleTimeUpdate
         };
         tt.addEventListener("cuechange", handler);
         cueChangeHandlers.push({ track: tt, handler });
@@ -250,8 +258,33 @@ export default function Watch() {
       cueChangeHandlers.forEach(({ track, handler }) => {
         track.removeEventListener("cuechange", handler);
       });
+      setCurrentTextTrack(null);
     };
-  }, [subtitleTracks, subtitlesEnabled, userLanguage]);
+  }, [subtitleTracks, subtitlesEnabled, userLanguage, subtitleOffset]);
+
+  // ========================================================================
+  // Subtitle timing persistence
+  // ========================================================================
+
+  // Load saved subtitle offset when movie changes (initial load handled in useState)
+  useEffect(() => {
+    if (movieId) {
+      const saved = localStorage.getItem(`subtitle-timing-${movieId}`);
+      const savedOffset = saved ? parseInt(saved) : 0;
+      // Only update if different from current value to avoid unnecessary rerenders
+      setSubtitleOffset((prev) => (prev !== savedOffset ? savedOffset : prev));
+    }
+  }, [movieId]); // Removed movie dependency as it's not needed for this
+
+  // Save subtitle offset changes
+  useEffect(() => {
+    if (movieId) {
+      localStorage.setItem(
+        `subtitle-timing-${movieId}`,
+        String(subtitleOffset),
+      );
+    }
+  }, [subtitleOffset, movieId]);
 
   // ========================================================================
   // Periodically save watch progress
@@ -336,6 +369,35 @@ export default function Watch() {
     // Update buffered range
     if (video.buffered.length > 0) {
       setBuffered(video.buffered.end(video.buffered.length - 1));
+    }
+
+    // Handle subtitle timing with offset
+    if (
+      currentTextTrack &&
+      subtitlesEnabled &&
+      currentTextTrack.cues &&
+      currentTextTrack.cues.length > 0
+    ) {
+      const currentTime = video.currentTime;
+
+      // Apply subtitle offset - VLC style: positive delays, negative advances
+      const adjustedCurrentTime = currentTime - subtitleOffset / 1000;
+
+      // Find cues that should be active with timing offset applied
+      const texts: string[] = [];
+      for (let j = 0; j < currentTextTrack.cues.length; j++) {
+        const cue = currentTextTrack.cues[j] as VTTCue;
+
+        if (
+          adjustedCurrentTime >= cue.startTime &&
+          adjustedCurrentTime <= cue.endTime
+        ) {
+          texts.push(cue.text);
+        }
+      }
+      setActiveCueText(texts.join("\n"));
+    } else if (!subtitlesEnabled) {
+      setActiveCueText("");
     }
   };
 
@@ -697,6 +759,39 @@ export default function Watch() {
                 >
                   <Subtitles className="w-5 h-5" />
                 </button>
+
+                {/* Subtitle Timing Control */}
+                {subtitleTracks.length > 0 && subtitlesEnabled && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-black/30 rounded border border-white/20">
+                    <span className="text-[10px] sm:text-xs text-white/70 whitespace-nowrap">
+                      Sub:
+                    </span>
+                    <input
+                      type="number"
+                      value={subtitleOffset}
+                      onChange={(e) =>
+                        setSubtitleOffset(parseInt(e.target.value) || 0)
+                      }
+                      className="w-12 sm:w-16 px-1 py-0.5 text-[10px] sm:text-xs bg-transparent text-white border border-white/30 rounded text-center focus:border-primary focus:outline-none"
+                      step="50"
+                      min="-20000"
+                      max="20000"
+                      placeholder="0"
+                      title="Subtitle timing offset: +ms delays, -ms advances"
+                    />
+                    <span className="text-[10px] sm:text-xs text-white/70">
+                      ms
+                    </span>
+                    <button
+                      onClick={() => setSubtitleOffset(0)}
+                      className="text-xs text-white/70 hover:text-white px-1 transition-colors"
+                      title="Reset subtitle timing"
+                      aria-label="Reset subtitle timing"
+                    >
+                      ↻
+                    </button>
+                  </div>
+                )}
 
                 {/* Fullscreen */}
                 <button
