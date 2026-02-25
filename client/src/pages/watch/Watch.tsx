@@ -37,7 +37,10 @@ import { MovieRating } from "../../components/movie";
 import ShareModal from "../../components/common/ShareModal";
 import { streamingService } from "../../services/streaming.service";
 import { movieInteractionService } from "../../services/movieInteraction.service";
-import type { ISubtitleTrack } from "../../types/movie.types";
+import type {
+  ISubtitleTrack,
+  IAvailableSubtitles,
+} from "../../types/movie.types";
 
 // ============================================================================
 // Constants
@@ -96,6 +99,7 @@ export default function Watch() {
   const controlsTimeoutRef = useRef<number | null>(null);
   const progressSaveRef = useRef<number | null>(null);
   const lastSavedTimeRef = useRef<number>(0);
+  const subtitleControlsRef = useRef<HTMLDivElement>(null);
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -107,9 +111,18 @@ export default function Watch() {
   const [buffered, setBuffered] = useState(0);
   const [isBuffering, setIsBuffering] = useState(true);
   const [volume, setVolume] = useState(1);
-  const [subtitleTracks, setSubtitleTracks] = useState<ISubtitleTrack[]>([]);
-  const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
+  // Subtitle state
+  const [availableSubtitles, setAvailableSubtitles] =
+    useState<IAvailableSubtitles>({});
+  const [selectedSubtitleLanguage, setSelectedSubtitleLanguage] = useState<
+    string | null
+  >(null);
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [activeCueText, setActiveCueText] = useState<string>("");
+  const [isSubtitleControlsHovered, setIsSubtitleControlsHovered] =
+    useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileVolumeHovered, setIsMobileVolumeHovered] = useState(false);
   const [subtitleOffset, setSubtitleOffset] = useState(() => {
     // Initialize from localStorage if movieId is available
     // const urlParams = new URLSearchParams(window.location.search);
@@ -156,10 +169,10 @@ export default function Watch() {
 
     // Poll for subtitles — they're fetched in the background after the torrent
     // engine becomes ready, so they may not be available on the first request.
-    // Keep polling until the user's preferred language track is available.
+    // Keep polling until all expected language tracks are available.
     let cancelled = false;
     let retries = 0;
-    const MAX_RETRIES = 10;
+    const MAX_RETRIES = 15; // Increased retries for multi-language
     const POLL_INTERVAL = 3_000; // 3 seconds
 
     const fetchSubtitles = () => {
@@ -167,23 +180,39 @@ export default function Watch() {
         .getStreamStatus(movieId)
         .then((status) => {
           if (cancelled) return;
-          // Only collect subtitle tracks for the user's preferred language
-          const tracks: ISubtitleTrack[] = [];
-          const langSubs = status.subtitles[userLanguage];
-          if (langSubs) {
-            for (const sub of langSubs) {
-              if (sub.url) {
-                tracks.push(sub);
-              }
+
+          // Collect English and user language subtitles
+          const available: IAvailableSubtitles = {
+            userLanguageCode: userLanguage,
+          };
+
+          // Check for English subtitles
+          const englishSubs = status.subtitles["en"];
+          if (englishSubs && englishSubs.length > 0) {
+            available.english = englishSubs.filter((sub) => sub.url);
+          }
+
+          // Check for user language subtitles (if different from English)
+          if (userLanguage !== "en") {
+            const userLangSubs = status.subtitles[userLanguage];
+            if (userLangSubs && userLangSubs.length > 0) {
+              available.userLanguage = userLangSubs.filter((sub) => sub.url);
             }
           }
-          // Update tracks (may be empty if preferred language has no subs)
-          setSubtitleTracks(tracks);
-          // Keep polling if the user's preferred language isn't available yet
-          const hasPreferredLang = tracks.some(
-            (t) => t.language === userLanguage,
-          );
-          if (!hasPreferredLang && retries < MAX_RETRIES) {
+
+          setAvailableSubtitles(available);
+
+          // Continue polling until we have all expected subtitle languages
+          const needsEnglish = true; // Always try to get English
+          const needsUserLang = userLanguage !== "en"; // Only if different from English
+
+          const hasEnglish = !!available.english;
+          const hasUserLang = !!available.userLanguage || userLanguage === "en"; // Don't need user lang if it's English
+
+          const hasAllExpectedSubtitles =
+            (!needsEnglish || hasEnglish) && (!needsUserLang || hasUserLang);
+
+          if (!hasAllExpectedSubtitles && retries < MAX_RETRIES) {
             retries++;
             setTimeout(fetchSubtitles, POLL_INTERVAL);
           }
@@ -196,6 +225,7 @@ export default function Watch() {
         });
     };
 
+    // Start fetching immediately
     fetchSubtitles();
 
     return () => {
@@ -209,25 +239,40 @@ export default function Watch() {
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || subtitleTracks.length === 0) return;
+    if (!video) return;
 
     // Remove any existing <track> elements we previously added
     const existingTracks = video.querySelectorAll("track[data-managed]");
     existingTracks.forEach((t) => t.remove());
 
-    // Only use subtitles in the user's preferred language — no fallback
-    const preferredTrack = subtitleTracks.find(
-      (t) => t.language === userLanguage,
-    );
+    // Only create tracks if subtitles are enabled and a language is selected
+    if (!subtitlesEnabled || !selectedSubtitleLanguage) {
+      setCurrentTextTrack(null);
+      return;
+    }
 
-    if (!preferredTrack) return;
+    // Get the selected track
+    let selectedTrack: ISubtitleTrack | undefined;
+    if (selectedSubtitleLanguage === "en" && availableSubtitles.english) {
+      selectedTrack = availableSubtitles.english[0]; // Use first English track
+    } else if (
+      selectedSubtitleLanguage === availableSubtitles.userLanguageCode &&
+      availableSubtitles.userLanguage
+    ) {
+      selectedTrack = availableSubtitles.userLanguage[0]; // Use first user language track
+    }
 
-    // Add only the preferred subtitle as a <track> element
+    if (!selectedTrack) {
+      setCurrentTextTrack(null);
+      return;
+    }
+
+    // Add the selected subtitle as a <track> element
     const trackEl = document.createElement("track");
     trackEl.kind = "subtitles";
-    trackEl.label = preferredTrack.label;
-    trackEl.srclang = preferredTrack.language;
-    trackEl.src = `${BACKEND_ORIGIN}${preferredTrack.url}`;
+    trackEl.label = selectedTrack.label;
+    trackEl.srclang = selectedTrack.language;
+    trackEl.src = `${BACKEND_ORIGIN}${selectedTrack.url}`;
     trackEl.setAttribute("data-managed", "true");
     video.appendChild(trackEl);
 
@@ -241,7 +286,7 @@ export default function Watch() {
       const tt = video.textTracks[i];
       tt.mode = "hidden";
 
-      if (subtitlesEnabled && tt.language === preferredTrack.language) {
+      if (tt.language === selectedTrack.language) {
         // Store the current track for subtitle timing
         setCurrentTextTrack(tt);
 
@@ -260,7 +305,12 @@ export default function Watch() {
       });
       setCurrentTextTrack(null);
     };
-  }, [subtitleTracks, subtitlesEnabled, userLanguage, subtitleOffset]);
+  }, [
+    availableSubtitles,
+    subtitlesEnabled,
+    selectedSubtitleLanguage,
+    subtitleOffset,
+  ]);
 
   // ========================================================================
   // Subtitle timing persistence
@@ -333,7 +383,13 @@ export default function Watch() {
   // ========================================================================
 
   useEffect(() => {
-    if (showControls && isPlaying) {
+    if (
+      showControls &&
+      isPlaying &&
+      !isSubtitleControlsHovered &&
+      !isDropdownOpen &&
+      !isMobileVolumeHovered
+    ) {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false);
@@ -342,7 +398,27 @@ export default function Watch() {
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
-  }, [showControls, isPlaying]);
+  }, [
+    showControls,
+    isPlaying,
+    isSubtitleControlsHovered,
+    isDropdownOpen,
+    isMobileVolumeHovered,
+  ]);
+
+  // Hide subtitle interactions when controls are hidden
+  useEffect(() => {
+    if (!showControls) {
+      setIsSubtitleControlsHovered(false);
+      setIsDropdownOpen(false);
+      setIsMobileVolumeHovered(false);
+      // Force close any open dropdowns
+      if (subtitleControlsRef.current) {
+        const selects = subtitleControlsRef.current.querySelectorAll("select");
+        selects.forEach((select) => select.blur());
+      }
+    }
+  }, [showControls]);
 
   // ========================================================================
   // Fullscreen change listener
@@ -492,10 +568,84 @@ export default function Watch() {
 
   const toggleSubtitles = () => {
     setSubtitlesEnabled((prev) => {
-      if (prev) setActiveCueText("");
-      return !prev;
+      const newEnabled = !prev;
+      if (!newEnabled) {
+        setActiveCueText("");
+        setSelectedSubtitleLanguage(null);
+      } else if (!selectedSubtitleLanguage) {
+        // Auto-select first available language when enabling
+        const langs = getAvailableSubtitleLanguages();
+        if (langs.length > 0) {
+          setSelectedSubtitleLanguage(langs[0].code);
+        }
+      }
+      return newEnabled;
     });
   };
+
+  // Get available subtitle language options
+  const getAvailableSubtitleLanguages = () => {
+    const languages: { code: string; label: string }[] = [];
+
+    if (availableSubtitles.english) {
+      languages.push({ code: "en", label: "English" });
+    }
+
+    if (
+      availableSubtitles.userLanguage &&
+      availableSubtitles.userLanguageCode &&
+      availableSubtitles.userLanguageCode !== "en"
+    ) {
+      const userLangLabel =
+        availableSubtitles.userLanguage[0]?.label ||
+        availableSubtitles.userLanguageCode.toUpperCase();
+      languages.push({
+        code: availableSubtitles.userLanguageCode,
+        label: userLangLabel,
+      });
+    }
+
+    return languages;
+  };
+
+  const availableLanguages = getAvailableSubtitleLanguages();
+  const hasSubtitles = availableLanguages.length > 0;
+
+  // Manual subtitle refresh function
+  const refreshSubtitles = useCallback(() => {
+    if (!movieId) return;
+
+    // Clear current subtitles and force re-fetch
+    setAvailableSubtitles({});
+    setSelectedSubtitleLanguage(null);
+    setSubtitlesEnabled(false);
+
+    // Trigger subtitle fetch by accessing the status endpoint directly
+    streamingService
+      .getStreamStatus(movieId)
+      .then((status) => {
+        const available: IAvailableSubtitles = {
+          userLanguageCode: userLanguage,
+        };
+
+        const englishSubs = status.subtitles["en"];
+        if (englishSubs && englishSubs.length > 0) {
+          available.english = englishSubs.filter((sub) => sub.url);
+        }
+
+        if (userLanguage !== "en") {
+          const userLangSubs = status.subtitles[userLanguage];
+          if (userLangSubs && userLangSubs.length > 0) {
+            available.userLanguage = userLangSubs.filter((sub) => sub.url);
+          }
+        }
+
+        setAvailableSubtitles(available);
+      })
+      .catch(() => {
+        // Silent fail, polling will handle retries
+      });
+  }, [movieId, userLanguage]);
 
   // Handle watchlist toggle
   const handleWatchlistClick = (e: React.MouseEvent) => {
@@ -725,71 +875,144 @@ export default function Watch() {
 
               {/* Right: Actions */}
               <div className="flex items-center gap-0.5 sm:gap-2">
-                {/* Volume - Mobile only */}
-                <button
-                  className="md:hidden w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white transition-colors"
-                  onClick={toggleMute}
-                  aria-label={isMuted ? "Unmute" : "Mute"}
+                {/* Volume - Mobile with vertical slider */}
+                <div
+                  className="md:hidden relative group/vol-mobile"
+                  onMouseEnter={() => setIsMobileVolumeHovered(true)}
+                  onMouseLeave={() => setIsMobileVolumeHovered(false)}
                 >
-                  {isMuted || volume === 0 ? (
-                    <VolumeX className="w-5 h-5" />
-                  ) : (
-                    <Volume2 className="w-5 h-5" />
-                  )}
-                </button>
+                  <button
+                    className="w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white transition-colors"
+                    onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                  </button>
 
-                {/* Subtitles */}
-                <button
-                  className={clsx(
-                    "w-9 h-9 flex items-center justify-center rounded transition-colors",
-                    subtitlesEnabled && subtitleTracks.length > 0
-                      ? "text-primary"
-                      : "text-white/70 active:text-white sm:hover:bg-white/10 sm:hover:text-primary",
-                  )}
-                  onClick={toggleSubtitles}
-                  title={
-                    subtitleTracks.length === 0
-                      ? "No subtitles available"
-                      : subtitlesEnabled
-                        ? "Turn off subtitles"
-                        : "Turn on subtitles"
-                  }
-                  disabled={subtitleTracks.length === 0}
-                  aria-label="Toggle subtitles"
-                >
-                  <Subtitles className="w-5 h-5" />
-                </button>
+                  {/* Vertical volume slider for mobile */}
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/vol-mobile:opacity-100 group-focus-within/vol-mobile:opacity-100 transition-opacity duration-200">
+                    <div className="bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-2 flex flex-col items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={isMuted ? 0 : volume}
+                        onChange={handleVolumeChange}
+                        className="h-20 accent-primary cursor-pointer"
+                        style={
+                          {
+                            writingMode: "vertical-rl",
+                            WebkitAppearance: "slider-vertical",
+                          } as React.CSSProperties
+                        }
+                        aria-label="Volume"
+                      />
+                      <span className="text-xs text-white/70 mt-1">
+                        {Math.round((isMuted ? 0 : volume) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Subtitle Timing Control */}
-                {subtitleTracks.length > 0 && subtitlesEnabled && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-black/30 rounded border border-white/20">
-                    <span className="text-[10px] sm:text-xs text-white/70 whitespace-nowrap">
-                      Sub:
-                    </span>
-                    <input
-                      type="number"
-                      value={subtitleOffset}
-                      onChange={(e) =>
-                        setSubtitleOffset(parseInt(e.target.value) || 0)
-                      }
-                      className="w-12 sm:w-16 px-1 py-0.5 text-[10px] sm:text-xs bg-transparent text-white border border-white/30 rounded text-center focus:border-primary focus:outline-none"
-                      step="50"
-                      min="-20000"
-                      max="20000"
-                      placeholder="0"
-                      title="Subtitle timing offset: +ms delays, -ms advances"
-                    />
-                    <span className="text-[10px] sm:text-xs text-white/70">
-                      ms
-                    </span>
+                {/* Subtitle Group - Compact Inline Layout */}
+                {hasSubtitles && (
+                  <div
+                    ref={subtitleControlsRef}
+                    className="flex items-center gap-1 bg-black/30 backdrop-blur-sm rounded px-2 py-1 border border-white/10"
+                    onMouseEnter={() => setIsSubtitleControlsHovered(true)}
+                    onMouseLeave={() => setIsSubtitleControlsHovered(false)}
+                  >
                     <button
-                      onClick={() => setSubtitleOffset(0)}
-                      className="text-xs text-white/70 hover:text-white px-1 transition-colors"
-                      title="Reset subtitle timing"
-                      aria-label="Reset subtitle timing"
+                      className={clsx(
+                        "w-6 h-6 flex items-center justify-center rounded transition-colors",
+                        subtitlesEnabled
+                          ? "text-primary"
+                          : "text-white/70 hover:text-white",
+                      )}
+                      onClick={toggleSubtitles}
+                      title={
+                        subtitlesEnabled
+                          ? "Turn off subtitles"
+                          : "Turn on subtitles"
+                      }
+                      aria-label="Toggle subtitles"
                     >
-                      ↻
+                      <Subtitles className="w-4 h-4" />
                     </button>
+
+                    {subtitlesEnabled && (
+                      <>
+                        <div className="w-px h-4 bg-white/20 mx-1"></div>
+                        <select
+                          value={selectedSubtitleLanguage || ""}
+                          onChange={(e) =>
+                            setSelectedSubtitleLanguage(e.target.value || null)
+                          }
+                          onFocus={() => setIsDropdownOpen(true)}
+                          onBlur={() => setIsDropdownOpen(false)}
+                          className="bg-white/10 text-xs text-white border border-white/20 rounded px-1 py-0.5 focus:border-primary focus:outline-none min-w-[60px]"
+                        >
+                          <option
+                            value=""
+                            disabled
+                            className="bg-gray-800 text-gray-300"
+                          >
+                            Lang
+                          </option>
+                          {availableLanguages.map((lang) => (
+                            <option
+                              key={lang.code}
+                              value={lang.code}
+                              className="bg-gray-800 text-white"
+                            >
+                              {lang.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={refreshSubtitles}
+                          className="w-5 h-5 flex items-center justify-center rounded text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                          title="Refresh subtitles"
+                          aria-label="Refresh subtitles"
+                        >
+                          ↻
+                        </button>
+
+                        {selectedSubtitleLanguage && (
+                          <>
+                            <div className="w-px h-4 bg-white/20 mx-1"></div>
+                            <input
+                              type="number"
+                              value={subtitleOffset}
+                              onChange={(e) =>
+                                setSubtitleOffset(parseInt(e.target.value) || 0)
+                              }
+                              className="w-16 bg-white/10 text-xs text-white text-center border border-white/20 rounded px-1 py-0.5 focus:border-primary focus:outline-none"
+                              step="50"
+                              min="-20000"
+                              max="20000"
+                              placeholder="0"
+                              title="Subtitle timing offset: +ms delays, -ms advances"
+                            />
+                            <span className="text-xs text-white/60">ms</span>
+                            <button
+                              onClick={() => setSubtitleOffset(0)}
+                              className="w-5 h-5 flex items-center justify-center rounded text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors ml-1"
+                              title="Reset timing"
+                              aria-label="Reset subtitle timing"
+                            >
+                              ↻
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
 

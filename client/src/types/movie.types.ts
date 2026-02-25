@@ -49,6 +49,12 @@ export interface IStreamStatus {
   subtitles: Record<string, ISubtitleTrack[]>;
 }
 
+export interface IAvailableSubtitles {
+  english?: ISubtitleTrack[];
+  userLanguage?: ISubtitleTrack[];
+  userLanguageCode?: string;
+}
+
 export interface IMovieDetails extends IMovie {
   cast?: ICastMember[];
   director?: ICrewMember | null;

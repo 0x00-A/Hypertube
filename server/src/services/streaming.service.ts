@@ -216,10 +216,10 @@ export class StreamingService {
       throw new NotFoundError('Movie not found');
     }
 
-    // If a language is requested and subs for it don't exist yet, trigger fetch
+    // If a language is requested and no subtitles exist yet, trigger multi-language fetch
     if (language && movie.torrents && movie.torrents.length > 0) {
-      const hasLang = movie.subtitles?.has(language) ?? false;
-      if (!hasLang) {
+      const hasAnySubtitles = movie.subtitles && movie.subtitles.size > 0;
+      if (!hasAnySubtitles) {
         const torrent = this.selectTorrent(movie);
         this.fetchSubtitlesInBackground(movie, torrent, language);
       }
@@ -459,31 +459,42 @@ export class StreamingService {
   }
 
   /**
-   * Fetch subtitles in the background. Non-blocking.
+   * Fetch multi-language subtitles in the background. Non-blocking.
+   * Downloads English + user language according to new multi-language rules.
    */
   private fetchSubtitlesInBackground(
     movie: IMovieDocument,
     torrent: ITorrent,
     language: string = 'en',
   ): void {
-    const key = `${movie.imdbId}:${language}`;
+    const key = `${movie.imdbId}:multi:${language}`;
     if (this._subtitleFetchesInFlight.has(key)) {
       logger.debug(
         { imdbId: movie.imdbId, language },
-        'Subtitle fetch already in progress, skipping duplicate',
+        'Multi-language subtitle fetch already in progress, skipping duplicate',
       );
       return;
     }
     this._subtitleFetchesInFlight.add(key);
 
     this._subtitleService
-      .ensureForMovie(movie.imdbId, language, torrent)
+      .ensureMultiLanguageForMovie(movie.imdbId, language, torrent, movie.originalLanguage)
       .then(() => {
-        logger.info({ imdbId: movie.imdbId, language }, 'Subtitles fetched for user language');
+        logger.info(
+          {
+            imdbId: movie.imdbId,
+            userLanguage: language,
+            movieOriginalLang: movie.originalLanguage,
+          },
+          'Multi-language subtitles fetched',
+        );
       })
       .catch((err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));
-        logger.warn({ err: error, imdbId: movie.imdbId }, 'Subtitle fetch failed (non-critical)');
+        logger.warn(
+          { err: error, imdbId: movie.imdbId, userLanguage: language },
+          'Multi-language subtitle fetch failed (non-critical)',
+        );
       })
       .finally(() => {
         this._subtitleFetchesInFlight.delete(key);
