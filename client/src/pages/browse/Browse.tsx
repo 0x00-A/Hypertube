@@ -70,7 +70,7 @@ export default function Browse() {
         {isAuthenticated && (
           <div className="mt-8 lg:mt-12">
             <MovieCarousel
-              title="Recommended for You"
+              title="Recommended"
               movies={recommended.recommended}
               icon={Sparkles}
               onViewAll={handleViewAllRecommended}

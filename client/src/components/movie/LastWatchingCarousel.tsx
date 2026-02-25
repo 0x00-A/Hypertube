@@ -81,7 +81,7 @@ export const LastWatchingCarousel = ({
 
       {/* Loading skeletons */}
       {isLoading && (
-        <div className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.333%-11px)] lg:auto-cols-[calc(25%-12px)] xl:auto-cols-[calc(20%-13px)] gap-4 overflow-hidden">
+        <div className="grid grid-flow-col auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.333%-11px)] lg:auto-cols-[calc(25%-12px)] xl:auto-cols-[calc(20%-13px)] gap-4 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={`skeleton-${String(i)}`}
@@ -148,7 +148,7 @@ export const LastWatchingCarousel = ({
 
           <div
             ref={scrollContainerRef}
-            className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.333%-11px)] lg:auto-cols-[calc(25%-12px)] xl:auto-cols-[calc(20%-13px)] gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
+            className="grid grid-flow-col auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.333%-11px)] lg:auto-cols-[calc(25%-12px)] xl:auto-cols-[calc(20%-13px)] gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {progressList.map((progress) => (

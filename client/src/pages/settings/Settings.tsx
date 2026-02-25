@@ -2,7 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
-import { Camera, Loader2, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Camera, Loader2, AlertCircle, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Select } from '../../components/ui/Select';
 import { clsx } from 'clsx';
 import { SaveButton } from '../../components/ui/SaveButton';
@@ -40,7 +41,6 @@ export default function Settings() {
   });
 
   const [previewAvatar, setPreviewAvatar] = useState<string>(getAvatarUrl(user?.avatarUrl));
-  const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Cleanup object URL on unmount to prevent memory leaks
@@ -76,13 +76,11 @@ export default function Settings() {
 
   const handleInputChange = (field: keyof SettingsFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setSuccessMessage('');
     setErrorMessage('');
   };
 
   const handlePasswordChange = (field: keyof PasswordData, value: string) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
-    setSuccessMessage('');
     setErrorMessage('');
   };
 
@@ -107,9 +105,6 @@ export default function Settings() {
     }
 
     setErrorMessage('');
-    setSuccessMessage('');
-
-    // Store the file for upload
     setAvatarFile(file);
 
     // Revoke previous preview URL (if any) to avoid memory leaks
@@ -123,7 +118,6 @@ export default function Settings() {
   };
 
   const handleSaveProfile = () => {
-    setSuccessMessage('');
     setErrorMessage('');
 
     // Basic validation
@@ -155,9 +149,7 @@ export default function Settings() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage('Profile updated successfully!');
           setAvatarFile(null); // Clear the file after successful upload
-          setTimeout(() => setSuccessMessage(''), 3000);
         },
         onError: (error: unknown) => {
           if (error instanceof Error) {
@@ -171,7 +163,6 @@ export default function Settings() {
   };
 
   const handleChangePasswordSubmit = () => {
-    setSuccessMessage('');
     setErrorMessage('');
 
     // Validate passwords
@@ -203,13 +194,12 @@ export default function Settings() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage('Password changed successfully!');
+          toast.success('Password changed successfully!');
           setPasswordData({
             currentPassword: '',
             newPassword: '',
             confirmPassword: '',
           });
-          setTimeout(() => setSuccessMessage(''), 3000);
         },
         onError: (error: unknown) => {
           if (error instanceof Error) {
@@ -268,14 +258,7 @@ export default function Settings() {
           </nav>
         </div>
 
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="mb-6 flex items-center gap-3 p-4 bg-success/10 border border-success/30 rounded-lg">
-            <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-            <p className="text-success font-medium">{successMessage}</p>
-          </div>
-        )}
-
+        {/* Error Messages */}
         {errorMessage && (
           <div className="mb-6 flex items-center gap-3 p-4 bg-error/10 border border-error/30 rounded-lg">
             <AlertCircle className="w-5 h-5 text-error shrink-0" />

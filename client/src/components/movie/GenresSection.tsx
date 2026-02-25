@@ -83,7 +83,7 @@ export const GenresSection = ({
     const scrollWidth = container.scrollWidth;
 
     const gap = 8;
-    let cardsVisible = 1;
+    let cardsVisible = 2;
 
     if (window.innerWidth >= 1280) {
       cardsVisible = 5;
@@ -278,7 +278,7 @@ export const GenresSection = ({
 
         <div
           ref={scrollContainerRef}
-          className="grid grid-flow-col auto-cols-[100%] sm:auto-cols-[calc(50%-4px)] md:auto-cols-[calc(33.333%-5.33px)] lg:auto-cols-[calc(25%-6px)] xl:auto-cols-[calc(20%-6.4px)] gap-2 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="grid grid-flow-col auto-cols-[calc(50%-4px)] sm:auto-cols-[calc(50%-4px)] md:auto-cols-[calc(33.333%-5.33px)] lg:auto-cols-[calc(25%-6px)] xl:auto-cols-[calc(20%-6.4px)] gap-2 overflow-x-auto scrollbar-hide scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {isLoading ? (
