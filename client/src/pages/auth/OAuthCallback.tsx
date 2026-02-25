@@ -57,9 +57,6 @@ export default function OAuthCallback() {
     }
 
     // Handle invalid callback (no status or error parameter)
-    toast.error('Invalid authentication callback', {
-      id: 'oauth-invalid',
-    });
     navigate('/auth/login', { replace: true });
   }, [searchParams, navigate]);
 

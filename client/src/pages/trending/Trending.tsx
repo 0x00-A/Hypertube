@@ -93,7 +93,7 @@ export default function Trending() {
               <div 
                 className={clsx(
                   'grid gap-2 sm:gap-2 md:gap-2',
-                  'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                  'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
                 )}>
                 {movies.map((movie) => (
                   <MovieCard
@@ -118,7 +118,7 @@ export default function Trending() {
               <div
                 className={clsx(
                   'grid gap-2 sm:gap-2 md:gap-2 mt-4',
-                  'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                  'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
                 )}
               >
                 {Array.from({ length: 20 }).map((_, i) => (

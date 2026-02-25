@@ -213,11 +213,11 @@ export const MovieCard = ({ movie, className }: MovieCardProps) => {
           {synopsis && (
             <div
               className={clsx(
-                'absolute inset-0 flex items-center justify-center px-4 text-center z-10 pointer-events-none transition-opacity duration-500',
+                'absolute inset-0 flex items-center justify-center px-2 sm:px-4 text-center z-10 pointer-events-none transition-opacity duration-500',
                 isHovered ? 'opacity-100' : 'opacity-0'
               )}
             >
-              <p className="text-white/90 text-sm font-medium leading-relaxed drop-shadow-md line-clamp-4">
+              <p className="text-white/90 text-[10px] sm:text-sm font-medium leading-relaxed drop-shadow-md line-clamp-3 sm:line-clamp-4">
                 {synopsis}
               </p>
             </div>
@@ -225,10 +225,10 @@ export const MovieCard = ({ movie, className }: MovieCardProps) => {
 
           {/* Info Footer */}
           <footer className="absolute bottom-0 left-0 right-0 backdrop-blur-md bg-black/60 z-10 rounded-b-md">
-            <div className="p-3 text-center">
+            <div className="p-1.5 sm:p-3 text-center">
               <h3
                 className={clsx(
-                  'text-white font-bold text-base leading-tight mb-1 drop-shadow-sm transition-colors line-clamp-2',
+                  'text-white font-bold text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 drop-shadow-sm transition-colors line-clamp-2',
                   isHovered && 'text-primary-400'
                 )}
               >
@@ -244,9 +244,9 @@ export const MovieCard = ({ movie, className }: MovieCardProps) => {
                   )}
                 >
                   {genres ? (
-                    <p className="text-text-secondary text-xs font-medium truncate">{genres}</p>
+                    <p className="text-text-secondary text-[9px] sm:text-xs font-medium truncate">{genres}</p>
                   ) : (
-                    <p className="text-text-secondary text-xs font-medium truncate uppercase">
+                    <p className="text-text-secondary text-[9px] sm:text-xs font-medium truncate uppercase">
                       {movie.originalLanguage || 'Unknown'}
                     </p>
                   )}
@@ -259,17 +259,17 @@ export const MovieCard = ({ movie, className }: MovieCardProps) => {
                     isHovered ? 'translate-y-0 opacity-100 delay-100' : '-translate-y-8 opacity-0'
                   )}
                 >
-                  <span className="text-white/90 text-xs font-semibold">{movie.year}</span>
+                  <span className="text-white/90 text-[9px] sm:text-xs font-semibold">{movie.year}</span>
                   {duration && (
                     <>
-                      <span className="w-1 h-1 rounded-full bg-text-muted" />
-                      <span className="text-text-secondary text-xs">{duration} min</span>
+                      <span className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-text-muted" />
+                      <span className="text-text-secondary text-[9px] sm:text-xs">{duration} min</span>
                     </>
                   )}
                   {movie.originalLanguage && (
                     <>
-                      <span className="w-1 h-1 rounded-full bg-text-muted" />
-                      <span className="text-text-secondary text-xs uppercase">{movie.originalLanguage}</span>
+                      <span className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-text-muted" />
+                      <span className="text-text-secondary text-[9px] sm:text-xs uppercase">{movie.originalLanguage}</span>
                     </>
                   )}
                 </div>
