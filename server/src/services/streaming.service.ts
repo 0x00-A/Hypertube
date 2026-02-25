@@ -264,7 +264,7 @@ export class StreamingService {
    */
   private selectTorrent(movie: IMovieDocument): ITorrent {
     const torrents = movie.torrents;
-    const qualityPriority = ['720p', '480p', '1080p'];
+    const qualityPriority = ['480p', '720p', '1080p'];
 
     for (const quality of qualityPriority) {
       const match = torrents.find((t) => t.quality === quality);
@@ -285,9 +285,20 @@ export class StreamingService {
   ): Promise<ActiveEngine> {
     const movieId = movie._id.toString();
 
+    // Log current active engines
+    const activeEngineIds = Array.from(this._activeEngines.keys());
+    logger.info(
+      { movieId, activeEngines: activeEngineIds, totalActive: activeEngineIds.length },
+      'Checking for existing torrent engines',
+    );
+
     // Reuse existing engine if available
     const existing = this._activeEngines.get(movieId);
     if (existing) {
+      logger.info(
+        { movieId, ready: existing.ready, fileName: existing.file?.name },
+        'Reusing existing torrent engine',
+      );
       await existing.readyPromise;
       return existing;
     }
@@ -318,9 +329,9 @@ export class StreamingService {
     const movieDir = path.join(this._downloadsDir, movieId);
     const engine = torrentStream(magnetUri, {
       path: movieDir,
-      connections: 100,
-      uploads: 10,
-      verify: true,
+      connections: 100, // Reduced from 200 for less overhead
+      uploads: 3, // Reduced uploads for more download bandwidth
+      verify: true, // Keep verification for data integrity & resume
       dht: true,
       tracker: true,
     });
@@ -340,6 +351,11 @@ export class StreamingService {
     };
 
     this._activeEngines.set(movieId, activeEngine);
+
+    logger.info(
+      { movieId, totalActiveEngines: this._activeEngines.size },
+      'Created new torrent engine and added to active engines map',
+    );
 
     // Handle engine ready event
     engine.on('ready', () => {

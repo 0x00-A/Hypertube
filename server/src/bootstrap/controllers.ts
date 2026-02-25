@@ -31,12 +31,18 @@ export const createControllers = () => {
 
   // MovieInteraction dependencies
   const movieInteractionRepository = new MovieInteractionRepository();
-  const movieInteractionService = new MovieInteractionService(movieInteractionRepository);
-  const movieInteractionController = new MovieInteractionController(movieInteractionService);
 
   // Movie dependencies
   const movieRepository = new MovieRepository();
   const movieService = new MovieService(movieRepository, scraperEngine, movieInteractionRepository);
+
+  const movieInteractionService = new MovieInteractionService(
+    movieInteractionRepository,
+    movieService,
+  );
+  const movieInteractionController = new MovieInteractionController(movieInteractionService);
+
+  // Movie controller
   const movieController = new MovieController(movieService);
 
   // Auth dependencies

@@ -446,6 +446,18 @@ export class MovieService {
     });
   }
 
+  /**
+   * Public method to apply user movie state flags to movies
+   * This method can be called by other services to add user-specific flags
+   */
+  async applyUserMovieState(
+    userId: string | undefined,
+    movies: IMovie | IMovie[] | undefined,
+    isArray: boolean = false,
+  ): Promise<IMovie | IMovie[] | undefined> {
+    return this.addUserMovieState(userId, movies, isArray);
+  }
+
   private async addUserMovieState(
     userId: string | undefined,
     movies: IMovie | IMovie[] | undefined,

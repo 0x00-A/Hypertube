@@ -10,7 +10,7 @@ export const env = cleanEnv(process.env, {
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
   LOG_LEVEL: str({ default: 'info' }),
 
-  YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
+  YTS_BASE_API_URL: str({ default: 'https://movies-api.accel.li/api/v2' }),
   TMDB_BASE_API_URL: str({ default: 'https://api.themoviedb.org/3' }),
   TMDB_IMAGE_BASE_URL: str({ default: 'https://image.tmdb.org/t/p' }),
   TMDB_API_ACCESS_TOKEN: str({ default: 'your-tmdb-api-access-token-here' }),
