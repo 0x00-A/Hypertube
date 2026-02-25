@@ -76,7 +76,8 @@ export default function Watch() {
 
   // Get movie details
   // If ID is purely numeric, it's a TMDB ID; otherwise it's a MongoDB ObjectId
-  const isTmdbMovie = location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
+  const isTmdbMovie =
+    location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
   const { user } = useAuthState();
   const userLanguage = user?.language || "en";
   const {
@@ -524,7 +525,7 @@ export default function Watch() {
           {/* Stream error overlay */}
           {streamError && (
             <div
-              className="absolute inset-0 flex items-center justify-center bg-black/80"
+              className="absolute inset-0 flex items-center justify-center bg-black z-99"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
@@ -558,7 +559,14 @@ export default function Watch() {
 
           {/* Custom Subtitle Overlay */}
           {activeCueText && (
-            <div className="absolute left-0 right-0 bottom-12 sm:bottom-14 flex justify-center pointer-events-none px-2 sm:px-8">
+            <div
+              className={clsx(
+                "absolute left-0 right-0 flex justify-center pointer-events-none px-2 sm:px-8",
+                showControls
+                  ? "bottom-16 sm:bottom-20" // Above visible controls
+                  : "bottom-4 sm:bottom-6", // Close to bottom when controls hidden
+              )}
+            >
               <span className="bg-black/75 text-white text-[13px] sm:text-base md:text-lg px-2 py-0.5 sm:px-3 sm:py-1.5 rounded text-center leading-snug whitespace-pre-line max-w-[95%] sm:max-w-[80%]">
                 {activeCueText}
               </span>
@@ -690,7 +698,9 @@ export default function Watch() {
                 <button
                   className="w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white sm:hover:bg-white/10 sm:hover:text-primary transition-colors"
                   onClick={toggleFullscreen}
-                  aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  aria-label={
+                    isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
+                  }
                 >
                   {isFullscreen ? (
                     <Minimize className="w-5 h-5" />
@@ -784,7 +794,9 @@ export default function Watch() {
                   ? "bg-primary text-black hover:bg-primary/90 active:bg-primary/80"
                   : "border-2 border-primary text-primary hover:bg-primary hover:text-black active:bg-primary/90",
               )}
-              aria-label={movie.inWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+              aria-label={
+                movie.inWatchlist ? "Remove from watchlist" : "Add to watchlist"
+              }
             >
               {isWatchlistLoading ? (
                 <>
@@ -810,7 +822,9 @@ export default function Watch() {
 
           {/* Story Line Section */}
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3">Story line:</h3>
+            <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3">
+              Story line:
+            </h3>
             <p className="text-sm sm:text-base leading-relaxed text-white/80">
               {isStoryExpanded ? storyline : truncatedStoryline}
               {storyline.length > 300 && (
