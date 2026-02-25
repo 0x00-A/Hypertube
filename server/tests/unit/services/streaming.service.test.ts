@@ -72,6 +72,7 @@ jest.mock('fs', () => {
 const movieRepository = new MovieRepository();
 const subtitleService = {
   ensureForMovie: jest.fn().mockResolvedValue(undefined),
+  ensureMultiLanguageForMovie: jest.fn().mockResolvedValue(undefined),
 } as unknown as SubtitleService;
 
 let streamingService: StreamingService;
