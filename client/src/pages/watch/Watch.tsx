@@ -1,455 +1,1191 @@
 /**
- * Watch Page - Streaming/Watching Experience
- * 
- * Premium streaming page with:
- * - Video player with trailer embed
- * - Movie info section
- * - Storyline section
- * - Watchlist functionality
+ * Watch Page - Real Streaming Experience
+ *
+ * Streams video from the backend via GET /api/v1/stream/:movieId
+ * with native <video> element, HTTP Range support for seeking,
+ * subtitle tracks, and real watch progress tracking.
  */
 
-import { useState, useRef, useEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import {
-    Play,
-    Pause,
-    Volume2,
-    VolumeX,
-    Settings,
-    Maximize,
-    Minimize,
-    Share2,
-    Star,
-    Plus,
-    Check
-} from 'lucide-react';
-import { clsx } from 'clsx';
-import { useMovieDetails } from '../../hooks/useMovieDetails';
-import { useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useMovieInteractions';
-import { useUserRating } from '../../hooks/useUserRating';
-import { CommentSection } from '../../components/comments';
-import { MovieRating } from '../../components/movie';
-import ShareModal from '../../components/common/ShareModal';
-import toast from 'react-hot-toast';
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+  Share2,
+  Star,
+  Plus,
+  Check,
+  Loader2,
+  Subtitles,
+  AlertTriangle,
+} from "lucide-react";
+import { clsx } from "clsx";
+import { useAuthState } from "../../hooks/useAuth";
+import { useMovieDetails } from "../../hooks/useMovieDetails";
+import {
+  useAddToWatchlist,
+  useRemoveFromWatchlist,
+} from "../../hooks/useMovieInteractions";
+import { useUserRating } from "../../hooks/useUserRating";
+import { useUpdateWatchProgress } from "../../hooks/useUpdateWatchProgress";
+import { CommentSection } from "../../components/comments";
+import { MovieRating } from "../../components/movie";
+import ShareModal from "../../components/common/ShareModal";
+import { streamingService } from "../../services/streaming.service";
+import { movieInteractionService } from "../../services/movieInteraction.service";
+import type {
+  ISubtitleTrack,
+  IAvailableSubtitles,
+} from "../../types/movie.types";
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const PROGRESS_SAVE_INTERVAL = 15_000; // Save progress every 15 seconds
+const CONTROLS_AUTO_HIDE_DELAY = 3_000;
+
+// Backend origin for static subtitle files (served at /api/subtitles/...)
+const BACKEND_ORIGIN = (
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api"
+).replace(/\/api(\/v1)?$/, "");
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return "00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export default function Watch() {
-    const { id } = useParams<{ id: string }>();
-    const location = useLocation();
-    const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    // Get movie details
-    const isTmdbMovie = location.state?.isTmdbMovie ?? true;
-    const { data: movie, isLoading, error } = useMovieDetails({ id: id || '', isTmdbMovie });
+  // Get movie details
+  // If ID is purely numeric, it's a TMDB ID; otherwise it's a MongoDB ObjectId
+  const isTmdbMovie =
+    location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
+  const { user } = useAuthState();
+  const userLanguage = user?.language || "en";
+  const {
+    data: movie,
+    isLoading,
+    error,
+  } = useMovieDetails({ id: id || "", isTmdbMovie });
 
-    // Video player state
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showControls, setShowControls] = useState(true);
-    const [progress, setProgress] = useState(35); // Mock progress at 35%
-    const [currentTime, setCurrentTime] = useState('01:04:09');
-    const duration = '01:23:47'; // Mock duration
+  // Watch progress mutation
+  const updateWatchProgressMutation = useUpdateWatchProgress();
 
-    // Storyline state
-    const [isStoryExpanded, setIsStoryExpanded] = useState(false);
+  // Video element ref
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const controlsTimeoutRef = useRef<number | null>(null);
+  const progressSaveRef = useRef<number | null>(null);
+  const lastSavedTimeRef = useRef<number>(0);
+  const subtitleControlsRef = useRef<HTMLDivElement>(null);
 
-    // Rating modal state
-    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-    const { data: currentRating } = useUserRating(movie?._id ?? '');
+  // Player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [buffered, setBuffered] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [volume, setVolume] = useState(1);
+  // Subtitle state
+  const [availableSubtitles, setAvailableSubtitles] =
+    useState<IAvailableSubtitles>({});
+  const [selectedSubtitleLanguage, setSelectedSubtitleLanguage] = useState<
+    string | null
+  >(null);
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
+  const [activeCueText, setActiveCueText] = useState<string>("");
+  const [isSubtitleControlsHovered, setIsSubtitleControlsHovered] =
+    useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileVolumeHovered, setIsMobileVolumeHovered] = useState(false);
+  const [subtitleOffset, setSubtitleOffset] = useState(() => {
+    // Initialize from localStorage if movieId is available
+    // const urlParams = new URLSearchParams(window.location.search);
+    const pathMovieId = window.location.pathname.split("/").pop();
+    if (pathMovieId) {
+      const saved = localStorage.getItem(`subtitle-timing-${pathMovieId}`);
+      return saved ? parseInt(saved) : 0;
+    }
+    return 0;
+  }); // milliseconds
+  const [currentTextTrack, setCurrentTextTrack] = useState<TextTrack | null>(
+    null,
+  );
+  const [streamError, setStreamError] = useState<string | null>(null);
 
-    // Share modal state
-    const [isShareOpen, setIsShareOpen] = useState(false);
+  // Derived stream URL — purely computed from movie._id, no state needed
+  const movieId = movie?._id ?? "";
+  const streamUrl = useMemo(
+    () => (movieId ? streamingService.getStreamUrl(movieId) : null),
+    [movieId],
+  );
 
-    // Watchlist mutations
-    const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
-    const { mutate: removeFromWatchlist, isPending: isRemoving } = useRemoveFromWatchlist();
+  // Storyline state
+  const [isStoryExpanded, setIsStoryExpanded] = useState(false);
 
-    // Video container ref for fullscreen
-    const videoContainerRef = useRef<HTMLDivElement>(null);
-    const controlsTimeoutRef = useRef<number | null>(null);
+  // Rating modal state
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const { data: currentRating } = useUserRating(movie?._id ?? "");
 
-    // Auto-hide controls after 3 seconds
-    useEffect(() => {
-        const CONTROLS_AUTO_HIDE_DELAY = 3000; // 3 seconds
-        if (showControls && isPlaying) {
-            if (controlsTimeoutRef.current) {
-                clearTimeout(controlsTimeoutRef.current);
+  // Share modal state
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
+  // Watchlist mutations
+  const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
+  const { mutate: removeFromWatchlist, isPending: isRemoving } =
+    useRemoveFromWatchlist();
+
+  // ========================================================================
+  // Initialize stream URL + load saved progress
+  // ========================================================================
+
+  useEffect(() => {
+    if (!movieId) return;
+
+    // Poll for subtitles — they're fetched in the background after the torrent
+    // engine becomes ready, so they may not be available on the first request.
+    // Keep polling until all expected language tracks are available.
+    let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 15; // Increased retries for multi-language
+    const POLL_INTERVAL = 3_000; // 3 seconds
+
+    const fetchSubtitles = () => {
+      streamingService
+        .getStreamStatus(movieId)
+        .then((status) => {
+          if (cancelled) return;
+
+          // Collect English and user language subtitles
+          const available: IAvailableSubtitles = {
+            userLanguageCode: userLanguage,
+          };
+
+          // Check for English subtitles
+          const englishSubs = status.subtitles["en"];
+          if (englishSubs && englishSubs.length > 0) {
+            available.english = englishSubs.filter((sub) => sub.url);
+          }
+
+          // Check for user language subtitles (if different from English)
+          if (userLanguage !== "en") {
+            const userLangSubs = status.subtitles[userLanguage];
+            if (userLangSubs && userLangSubs.length > 0) {
+              available.userLanguage = userLangSubs.filter((sub) => sub.url);
             }
-            controlsTimeoutRef.current = setTimeout(() => {
-                setShowControls(false);
-            }, CONTROLS_AUTO_HIDE_DELAY);
-        }
-        return () => {
-            if (controlsTimeoutRef.current) {
-                clearTimeout(controlsTimeoutRef.current);
-            }
+          }
+
+          setAvailableSubtitles(available);
+
+          // Continue polling until we have all expected subtitle languages
+          const needsEnglish = true; // Always try to get English
+          const needsUserLang = userLanguage !== "en"; // Only if different from English
+
+          const hasEnglish = !!available.english;
+          const hasUserLang = !!available.userLanguage || userLanguage === "en"; // Don't need user lang if it's English
+
+          const hasAllExpectedSubtitles =
+            (!needsEnglish || hasEnglish) && (!needsUserLang || hasUserLang);
+
+          if (!hasAllExpectedSubtitles && retries < MAX_RETRIES) {
+            retries++;
+            setTimeout(fetchSubtitles, POLL_INTERVAL);
+          }
+        })
+        .catch(() => {
+          if (!cancelled && retries < MAX_RETRIES) {
+            retries++;
+            setTimeout(fetchSubtitles, POLL_INTERVAL);
+          }
+        });
+    };
+
+    // Start fetching immediately
+    fetchSubtitles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [movieId, userLanguage]);
+
+  // ========================================================================
+  // Programmatically manage subtitle tracks on the <video> element
+  // ========================================================================
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Remove any existing <track> elements we previously added
+    const existingTracks = video.querySelectorAll("track[data-managed]");
+    existingTracks.forEach((t) => t.remove());
+
+    // Only create tracks if subtitles are enabled and a language is selected
+    if (!subtitlesEnabled || !selectedSubtitleLanguage) {
+      setCurrentTextTrack(null);
+      return;
+    }
+
+    // Get the selected track
+    let selectedTrack: ISubtitleTrack | undefined;
+    if (selectedSubtitleLanguage === "en" && availableSubtitles.english) {
+      selectedTrack = availableSubtitles.english[0]; // Use first English track
+    } else if (
+      selectedSubtitleLanguage === availableSubtitles.userLanguageCode &&
+      availableSubtitles.userLanguage
+    ) {
+      selectedTrack = availableSubtitles.userLanguage[0]; // Use first user language track
+    }
+
+    if (!selectedTrack) {
+      setCurrentTextTrack(null);
+      return;
+    }
+
+    // Add the selected subtitle as a <track> element
+    const trackEl = document.createElement("track");
+    trackEl.kind = "subtitles";
+    trackEl.label = selectedTrack.label;
+    trackEl.srclang = selectedTrack.language;
+    trackEl.src = `${BACKEND_ORIGIN}${selectedTrack.url}`;
+    trackEl.setAttribute("data-managed", "true");
+    video.appendChild(trackEl);
+
+    // Store cuechange handlers for cleanup
+    const cueChangeHandlers: Array<{ track: TextTrack; handler: () => void }> =
+      [];
+
+    // Set track to 'hidden' (loads cues but no native rendering)
+    // Store the current track for subtitle timing in handleTimeUpdate
+    for (let i = 0; i < video.textTracks.length; i++) {
+      const tt = video.textTracks[i];
+      tt.mode = "hidden";
+
+      if (tt.language === selectedTrack.language) {
+        // Store the current track for subtitle timing
+        setCurrentTextTrack(tt);
+
+        // Simple handler just to keep track of cue changes
+        const handler = () => {
+          // Subtitle timing is now handled in handleTimeUpdate
         };
-    }, [showControls, isPlaying]);
-
-    // Handle play/pause toggle
-    const togglePlay = () => {
-        setIsPlaying(!isPlaying);
-        setShowControls(true);
-    };
-
-    // Handle mute toggle
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-    };
-
-    // Handle fullscreen toggle
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement && videoContainerRef.current) {
-            videoContainerRef.current.requestFullscreen();
-            setIsFullscreen(true);
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
-            setIsFullscreen(false);
-        }
-    };
-
-    // Handle progress bar click
-    const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const newProgress = (clickX / rect.width) * 100;
-        setProgress(Math.max(0, Math.min(100, newProgress)));
-
-        // Update mock current time based on progress
-        const MOCK_DURATION_SECONDS = 5027; // 01:23:47 in seconds
-        const currentSeconds = Math.floor((newProgress / 100) * MOCK_DURATION_SECONDS);
-        const hours = Math.floor(currentSeconds / 3600);
-        const minutes = Math.floor((currentSeconds % 3600) / 60);
-        const seconds = currentSeconds % 60;
-        setCurrentTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    };
-
-    // Handle mouse move to show controls
-    const handleMouseMove = () => {
-        setShowControls(true);
-    };
-
-    // Handle watchlist toggle - matching MovieDetails implementation
-    const handleWatchlistClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!movie) return;
-
-        if (movie.inWatchlist) {
-            if (movie._id) {
-                removeFromWatchlist(movie._id);
-            } else {
-                toast.error('Cannot remove from watchlist: Missing movie ID');
-            }
-        } else {
-            const movieId = movie._id || movie.tmdbId;
-            const isTmdb = !movie._id;
-
-            if (movieId) {
-                addToWatchlist({ id: movieId, isTmdbMovie: isTmdb });
-            } else {
-                toast.error('Cannot add to watchlist: Missing movie identifier');
-            }
-        }
-    };
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-                    <p className="text-text-secondary">Loading movie...</p>
-                </div>
-            </div>
-        );
+        tt.addEventListener("cuechange", handler);
+        cueChangeHandlers.push({ track: tt, handler });
+      }
     }
 
-    // Error state
-    if (error || !movie) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <h2 className="text-2xl text-white font-bold mb-4">Movie not found</h2>
-                    <button
-                        onClick={() => navigate('/movies')}
-                        className="text-primary hover:underline"
-                    >
-                        Back to Movies
-                    </button>
-                </div>
-            </div>
-        );
+    return () => {
+      cueChangeHandlers.forEach(({ track, handler }) => {
+        track.removeEventListener("cuechange", handler);
+      });
+      setCurrentTextTrack(null);
+    };
+  }, [
+    availableSubtitles,
+    subtitlesEnabled,
+    selectedSubtitleLanguage,
+    subtitleOffset,
+  ]);
+
+  // ========================================================================
+  // Subtitle timing persistence
+  // ========================================================================
+
+  // Load saved subtitle offset when movie changes (initial load handled in useState)
+  useEffect(() => {
+    if (movieId) {
+      const saved = localStorage.getItem(`subtitle-timing-${movieId}`);
+      const savedOffset = saved ? parseInt(saved) : 0;
+      // Only update if different from current value to avoid unnecessary rerenders
+      setSubtitleOffset((prev) => (prev !== savedOffset ? savedOffset : prev));
+    }
+  }, [movieId]); // Removed movie dependency as it's not needed for this
+
+  // Save subtitle offset changes
+  useEffect(() => {
+    if (movieId) {
+      localStorage.setItem(
+        `subtitle-timing-${movieId}`,
+        String(subtitleOffset),
+      );
+    }
+  }, [subtitleOffset, movieId]);
+
+  // ========================================================================
+  // Periodically save watch progress
+  // ========================================================================
+
+  const saveProgress = useCallback(() => {
+    if (!movieId || !videoRef.current) return;
+    const video = videoRef.current;
+    if (video.currentTime <= 0 || !isFinite(video.duration)) return;
+
+    // Only save if time changed by at least 5 seconds
+    if (Math.abs(video.currentTime - lastSavedTimeRef.current) < 5) return;
+
+    lastSavedTimeRef.current = video.currentTime;
+    updateWatchProgressMutation.mutate({
+      movieId,
+      lastWatchedPosition: video.currentTime,
+      duration: video.duration,
+    });
+  }, [movieId, updateWatchProgressMutation]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      progressSaveRef.current = window.setInterval(
+        saveProgress,
+        PROGRESS_SAVE_INTERVAL,
+      );
+    }
+    return () => {
+      if (progressSaveRef.current) {
+        window.clearInterval(progressSaveRef.current);
+        progressSaveRef.current = null;
+      }
+    };
+  }, [isPlaying, saveProgress]);
+
+  // Save progress on unmount
+  useEffect(() => {
+    return () => {
+      saveProgress();
+    };
+  }, [saveProgress]);
+
+  // ========================================================================
+  // Auto-hide controls
+  // ========================================================================
+
+  useEffect(() => {
+    if (
+      showControls &&
+      isPlaying &&
+      !isSubtitleControlsHovered &&
+      !isDropdownOpen &&
+      !isMobileVolumeHovered
+    ) {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      controlsTimeoutRef.current = window.setTimeout(() => {
+        setShowControls(false);
+      }, CONTROLS_AUTO_HIDE_DELAY);
+    }
+    return () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [
+    showControls,
+    isPlaying,
+    isSubtitleControlsHovered,
+    isDropdownOpen,
+    isMobileVolumeHovered,
+  ]);
+
+  // Hide subtitle interactions when controls are hidden
+  useEffect(() => {
+    if (!showControls) {
+      setIsSubtitleControlsHovered(false);
+      setIsDropdownOpen(false);
+      setIsMobileVolumeHovered(false);
+      // Force close any open dropdowns
+      if (subtitleControlsRef.current) {
+        const selects = subtitleControlsRef.current.querySelectorAll("select");
+        selects.forEach((select) => select.blur());
+      }
+    }
+  }, [showControls]);
+
+  // ========================================================================
+  // Fullscreen change listener
+  // ========================================================================
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  // ========================================================================
+  // Video event handlers
+  // ========================================================================
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setCurrentTime(video.currentTime);
+
+    // Update buffered range
+    if (video.buffered.length > 0) {
+      setBuffered(video.buffered.end(video.buffered.length - 1));
     }
 
-    const backdropUrl = movie.images?.backdrop || movie.images?.poster || movie.images?.thumbnail;
-    const posterUrl = movie.images?.poster || movie.images?.thumbnail;
-    const storyline = movie.synopsis || movie.overview || '';
-    const truncatedStoryline = storyline.length > 300 ? storyline.substring(0, 300) + '...' : storyline;
+    // Handle subtitle timing with offset
+    if (
+      currentTextTrack &&
+      subtitlesEnabled &&
+      currentTextTrack.cues &&
+      currentTextTrack.cues.length > 0
+    ) {
+      const currentTime = video.currentTime;
 
-    // Extract YouTube video ID from trailer URL and generate embed URL
-    const getYouTubeEmbedUrl = (trailerUrl?: string): string | null => {
-        if (!trailerUrl) return null;
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?/]+)/,
-            /youtube\.com\/v\/([^&?/]+)/
-        ];
-        for (const pattern of patterns) {
-            const match = trailerUrl.match(pattern);
-            if (match && match[1]) {
-                return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
-            }
+      // Apply subtitle offset - VLC style: positive delays, negative advances
+      const adjustedCurrentTime = currentTime - subtitleOffset / 1000;
+
+      // Find cues that should be active with timing offset applied
+      const texts: string[] = [];
+      for (let j = 0; j < currentTextTrack.cues.length; j++) {
+        const cue = currentTextTrack.cues[j] as VTTCue;
+
+        if (
+          adjustedCurrentTime >= cue.startTime &&
+          adjustedCurrentTime <= cue.endTime
+        ) {
+          texts.push(cue.text);
         }
-        return null;
-    };
+      }
+      setActiveCueText(texts.join("\n"));
+    } else if (!subtitlesEnabled) {
+      setActiveCueText("");
+    }
+  };
 
-    const trailerEmbedUrl = getYouTubeEmbedUrl(movie.trailer);
-    const isWatchlistLoading = isAdding || isRemoving;
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setDuration(video.duration);
+    setIsBuffering(false);
 
+    // Resume from saved position (set in useEffect above)
+    if (movieId) {
+      movieInteractionService
+        .getWatchProgress(movieId)
+        .then((progress) => {
+          if (progress?.lastWatchedPosition && video) {
+            video.currentTime = progress.lastWatchedPosition;
+          }
+        })
+        .catch(() => {
+          /* ignore */
+        });
+    }
+  };
+
+  const handlePlay = () => setIsPlaying(true);
+  const handlePause = () => setIsPlaying(false);
+  const handleWaiting = () => setIsBuffering(true);
+  const handleCanPlay = () => setIsBuffering(false);
+
+  const handleVideoError = () => {
+    setIsBuffering(false);
+    setStreamError(
+      "This movie is not available for streaming. It may not have any torrent sources.",
+    );
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    saveProgress();
+  };
+
+  // ========================================================================
+  // Player controls
+  // ========================================================================
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {
+        /* autoplay blocked */
+      });
+    } else {
+      video.pause();
+    }
+    setShowControls(true);
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const vol = parseFloat(e.target.value);
+    video.volume = vol;
+    setVolume(vol);
+    setIsMuted(vol === 0);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement && videoContainerRef.current) {
+      videoContainerRef.current.requestFullscreen();
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const video = videoRef.current;
+    if (!video || !isFinite(duration)) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const newTime = (clickX / rect.width) * duration;
+    video.currentTime = Math.max(0, Math.min(duration, newTime));
+    setCurrentTime(video.currentTime);
+  };
+
+  const toggleSubtitles = () => {
+    setSubtitlesEnabled((prev) => {
+      const newEnabled = !prev;
+      if (!newEnabled) {
+        setActiveCueText("");
+        setSelectedSubtitleLanguage(null);
+      } else if (!selectedSubtitleLanguage) {
+        // Auto-select first available language when enabling
+        const langs = getAvailableSubtitleLanguages();
+        if (langs.length > 0) {
+          setSelectedSubtitleLanguage(langs[0].code);
+        }
+      }
+      return newEnabled;
+    });
+  };
+
+  // Get available subtitle language options
+  const getAvailableSubtitleLanguages = () => {
+    const languages: { code: string; label: string }[] = [];
+
+    if (availableSubtitles.english) {
+      languages.push({ code: "en", label: "English" });
+    }
+
+    if (
+      availableSubtitles.userLanguage &&
+      availableSubtitles.userLanguageCode &&
+      availableSubtitles.userLanguageCode !== "en"
+    ) {
+      const userLangLabel =
+        availableSubtitles.userLanguage[0]?.label ||
+        availableSubtitles.userLanguageCode.toUpperCase();
+      languages.push({
+        code: availableSubtitles.userLanguageCode,
+        label: userLangLabel,
+      });
+    }
+
+    return languages;
+  };
+
+  const availableLanguages = getAvailableSubtitleLanguages();
+  const hasSubtitles = availableLanguages.length > 0;
+
+  // Manual subtitle refresh function
+  const refreshSubtitles = useCallback(() => {
+    if (!movieId) return;
+
+    // Clear current subtitles and force re-fetch
+    setAvailableSubtitles({});
+    setSelectedSubtitleLanguage(null);
+    setSubtitlesEnabled(false);
+
+    // Trigger subtitle fetch by accessing the status endpoint directly
+    streamingService
+      .getStreamStatus(movieId)
+      .then((status) => {
+        const available: IAvailableSubtitles = {
+          userLanguageCode: userLanguage,
+        };
+
+        const englishSubs = status.subtitles["en"];
+        if (englishSubs && englishSubs.length > 0) {
+          available.english = englishSubs.filter((sub) => sub.url);
+        }
+
+        if (userLanguage !== "en") {
+          const userLangSubs = status.subtitles[userLanguage];
+          if (userLangSubs && userLangSubs.length > 0) {
+            available.userLanguage = userLangSubs.filter((sub) => sub.url);
+          }
+        }
+
+        setAvailableSubtitles(available);
+      })
+      .catch(() => {
+        // Silent fail, polling will handle retries
+      });
+  }, [movieId, userLanguage]);
+
+  // Handle watchlist toggle
+  const handleWatchlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!movie?._id) return;
+
+    if (movie.inWatchlist) {
+      removeFromWatchlist(movie._id);
+    } else {
+      addToWatchlist({ id: movie._id, isTmdbMovie: false });
+    }
+  };
+
+  // ========================================================================
+  // Render - Loading / Error states
+  // ========================================================================
+
+  if (isLoading) {
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* Video Player Section */}
-                <div
-                    ref={videoContainerRef}
-                    className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border-2 border-primary/30 cursor-pointer"
-                    onMouseMove={handleMouseMove}
-                    onClick={!isPlaying ? togglePlay : undefined}
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-text-secondary">Loading movie...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !movie) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl text-white font-bold mb-4">
+            Movie not found
+          </h2>
+          <button
+            onClick={() => navigate("/movies")}
+            className="text-primary hover:underline"
+          >
+            Back to Movies
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const posterUrl = movie.images?.poster || movie.images?.thumbnail;
+  const storyline = movie.synopsis || movie.overview || "";
+  const truncatedStoryline =
+    storyline.length > 300 ? storyline.substring(0, 300) + "..." : storyline;
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const bufferedPercent = duration > 0 ? (buffered / duration) * 100 : 0;
+  const isWatchlistLoading = isAdding || isRemoving;
+
+  // ========================================================================
+  // Render
+  // ========================================================================
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
+        {/* Video Player Section */}
+        <div
+          ref={videoContainerRef}
+          className="relative w-full aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden border border-primary/20 sm:border-2 sm:border-primary/30 cursor-pointer group"
+          onMouseMove={() => setShowControls(true)}
+          onTouchStart={() => setShowControls(true)}
+          onClick={togglePlay}
+        >
+          {/* Native Video Element */}
+          {streamUrl ? (
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain"
+              src={streamUrl}
+              crossOrigin="use-credentials"
+              preload="auto"
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onWaiting={handleWaiting}
+              onCanPlay={handleCanPlay}
+              onEnded={handleEnded}
+              onError={handleVideoError}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            </div>
+          )}
+
+          {/* Stream error overlay */}
+          {streamError && (
+            <div
+              className="absolute inset-0 flex items-center justify-center bg-black z-99"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
+                <AlertTriangle className="w-14 h-14 text-yellow-500" />
+                <p className="text-white text-lg font-medium">{streamError}</p>
+                <button
+                  onClick={() => navigate("/movies")}
+                  className="px-5 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors"
                 >
-                    {/* Video/Poster or Trailer */}
-                    <div className="w-full h-full relative">
-                        {isPlaying && trailerEmbedUrl ? (
-                            <iframe
-                                src={trailerEmbedUrl}
-                                title={`${movie.title} Trailer`}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full border-none"
-                            />
-                        ) : (
-                            <>
-                                <img
-                                    src={backdropUrl}
-                                    alt={movie.title}
-                                    className={clsx(
-                                        "w-full h-full object-cover transition-all duration-300",
-                                        isPlaying && "brightness-50"
-                                    )}
-                                />
+                  Back to Movies
+                </button>
+              </div>
+            </div>
+          )}
 
-                                {/* Play button overlay when paused */}
-                                {!isPlaying && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-transparent to-black/40">
-                                        <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:border-primary">
-                                            <Play className="w-10 h-10 text-white fill-white ml-1" />
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
+          {/* Buffering indicator */}
+          {isBuffering && !streamError && streamUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <Loader2 className="w-16 h-16 text-primary animate-spin" />
+            </div>
+          )}
+
+          {/* Play button overlay when paused and not buffering */}
+          {!isPlaying && !isBuffering && !streamError && streamUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:border-primary">
+                <Play className="w-10 h-10 text-white fill-white ml-1" />
+              </div>
+            </div>
+          )}
+
+          {/* Custom Subtitle Overlay */}
+          {activeCueText && (
+            <div
+              className={clsx(
+                "absolute left-0 right-0 flex justify-center pointer-events-none px-2 sm:px-8",
+                showControls
+                  ? "bottom-16 sm:bottom-20" // Above visible controls
+                  : "bottom-4 sm:bottom-6", // Close to bottom when controls hidden
+              )}
+            >
+              <span className="bg-black/75 text-white text-[13px] sm:text-base md:text-lg px-2 py-0.5 sm:px-3 sm:py-1.5 rounded text-center leading-snug whitespace-pre-line max-w-[95%] sm:max-w-[80%]">
+                {activeCueText}
+              </span>
+            </div>
+          )}
+
+          {/* Video Controls */}
+          <div
+            className={clsx(
+              "absolute bottom-0 left-0 right-0 px-3 pb-2 pt-3 sm:px-4 sm:pb-3 sm:pt-4 bg-gradient-to-t from-black/95 via-black/60 to-transparent transition-opacity duration-300",
+              showControls ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Progress Bar */}
+            <div
+              className="w-full py-1 sm:py-1.5 cursor-pointer group/progress touch-none"
+              onClick={handleProgressClick}
+            >
+              <div className="w-full h-0.5 sm:h-1 bg-white/20 rounded-full relative group-hover/progress:h-1.5 transition-all">
+                {/* Buffered bar */}
+                <div
+                  className="absolute h-full bg-white/30 rounded-full transition-all"
+                  style={{ width: `${bufferedPercent}%` }}
+                />
+                {/* Progress bar */}
+                <div
+                  className="absolute h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+                {/* Scrub handle */}
+                <div
+                  className="absolute w-3 h-3 sm:w-3 sm:h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
+                  style={{
+                    left: `${progressPercent}%`,
+                    top: "50%",
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Controls Row */}
+            <div className="flex items-center justify-between mt-1 sm:mt-2">
+              {/* Left: Play + Time */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full sm:rounded text-white bg-white/10 sm:bg-transparent hover:bg-white/20 active:bg-white/30 transition-colors"
+                  onClick={togglePlay}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                  ) : (
+                    <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
+                  )}
+                </button>
+
+                <span className="text-[11px] sm:text-sm text-white/80 tabular-nums">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+
+                {/* Volume controls - Desktop only */}
+                <div className="hidden md:flex items-center group/vol">
+                  <button
+                    className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
+                    onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                  </button>
+                  <div className="w-0 overflow-hidden group-hover/vol:w-24 transition-all duration-200">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="w-24 ml-1 accent-primary cursor-pointer"
+                      aria-label="Volume"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Actions */}
+              <div className="flex items-center gap-0.5 sm:gap-2">
+                {/* Volume - Mobile with vertical slider */}
+                <div
+                  className="md:hidden relative group/vol-mobile"
+                  onMouseEnter={() => setIsMobileVolumeHovered(true)}
+                  onMouseLeave={() => setIsMobileVolumeHovered(false)}
+                >
+                  <button
+                    className="w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white transition-colors"
+                    onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                  </button>
+
+                  {/* Vertical volume slider for mobile */}
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/vol-mobile:opacity-100 group-focus-within/vol-mobile:opacity-100 transition-opacity duration-200">
+                    <div className="bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-2 flex flex-col items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={isMuted ? 0 : volume}
+                        onChange={handleVolumeChange}
+                        className="h-20 accent-primary cursor-pointer"
+                        style={
+                          {
+                            writingMode: "vertical-rl",
+                            WebkitAppearance: "slider-vertical",
+                          } as React.CSSProperties
+                        }
+                        aria-label="Volume"
+                      />
+                      <span className="text-xs text-white/70 mt-1">
+                        {Math.round((isMuted ? 0 : volume) * 100)}%
+                      </span>
                     </div>
-
-                    {/* Video Controls */}
-                    <div
-                        className={clsx(
-                            "absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300",
-                            showControls ? "opacity-100" : "opacity-0"
-                        )}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Progress Bar */}
-                        <div className="w-full py-2 cursor-pointer group" onClick={handleProgressClick}>
-                            <div className="w-full h-1 bg-white/20 rounded-full relative group-hover:h-1.5 transition-all">
-                                <div
-                                    className="h-full bg-primary rounded-full"
-                                    style={{ width: `${progress}%` }}
-                                />
-                                <div
-                                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    style={{ left: `${progress}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Controls Row */}
-                        <div className="flex items-center justify-between mt-3">
-                            {/* Left Controls */}
-                            <div className="flex items-center gap-3">
-                                <button
-                                    className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
-                                    onClick={togglePlay}
-                                >
-                                    {isPlaying ? (
-                                        <Pause className="w-6 h-6" />
-                                    ) : (
-                                        <Play className="w-6 h-6 ml-0.5" />
-                                    )}
-                                </button>
-
-                                <span className="text-sm text-white/90 tabular-nums">
-                                    {currentTime} / {duration}
-                                </span>
-
-                                <button
-                                    className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
-                                    onClick={toggleMute}
-                                >
-                                    {isMuted ? (
-                                        <VolumeX className="w-5 h-5" />
-                                    ) : (
-                                        <Volume2 className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Right Controls */}
-                            <div className="flex items-center gap-2">
-                                <button className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors">
-                                    <Settings className="w-5 h-5" />
-                                </button>
-                                <button
-                                    className="w-9 h-9 flex items-center justify-center rounded text-white hover:bg-white/10 hover:text-primary transition-colors"
-                                    onClick={toggleFullscreen}
-                                >
-                                    {isFullscreen ? (
-                                        <Minimize className="w-5 h-5" />
-                                    ) : (
-                                        <Maximize className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                  </div>
                 </div>
 
-                {/* Movie Info Section */}
-                <div className="mt-6">
-                    {/* Title Row */}
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white">
-                                {movie.title}
-                                {movie.year && (
-                                    <span className="text-base text-text-secondary font-normal ml-2">({movie.year})</span>
-                                )}
-                            </h1>
-                        </div>
+                {/* Subtitle Group - Compact Inline Layout */}
+                {hasSubtitles && (
+                  <div
+                    ref={subtitleControlsRef}
+                    className="flex items-center gap-1 bg-black/30 backdrop-blur-sm rounded px-2 py-1 border border-white/10"
+                    onMouseEnter={() => setIsSubtitleControlsHovered(true)}
+                    onMouseLeave={() => setIsSubtitleControlsHovered(false)}
+                  >
+                    <button
+                      className={clsx(
+                        "w-6 h-6 flex items-center justify-center rounded transition-colors",
+                        subtitlesEnabled
+                          ? "text-primary"
+                          : "text-white/70 hover:text-white",
+                      )}
+                      onClick={toggleSubtitles}
+                      title={
+                        subtitlesEnabled
+                          ? "Turn off subtitles"
+                          : "Turn on subtitles"
+                      }
+                      aria-label="Toggle subtitles"
+                    >
+                      <Subtitles className="w-4 h-4" />
+                    </button>
 
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsShareOpen(true)}
-                                className="w-10 h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                    {subtitlesEnabled && (
+                      <>
+                        <div className="w-px h-4 bg-white/20 mx-1"></div>
+                        <select
+                          value={selectedSubtitleLanguage || ""}
+                          onChange={(e) =>
+                            setSelectedSubtitleLanguage(e.target.value || null)
+                          }
+                          onFocus={() => setIsDropdownOpen(true)}
+                          onBlur={() => setIsDropdownOpen(false)}
+                          className="bg-white/10 text-xs text-white border border-white/20 rounded px-1 py-0.5 focus:border-primary focus:outline-none min-w-[60px]"
+                        >
+                          <option
+                            value=""
+                            disabled
+                            className="bg-gray-800 text-gray-300"
+                          >
+                            Lang
+                          </option>
+                          {availableLanguages.map((lang) => (
+                            <option
+                              key={lang.code}
+                              value={lang.code}
+                              className="bg-gray-800 text-white"
                             >
-                                <Share2 className="w-5 h-5" />
-                            </button>
-                            {movie.rating && (
-                                <div className="flex items-center gap-2 ml-2">
-                                    {/* IMDb Rating */}
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg">
-                                        <span className="text-base font-bold text-white">{movie.rating.toFixed(1)}</span>
-                                        <span className="bg-[#F5C518] text-black text-[10px] font-bold px-1.5 py-0.5 rounded">IMDb</span>
-                                    </div>
-                                    {/* User Rating Button */}
-                                    <button
-                                        onClick={() => setIsRatingModalOpen(true)}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all active:scale-95 group"
-                                    >
-                                        <Star className={clsx("w-4 h-4 transition-colors", currentRating ? "fill-primary text-primary" : "text-white/60 group-hover:text-white")} />
-                                        <span className="text-sm font-bold">
-                                            {currentRating ? `${currentRating}/10` : 'Rate'}
-                                        </span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Show Info Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 flex-shrink-0">
-                                <img
-                                    src={posterUrl}
-                                    alt={movie.title}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            <span className="text-base font-medium text-white">{movie.title}</span>
-                        </div>
+                              {lang.label}
+                            </option>
+                          ))}
+                        </select>
 
                         <button
-                            onClick={handleWatchlistClick}
-                            disabled={isWatchlistLoading}
-                            className={clsx(
-                                "flex items-center gap-2 px-5 py-3 rounded-lg font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
-                                movie.inWatchlist
-                                    ? "bg-primary text-black hover:bg-primary/90"
-                                    : "border-2 border-primary text-primary hover:bg-primary hover:text-black"
-                            )}
+                          onClick={refreshSubtitles}
+                          className="w-5 h-5 flex items-center justify-center rounded text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                          title="Refresh subtitles"
+                          aria-label="Refresh subtitles"
                         >
-                            {isWatchlistLoading ? (
-                                <>
-                                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    <span>Loading...</span>
-                                </>
-                            ) : movie.inWatchlist ? (
-                                <>
-                                    <Check className="w-5 h-5 stroke-[3]" />
-                                    <span>In Watchlist</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Plus className="w-5 h-5 stroke-[3]" />
-                                    <span>Add to Watchlist</span>
-                                </>
-                            )}
+                          ↻
                         </button>
-                    </div>
 
-                    {/* Divider */}
-                    <div className="h-px bg-white/10 my-6" />
-
-                    {/* Story Line Section */}
-                    <div>
-                        <h3 className="text-base font-bold text-white mb-3">Story line:</h3>
-                        <p className="text-sm md:text-base leading-relaxed text-white/80">
-                            {isStoryExpanded ? storyline : truncatedStoryline}
-                            {storyline.length > 300 && (
-                                <button
-                                    className="text-primary font-semibold ml-2 hover:underline"
-                                    onClick={() => setIsStoryExpanded(!isStoryExpanded)}
-                                >
-                                    {isStoryExpanded ? 'Show Less' : 'Read More'}
-                                </button>
-                            )}
-                        </p>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-white/10 my-6" />
-
-                    {/* Comments Section */}
-                    {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
-                </div>
-
-                {/* Rating Modal */}
-                {movie._id && (
-                    <MovieRating
-                        isOpen={isRatingModalOpen}
-                        onClose={() => setIsRatingModalOpen(false)}
-                        currentRating={currentRating}
-                        movieId={movie._id}
-                        movieTitle={movie.title}
-                    />
+                        {selectedSubtitleLanguage && (
+                          <>
+                            <div className="w-px h-4 bg-white/20 mx-1"></div>
+                            <input
+                              type="number"
+                              value={subtitleOffset}
+                              onChange={(e) =>
+                                setSubtitleOffset(parseInt(e.target.value) || 0)
+                              }
+                              className="w-16 bg-white/10 text-xs text-white text-center border border-white/20 rounded px-1 py-0.5 focus:border-primary focus:outline-none"
+                              step="50"
+                              min="-20000"
+                              max="20000"
+                              placeholder="0"
+                              title="Subtitle timing offset: +ms delays, -ms advances"
+                            />
+                            <span className="text-xs text-white/60">ms</span>
+                            <button
+                              onClick={() => setSubtitleOffset(0)}
+                              className="w-5 h-5 flex items-center justify-center rounded text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors ml-1"
+                              title="Reset timing"
+                              aria-label="Reset subtitle timing"
+                            >
+                              ↻
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
 
-                {/* Share Modal */}
-                <ShareModal
-                    isOpen={isShareOpen}
-                    onClose={() => setIsShareOpen(false)}
-                    title="Share this movie"
-                />
+                {/* Fullscreen */}
+                <button
+                  className="w-9 h-9 flex items-center justify-center rounded text-white/70 active:text-white sm:hover:bg-white/10 sm:hover:text-primary transition-colors"
+                  onClick={toggleFullscreen}
+                  aria-label={
+                    isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
+                  }
+                >
+                  {isFullscreen ? (
+                    <Minimize className="w-5 h-5" />
+                  ) : (
+                    <Maximize className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
+          </div>
         </div>
-    );
+
+        {/* Movie Info Section */}
+        <div className="mt-3 sm:mt-6 px-2 sm:px-0">
+          {/* Title Row */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                {movie.title}
+                {movie.year && (
+                  <span className="text-sm sm:text-base text-text-secondary font-normal ml-2">
+                    ({movie.year})
+                  </span>
+                )}
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setIsShareOpen(true)}
+                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-white/20 rounded text-white/70 hover:border-primary hover:text-primary hover:bg-primary/10 active:bg-primary/20 transition-colors"
+                aria-label="Share"
+              >
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              {movie.rating && (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* IMDb Rating */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white/5 rounded-lg">
+                    <span className="text-sm sm:text-base font-bold text-white">
+                      {movie.rating.toFixed(1)}
+                    </span>
+                    <span className="bg-[#F5C518] text-black text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded">
+                      IMDb
+                    </span>
+                  </div>
+                  {/* User Rating Button */}
+                  <button
+                    onClick={() => setIsRatingModalOpen(true)}
+                    className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 active:bg-white/20 transition-all active:scale-95 group"
+                    aria-label="Rate movie"
+                  >
+                    <Star
+                      className={clsx(
+                        "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors",
+                        currentRating
+                          ? "fill-primary text-primary"
+                          : "text-white/60 group-hover:text-white",
+                      )}
+                    />
+                    <span className="text-xs sm:text-sm font-bold">
+                      {currentRating ? `${currentRating}/10` : "Rate"}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Show Info Row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/20 shrink-0">
+                <img
+                  src={posterUrl}
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-sm sm:text-base font-medium text-white line-clamp-1">
+                {movie.title}
+              </span>
+            </div>
+
+            <button
+              onClick={handleWatchlistClick}
+              disabled={isWatchlistLoading}
+              className={clsx(
+                "flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto",
+                movie.inWatchlist
+                  ? "bg-primary text-black hover:bg-primary/90 active:bg-primary/80"
+                  : "border-2 border-primary text-primary hover:bg-primary hover:text-black active:bg-primary/90",
+              )}
+              aria-label={
+                movie.inWatchlist ? "Remove from watchlist" : "Add to watchlist"
+              }
+            >
+              {isWatchlistLoading ? (
+                <>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Loading...</span>
+                </>
+              ) : movie.inWatchlist ? (
+                <>
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+                  <span>In Watchlist</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+                  <span>Add to Watchlist</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-white/10 my-4 sm:my-6" />
+
+          {/* Story Line Section */}
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-white mb-2 sm:mb-3">
+              Story line:
+            </h3>
+            <p className="text-sm sm:text-base leading-relaxed text-white/80">
+              {isStoryExpanded ? storyline : truncatedStoryline}
+              {storyline.length > 300 && (
+                <button
+                  className="text-primary font-semibold ml-2 hover:underline active:underline text-sm sm:text-base"
+                  onClick={() => setIsStoryExpanded(!isStoryExpanded)}
+                  aria-label={isStoryExpanded ? "Show less" : "Read more"}
+                >
+                  {isStoryExpanded ? "Show Less" : "Read More"}
+                </button>
+              )}
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-white/10 my-4 sm:my-6" />
+
+          {/* Comments Section */}
+          {movie.tmdbId && <CommentSection tmdbId={movie.tmdbId} />}
+        </div>
+
+        {/* Rating Modal */}
+        {movie._id && (
+          <MovieRating
+            isOpen={isRatingModalOpen}
+            onClose={() => setIsRatingModalOpen(false)}
+            currentRating={currentRating}
+            movieId={movie._id}
+            movieTitle={movie.title}
+          />
+        )}
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+          title="Share this movie"
+        />
+      </div>
+    </div>
+  );
 }

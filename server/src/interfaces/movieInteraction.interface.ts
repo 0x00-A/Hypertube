@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import type { IMovie } from './movie.interface';
 
 export interface IMovieInteraction {
   _id?: Types.ObjectId;
@@ -48,4 +49,12 @@ export interface IUserInteractionStats {
   watchlistCount: number;
   averageRating?: number;
   totalRatings: number;
+}
+
+export interface IContinueWatchingItem {
+  movie: IMovie;
+  watchedDuration: number;
+  totalDuration: number;
+  percentage: number;
+  lastWatchedAt: Date | string;
 }

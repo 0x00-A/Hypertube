@@ -5,6 +5,7 @@ import { FortyTwoProfile } from "../types/oauth.type";
 import { PasswordService } from "./password.service";
 import { IUser } from "../interfaces/user.interface";
 import { generateUniqueUsername } from "../utils/usernameGenerator";
+import { logger } from "../utils/logger";
 
 
 export class OAuthService {
@@ -33,6 +34,7 @@ export class OAuthService {
                 return linkedUser;
             } else {
                 const uniqueUsername = await generateUniqueUsername(email.split('@')[0], this._userRepo);
+                logger.info('avatar url == ' + profile._json.picture)
                 user = await this._userRepo.createOauthUser({
                     email: email,
                     username: uniqueUsername,

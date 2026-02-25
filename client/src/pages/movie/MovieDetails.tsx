@@ -23,7 +23,8 @@ export default function MovieDetails() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const isTmdbMovie = location.state?.isTmdbMovie ?? (id && !/^\d+$/.test(id));
+    // If ID is purely numeric, it's a TMDB ID; otherwise it's a MongoDB ObjectId
+    const isTmdbMovie = location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
 
     const { data: movie, isLoading, error } = useMovieDetails({
         id: id!,
@@ -146,7 +147,7 @@ export default function MovieDetails() {
                 </div>
 
                 {/* Ticket Hero Section */}
-                <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
+                <div className="relative w-full rounded-xl overflow-hidden flex flex-col md:flex-row bg-[#111] min-h-[400px] md:min-h-[600px]">
 
                     {/* Cutouts for Ticket Effect */}
                     <div className="hidden md:block absolute top-0 left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
@@ -156,40 +157,46 @@ export default function MovieDetails() {
                     <div className="hidden md:block absolute top-9 bottom-9 left-[35%] -translate-x-1/2 border-l-2 border-dashed border-white/30 z-30" />
 
                     {/* Left Side - Poster */}
-                    <div className="hidden md:block relative w-[35%] z-20 bg-black">
+                    <div className="hidden md:block relative w-[35%] z-20 bg-black min-h-[600px]">
                         <div className="h-full w-full relative">
                             {/* Skeleton loader for poster */}
                             {!isPosterLoaded && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 animate-pulse">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                </div>
                             )}
                             <img
                                 src={posterImage}
                                 alt={movie.title}
                                 className={clsx(
-                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    "w-full h-full object-cover transition-opacity duration-500",
                                     isPosterLoaded ? "opacity-100" : "opacity-0"
                                 )}
                                 onLoad={() => setIsPosterLoaded(true)}
+                                loading="eager"
                             />
                         </div>
                     </div>
 
                     {/* Right Side - Info with Backdrop Background */}
-                    <div className="relative w-full md:w-[65%] flex-1 flex flex-col">
+                    <div className="relative w-full md:w-[65%] flex-1 flex flex-col min-h-[400px] md:min-h-[600px]">
                         {/* Background Image & Overlay */}
                         <div className="absolute inset-0">
                             {/* Skeleton loader for backdrop */}
                             {!isBackdropLoaded && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+                                </div>
                             )}
                             <img
                                 src={backdropImage}
                                 alt="Backdrop"
                                 className={clsx(
-                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    "w-full h-full object-cover transition-opacity duration-500",
                                     isBackdropLoaded ? "opacity-100" : "opacity-0"
                                 )}
                                 onLoad={() => setIsBackdropLoaded(true)}
+                                loading="eager"
                             />
                             {/* Gradient Overlay for Text Readability */}
                             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />

@@ -22,10 +22,7 @@ describe('UserService.list', () => {
     } as unknown as jest.Mocked<PasswordService>;
 
     // Cast to UserRepository for dependency injection (acceptable for unit tests)
-    userService = new UserService(
-      mockRepository as unknown as UserRepository,
-      mockPasswordService
-    );
+    userService = new UserService(mockRepository as unknown as UserRepository, mockPasswordService);
   });
 
   it('should handle negative page by defaulting to 1', async () => {
@@ -35,10 +32,7 @@ describe('UserService.list', () => {
     const result = await userService.list(-5, 10);
 
     expect(result.page).toBe(1);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 10 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 10 });
   });
 
   it('should handle zero page by defaulting to 1', async () => {
@@ -48,10 +42,7 @@ describe('UserService.list', () => {
     const result = await userService.list(0, 10);
 
     expect(result.page).toBe(1);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 10 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 10 });
   });
 
   it('should handle negative limit by defaulting to 1', async () => {
@@ -61,10 +52,7 @@ describe('UserService.list', () => {
     const result = await userService.list(1, -10);
 
     expect(result.limit).toBe(1);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 1 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 1 });
   });
 
   it('should handle zero limit by defaulting to 1', async () => {
@@ -74,10 +62,7 @@ describe('UserService.list', () => {
     const result = await userService.list(1, 0);
 
     expect(result.limit).toBe(1);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 1 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 1 });
   });
 
   it('should handle decimal page by flooring to integer', async () => {
@@ -89,7 +74,7 @@ describe('UserService.list', () => {
     expect(result.page).toBe(2);
     expect(mockRepository.findAll).toHaveBeenCalledWith(
       { isActive: true },
-      { skip: 10, limit: 10 }
+      { skip: 10, limit: 10 },
     );
   });
 
@@ -100,10 +85,7 @@ describe('UserService.list', () => {
     const result = await userService.list(1, 15.9);
 
     expect(result.limit).toBe(15);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 15 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 15 });
   });
 
   it('should calculate correct skip value for valid pagination', async () => {
@@ -114,7 +96,7 @@ describe('UserService.list', () => {
 
     expect(mockRepository.findAll).toHaveBeenCalledWith(
       { isActive: true },
-      { skip: 40, limit: 20 }
+      { skip: 40, limit: 20 },
     );
   });
 
@@ -135,16 +117,18 @@ describe('UserService.list', () => {
 
     expect(result.page).toBe(1);
     expect(result.limit).toBe(1);
-    expect(mockRepository.findAll).toHaveBeenCalledWith(
-      { isActive: true },
-      { skip: 0, limit: 1 }
-    );
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true }, { skip: 0, limit: 1 });
   });
 });
 
 describe('UserService.changePassword', () => {
   let userService: UserService;
-  let mockRepository: jest.Mocked<Pick<UserRepository, 'findByUsernameWithPasswordOauth' | 'updateByUsername' | 'updatePasswordByUsername'>>;
+  let mockRepository: jest.Mocked<
+    Pick<
+      UserRepository,
+      'findByUsernameWithPasswordOauth' | 'updateByUsername' | 'updatePasswordByUsername'
+    >
+  >;
   let mockPasswordService: jest.Mocked<PasswordService>;
 
   beforeEach(() => {
@@ -159,10 +143,7 @@ describe('UserService.changePassword', () => {
       verifyPassword: jest.fn(),
     } as unknown as jest.Mocked<PasswordService>;
 
-    userService = new UserService(
-      mockRepository as unknown as UserRepository,
-      mockPasswordService
-    );
+    userService = new UserService(mockRepository as unknown as UserRepository, mockPasswordService);
   });
 
   it('should successfully change password when all conditions are met', async () => {
@@ -185,20 +166,26 @@ describe('UserService.changePassword', () => {
     await userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!');
 
     expect(mockRepository.findByUsernameWithPasswordOauth).toHaveBeenCalledWith('testuser');
-    expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith('hashedOldPassword', 'OldPassword123!');
+    expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith(
+      'hashedOldPassword',
+      'OldPassword123!',
+    );
     expect(mockPasswordService.hashPassword).toHaveBeenCalledWith('NewPassword456!');
-    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith('testuser', 'hashedNewPassword');
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith(
+      'testuser',
+      'hashedNewPassword',
+    );
   });
 
   it('should throw BadRequestError when user not found', async () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(null);
 
     await expect(
-      userService.changePassword('nonexistent', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('nonexistent', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow(BadRequestError);
 
     await expect(
-      userService.changePassword('nonexistent', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('nonexistent', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow('User not found');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
@@ -220,11 +207,11 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
 
     await expect(
-      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow(BadRequestError);
 
     await expect(
-      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow('User not found');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
@@ -246,11 +233,11 @@ describe('UserService.changePassword', () => {
     mockRepository.findByUsernameWithPasswordOauth.mockResolvedValue(mockUser);
 
     await expect(
-      userService.changePassword('oauthuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('oauthuser', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow(BadRequestError);
 
     await expect(
-      userService.changePassword('oauthuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('oauthuser', 'OldPassword123!', 'NewPassword456!'),
     ).rejects.toThrow('Password change not allowed for OAuth users');
 
     expect(mockPasswordService.verifyPassword).not.toHaveBeenCalled();
@@ -272,7 +259,7 @@ describe('UserService.changePassword', () => {
 
     // Should succeed for regular users without oauth
     await expect(
-      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!'),
     ).resolves.not.toThrow();
 
     expect(mockRepository.updatePasswordByUsername).toHaveBeenCalled();
@@ -294,14 +281,17 @@ describe('UserService.changePassword', () => {
     mockPasswordService.verifyPassword.mockResolvedValue(false);
 
     await expect(
-      userService.changePassword('testuser', 'WrongPassword123!', 'NewPassword456!')
+      userService.changePassword('testuser', 'WrongPassword123!', 'NewPassword456!'),
     ).rejects.toThrow(BadRequestError);
 
     await expect(
-      userService.changePassword('testuser', 'WrongPassword123!', 'NewPassword456!')
+      userService.changePassword('testuser', 'WrongPassword123!', 'NewPassword456!'),
     ).rejects.toThrow('Current password is incorrect');
 
-    expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith('hashedOldPassword', 'WrongPassword123!');
+    expect(mockPasswordService.verifyPassword).toHaveBeenCalledWith(
+      'hashedOldPassword',
+      'WrongPassword123!',
+    );
     expect(mockPasswordService.hashPassword).not.toHaveBeenCalled();
     expect(mockRepository.updatePasswordByUsername).not.toHaveBeenCalled();
   });
@@ -326,7 +316,10 @@ describe('UserService.changePassword', () => {
     await userService.changePassword('testuser', 'OldPassword123!', 'NewPassword456!');
 
     expect(mockPasswordService.hashPassword).toHaveBeenCalledWith('NewPassword456!');
-    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith('testuser', 'hashedNewPassword');
+    expect(mockRepository.updatePasswordByUsername).toHaveBeenCalledWith(
+      'testuser',
+      'hashedNewPassword',
+    );
   });
 
   it('should allow password change for regular users with isPasswordSet true', async () => {
@@ -347,7 +340,7 @@ describe('UserService.changePassword', () => {
     mockRepository.updatePasswordByUsername.mockResolvedValue(null);
 
     await expect(
-      userService.changePassword('regularuser', 'OldPassword123!', 'NewPassword456!')
+      userService.changePassword('regularuser', 'OldPassword123!', 'NewPassword456!'),
     ).resolves.not.toThrow();
 
     expect(mockRepository.updatePasswordByUsername).toHaveBeenCalled();

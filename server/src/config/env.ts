@@ -10,7 +10,7 @@ export const env = cleanEnv(process.env, {
   ENABLE_REQUEST_LOGGING: bool({ default: true }),
   LOG_LEVEL: str({ default: 'info' }),
 
-  YTS_BASE_API_URL: str({ default: 'https://yts.mx/api/v2' }),
+  YTS_BASE_API_URL: str({ default: 'https://movies-api.accel.li/api/v2' }),
   TMDB_BASE_API_URL: str({ default: 'https://api.themoviedb.org/3' }),
   TMDB_IMAGE_BASE_URL: str({ default: 'https://image.tmdb.org/t/p' }),
   TMDB_API_ACCESS_TOKEN: str({ default: 'your-tmdb-api-access-token-here' }),
@@ -27,10 +27,10 @@ export const env = cleanEnv(process.env, {
 
   JWT_ACCESS_SECRET: str({ default: 'test-access-secret-key-at-least-32-characters-long' }),
   JWT_REFRESH_SECRET: str({ default: 'test-refresh-secret-key-at-least-32-characters-long' }),
-  JWT_ACCESS_EXPIRES_IN: str({ default: '1h' }),
+  JWT_ACCESS_EXPIRES_IN: str({ default: '12h' }),
   JWT_REFRESH_EXPIRES_IN: str({ default: '30d' }),
   JWT_REFRESH_PATH: str({ default: '/api/v1/auth/refresh-token' }),
-  MAX_AGE_ACCESS_TOKEN: num({ default: 3600000 }), // 1 hour in ms
+  MAX_AGE_ACCESS_TOKEN: num({ default: 43200000 }), // 12 hours in ms
   MAX_AGE_REFRESH_TOKEN: num({ default: 2592000000 }), // 30 days in ms
 
   GOOGLE_CLIENT_ID: str({ default: 'test-google-client-id' }),
@@ -47,4 +47,7 @@ export const env = cleanEnv(process.env, {
   EMAIL_PORT: num({ default: 1025 }),
   EMAIL_USER: str({ default: 'test@hypertube.test' }),
   EMAIL_PASS: str({ default: 'test-password' }),
+
+  // Streaming
+  DOWNLOADS_DIR: str({ default: './downloads' }),
 });

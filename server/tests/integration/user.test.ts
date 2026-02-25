@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 
 describe('User Profile Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
   let passwordService: PasswordService;
   let hashedPassword: string;
   let authToken: string;

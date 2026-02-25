@@ -2,7 +2,7 @@ import request from 'supertest';
 import { createApp } from '../../../src/app';
 
 describe('Movies API - Curated Endpoint', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   describe('GET /api/v1/movies/curated', () => {
     it('should return 200 and a list of curated movies', async () => {

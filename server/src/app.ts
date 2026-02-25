@@ -20,8 +20,14 @@ import { createOAuthRoutes } from './routes/v1/oauth.routes';
 import { passport } from './config/passport';
 import { createUserRoutes } from './routes/v1/users.routes';
 import { createCommentRouter } from './routes/v1/comment.routes';
+import { createStreamingRouter } from './routes/v1/streaming.routes';
 
-export const createApp = () => {
+import { StreamingService } from './services/streaming.service';
+
+export const createApp = (): {
+  app: ReturnType<typeof express>;
+  streamingService: StreamingService;
+} => {
   const app = express();
   app.disable('x-powered-by');
 
@@ -47,6 +53,7 @@ export const createApp = () => {
   app.use(passport.initialize());
 
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  app.use('/api/subtitles', express.static(path.join(__dirname, '../public/subtitles')));
 
   // Disable rate limiting in test environment to prevent 429 errors
   // if (env.NODE_ENV === 'production') {
@@ -80,6 +87,8 @@ export const createApp = () => {
     userController,
     movieInteractionController,
     commentController,
+    streamingController,
+    streamingService: sService,
   } = createControllers();
 
   app.use('/api/v1/auth', createAuthRoutes(authController));
@@ -88,6 +97,7 @@ export const createApp = () => {
   app.use('/api/v1/users', createUserRoutes(userController));
   app.use('/api/v1/interactions', createMovieInteractionRouter(movieInteractionController));
   app.use('/api/v1/comments', createCommentRouter(commentController));
+  app.use('/api/v1/stream', createStreamingRouter(streamingController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {
@@ -97,5 +107,5 @@ export const createApp = () => {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  return app;
+  return { app, streamingService: sService };
 };

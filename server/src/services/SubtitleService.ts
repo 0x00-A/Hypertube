@@ -63,6 +63,70 @@ export class SubtitleService {
   }
 
   /**
+   * Ensures that subtitles exist for a given movie with enhanced multi-language support.
+   * Downloads English subtitles (when available) plus user's preferred language when appropriate.
+   *
+   * Rules:
+   * - Always try to download English subtitles (if available)
+   * - Download user language if different from English AND different from movie's original language
+   * - Avoid duplicate downloads when user language is English
+   * - Skip user language when it matches non-English movie original language
+   *
+   * @param imdbId - IMDb identifier of the movie
+   * @param userLanguage - User's preferred language ('en', 'fr', etc.)
+   * @param torrent - Torrent metadata for subtitle association
+   * @param movieOriginalLanguage - Original movie language (optional, from metadata)
+   * @returns Promise that resolves when all applicable subtitle downloads are complete
+   */
+  async ensureMultiLanguageForMovie(
+    imdbId: string,
+    userLanguage: string,
+    torrent: ITorrent,
+    movieOriginalLanguage?: string,
+  ): Promise<void> {
+    const movie = await this._movieRepository.findByImdbId(imdbId);
+    if (!movie) throw new Error('Movie not found');
+
+    const languagesToDownload = new Set<string>();
+
+    // Rule 1: Always try to download English subtitles
+    languagesToDownload.add('en');
+
+    // Rule 2: Add user language if it's not English and not the same as movie's original language
+    if (userLanguage !== 'en') {
+      const shouldDownloadUserLang =
+        !movieOriginalLanguage || movieOriginalLanguage !== userLanguage;
+      if (shouldDownloadUserLang) {
+        languagesToDownload.add(userLanguage);
+      } else {
+        logger.info(
+          { imdbId, userLanguage, movieOriginalLanguage },
+          `Skipping user language ${userLanguage} as it matches movie original language`,
+        );
+      }
+    }
+
+    // Download subtitles for each language (concurrently)
+    const downloadPromises = Array.from(languagesToDownload).map((lang) =>
+      this.ensureForMovie(imdbId, lang, torrent).catch((err: unknown) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.warn(
+          { err: error, imdbId, language: lang },
+          `Failed to download ${lang} subtitles (non-critical)`,
+        );
+        return null; // Continue with other languages
+      }),
+    );
+
+    await Promise.allSettled(downloadPromises);
+
+    logger.info(
+      { userLanguage, movieOriginalLanguage, languagesToDownload: Array.from(languagesToDownload) },
+      `Multi-language subtitle download completed for ${imdbId}`,
+    );
+  }
+
+  /**
    * Ensures that subtitles exist for a given movie, language, and torrent.
    *
    * This method is typically invoked before starting playback for a specific torrent
@@ -162,19 +226,27 @@ export class SubtitleService {
         order_direction: 'desc',
       },
     });
+
+    if (!response.data.data || response.data.data.length === 0) {
+      logger.info(`No subtitles found on OpenSubtitles for ${imdbId} in ${language}`);
+      return [];
+    }
+
     logger.info(
-      `OpenSubtitles response data: ${JSON.stringify(response.data.data[0].attributes.files)}`,
+      `OpenSubtitles found ${response.data.data.length} results for ${imdbId} in ${language}`,
     );
 
-    return response.data.data.map((item) => {
-      const attrs = item.attributes;
-      return {
-        id: attrs.subtitle_id,
-        fileName: attrs.files[0].file_name,
-        fileId: attrs.files[0].file_id,
-        language: attrs.language,
-      };
-    });
+    return response.data.data
+      .filter((item) => item.attributes?.files?.length > 0)
+      .map((item) => {
+        const attrs = item.attributes;
+        return {
+          id: attrs.subtitle_id,
+          fileName: attrs.files[0].file_name,
+          fileId: attrs.files[0].file_id,
+          language: attrs.language,
+        };
+      });
   }
 
   public async getDownloadLink(fileId: number) {

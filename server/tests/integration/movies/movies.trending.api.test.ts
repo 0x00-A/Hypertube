@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import { UserModel } from '../../../src/models/User';
 
 describe('Movies API - New Endpoints (Integration)', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {

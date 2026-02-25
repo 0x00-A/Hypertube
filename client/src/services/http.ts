@@ -1,10 +1,17 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // ============================================================================
 // Error Response Interface
@@ -16,24 +23,49 @@ interface ErrorResponse {
   errors?: Record<string, string[]>;
 }
 
+// Extend AxiosRequestConfig to track retry attempts
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
 // ============================================================================
 // HTTP Client Class
 // ============================================================================
 
 class HttpClient {
   private client: AxiosInstance;
+  private isRefreshing = false;
+  private failedQueue: Array<{
+    resolve: (value: AxiosResponse) => void;
+    reject: (error: ErrorResponse) => void;
+    config: RetryableRequestConfig;
+  }> = [];
 
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       withCredentials: true, // Include cookies in requests
       timeout: 30000, // 30 seconds timeout
     });
 
     this.initializeInterceptors();
+  }
+
+  /**
+   * Process queued requests after a successful token refresh
+   */
+  private processQueue(error: ErrorResponse | null): void {
+    this.failedQueue.forEach(({ resolve, reject, config }) => {
+      if (error) {
+        reject(error);
+      } else {
+        this.client.request(config).then(resolve).catch(reject);
+      }
+    });
+    this.failedQueue = [];
   }
 
   /**
@@ -47,22 +79,72 @@ class HttpClient {
       },
       (error) => {
         return Promise.reject(this.handleError(error));
-      }
+      },
     );
 
-    // Response interceptor
+    // Response interceptor with automatic token refresh
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError<ErrorResponse>) => {
-        // Handle 401 Unauthorized
-        if (error.response?.status === 401) {
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        const originalRequest = error.config as
+          | RetryableRequestConfig
+          | undefined;
+
+        // Only attempt refresh on 401, if we have a config, and haven't already retried
+        const isRefreshRequest = originalRequest?.url?.includes(
+          "/auth/refresh-token",
+        );
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry &&
+          !isRefreshRequest
+        ) {
+          // If a refresh is already in progress, queue this request
+          if (this.isRefreshing) {
+            return new Promise<AxiosResponse>((resolve, reject) => {
+              this.failedQueue.push({
+                resolve,
+                reject,
+                config: originalRequest,
+              });
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            // Attempt to refresh the access token
+            await this.client.post("/auth/refresh-token");
+
+            // Refresh succeeded — retry queued requests and the original request
+            this.processQueue(null);
+            return this.client.request(originalRequest);
+          } catch {
+            // Refresh failed — reject queued requests and dispatch unauthorized
+            const refreshError = this.handleError(error);
+            this.processQueue(refreshError);
+
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+            }
+
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
+        }
+
+        // Non-401 errors or refresh request itself failed
+        if (error.response?.status === 401 && isRefreshRequest) {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("auth:unauthorized"));
           }
         }
 
         return Promise.reject(this.handleError(error));
-      }
+      },
     );
   }
 
@@ -73,20 +155,20 @@ class HttpClient {
     if (error.response) {
       // Server responded with error
       return {
-        message: error.response.data?.message || 'An error occurred',
+        message: error.response.data?.message || "An error occurred",
         statusCode: error.response.status,
         errors: error.response.data?.errors,
       };
     } else if (error.request) {
       // Request made but no response
       return {
-        message: 'Network error. Please check your connection.',
+        message: "Network error. Please check your connection.",
         statusCode: 0,
       };
     } else {
       // Something else happened
       return {
-        message: error.message || 'An unexpected error occurred',
+        message: error.message || "An unexpected error occurred",
       };
     }
   }
@@ -102,15 +184,27 @@ class HttpClient {
   /**
    * POST request
    */
-  async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.post(url, data, config);
+  async post<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.post(
+      url,
+      data,
+      config,
+    );
     return response.data;
   }
 
   /**
    * PUT request
    */
-  async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  async put<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
     const response: AxiosResponse<T> = await this.client.put(url, data, config);
     return response.data;
   }
@@ -118,8 +212,16 @@ class HttpClient {
   /**
    * PATCH request
    */
-  async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.patch(url, data, config);
+  async patch<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.patch(
+      url,
+      data,
+      config,
+    );
     return response.data;
   }
 

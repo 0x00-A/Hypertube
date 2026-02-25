@@ -59,7 +59,11 @@ export const createMovieInteractionRouter = (controller: MovieInteractionControl
 
   router.get('/user/stats', controller.getUserStats.bind(controller));
 
-  router.get('/history', validate(LimitQuerySchema), controller.getWatchHistory.bind(controller));
+  router.get(
+    '/history',
+    validate(MovieListQuerySchema),
+    controller.getWatchHistory.bind(controller),
+  );
 
   router.get(
     '/watchlist',

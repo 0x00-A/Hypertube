@@ -2,7 +2,7 @@ import request from 'supertest';
 import { createApp } from '../../../src/app';
 
 describe('Movies API - Popular Endpoint', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   describe('GET /api/v1/movies/popular', () => {
     it('should return 200 and a list of popular movies', async () => {

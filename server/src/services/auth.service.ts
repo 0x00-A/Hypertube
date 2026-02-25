@@ -4,10 +4,9 @@ import { UserRepository } from '../repositories/user.repository';
 import { PasswordService } from './password.service';
 import { ConflictError } from '../core/errors/customErrors';
 import { EmailService } from './email.service';
-
+import { logger } from '../utils/logger';
 
 export class AuthService {
-
   constructor(
     private _userRepo: UserRepository,
     private _passwordService: PasswordService,
@@ -24,19 +23,26 @@ export class AuthService {
       throw new ConflictError('Email already exists');
     }
     const hashedPassword = await this._passwordService.hashPassword(userData.password);
-    const user =await this._userRepo.create({
+    const user = await this._userRepo.create({
       username: userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
       password: hashedPassword,
     });
-    await this._emailService.createEmailToken(user, 'verification');
+    try {
+      await this._emailService.createEmailToken(user, 'verification');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error(
+        { userId: user._id, email: user.email, err: errorMessage },
+        'Failed to send verification email during signup',
+      );
+    }
     return true;
   }
 
   async verifyEmail(token: string): Promise<boolean> {
-
     const verification = await this._emailService.verifyEmailToken(token);
     if (!verification) {
       throw new ConflictError('Invalid or expired verification token');
@@ -50,13 +56,19 @@ export class AuthService {
     }
     await this._userRepo.update(user._id!, { isActive: true });
     await this._emailService.deleteVerificationToken(verification.token);
-    await this._emailService.sendWelcomeEmail(user);
+    try {
+      await this._emailService.sendWelcomeEmail(user);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error(
+        { userId: user._id, email: user.email, err: errorMessage },
+        'Failed to send welcome email',
+      );
+    }
     return true;
   }
 
-  async logIn(
-    body: ILoginDTO,
-  ): Promise<Partial<IUser> | null> {
+  async logIn(body: ILoginDTO): Promise<Partial<IUser> | null> {
     const user = body.identifier.includes('@')
       ? await this._userRepo.findByEmailLogin(body.identifier)
       : await this._userRepo.findByUsernameLogin(body.identifier);
@@ -81,9 +93,19 @@ export class AuthService {
     const user = await this._userRepo.findByEmailWithOauth(email);
     if (user) {
       if (user.oauth && !user.oauth.isPasswordSet) {
-        throw new ConflictError(`Password reset is not available for ${user.oauth.provider} accounts`);
+        throw new ConflictError(
+          `Password reset is not available for ${user.oauth.provider} accounts`,
+        );
       }
-      await this._emailService.createEmailToken(user, 'password_reset');
+      try {
+        await this._emailService.createEmailToken(user, 'password_reset');
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        logger.error(
+          { userId: user._id, email: user.email, err: errorMessage },
+          'Failed to send password reset email',
+        );
+      }
     }
   }
 

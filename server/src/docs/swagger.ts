@@ -25,6 +25,7 @@ const options: swaggerJsdoc.Options = {
     path.join(__dirname, 'swagger.curated.yaml'),
     path.join(__dirname, 'swagger.interactions.yaml'),
     path.join(__dirname, 'swagger.comments.yaml'),
+    path.join(__dirname, 'swagger.streaming.yaml'),
     'src/routes/v1/*.routes.ts',
     'src/controllers/*.controller.ts',
   ],

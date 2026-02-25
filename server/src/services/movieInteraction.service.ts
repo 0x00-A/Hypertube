@@ -1,9 +1,11 @@
 import { MovieInteractionRepository } from '../repositories/movieInteraction.repository';
+import { MovieService } from './movie.service';
 import { Types } from 'mongoose';
 import {
   IMovieInteraction,
   IUpdateWatchProgress,
   IMovieInteractionStats,
+  IContinueWatchingItem,
 } from '../interfaces/movieInteraction.interface';
 import { BadRequestError, NotFoundError } from '../core/errors/customErrors';
 import { IMovie } from '../interfaces/movie.interface';
@@ -15,9 +17,11 @@ import {
 
 export class MovieInteractionService {
   private _repository: MovieInteractionRepository;
+  private _movieService: MovieService;
 
-  constructor(repository: MovieInteractionRepository) {
+  constructor(repository: MovieInteractionRepository, movieService: MovieService) {
     this._repository = repository;
+    this._movieService = movieService;
   }
 
   async updateWatchProgress(
@@ -69,8 +73,26 @@ export class MovieInteractionService {
     }
   }
 
-  async getWatchHistory(userId: Types.ObjectId, limit = 20): Promise<IMovie[]> {
-    const history = await this._repository.getUserWatchHistory(userId, limit);
+  async getWatchHistory(
+    userId: Types.ObjectId,
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+  ): Promise<IPaginatedResponse<IMovie>> {
+    const history = await this._repository.getUserWatchHistory(
+      userId,
+      paginationOptions,
+      filterOptions,
+    );
+
+    if (history.data && history.data.length > 0) {
+      const moviesWithState = await this._movieService.applyUserMovieState(
+        userId.toString(),
+        history.data,
+        true,
+      );
+      history.data = moviesWithState as IMovie[];
+    }
+
     return history;
   }
 
@@ -84,13 +106,20 @@ export class MovieInteractionService {
       paginationOptions,
       filterOptions,
     );
+
+    if (watchlist.data && watchlist.data.length > 0) {
+      const moviesWithState = await this._movieService.applyUserMovieState(
+        userId.toString(),
+        watchlist.data,
+        true,
+      );
+      watchlist.data = moviesWithState as IMovie[];
+    }
+
     return watchlist;
   }
 
-  async getContinueWatching(
-    userId: Types.ObjectId,
-    limit = 10,
-  ): Promise<({ watchProgress: number } & IMovie)[]> {
+  async getContinueWatching(userId: Types.ObjectId, limit = 10): Promise<IContinueWatchingItem[]> {
     const continueWatching = await this._repository.getUserContinueWatching(userId, limit);
     return continueWatching;
   }

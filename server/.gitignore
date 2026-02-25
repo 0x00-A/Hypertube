@@ -70,3 +70,8 @@ uploads/*
 !uploads/avatars/
 uploads/avatars/*
 !uploads/avatars/.gitkeep
+
+# Downloaded torrent files
+downloads/
+
+public/subtitles/*

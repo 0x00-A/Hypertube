@@ -20,7 +20,7 @@ if (!process.env.MONGODB_URI) {
 
 // YTS has multiple mirror URLs - try yts.lt if yts.mx is blocked
 if (!process.env.YTS_BASE_API_URL) {
-  process.env.YTS_BASE_API_URL = 'https://yts.lt/api/v2';
+  process.env.YTS_BASE_API_URL = 'https://movies-api.accel.li/api/v2';
 }
 
 if (!process.env.TMDB_BASE_API_URL) {

@@ -60,12 +60,22 @@ export async function getMetadata(imdbId: string) {
 
   // fetch Details, Trailer, and Cast
   const detailUrl = `${TMDB_BASE}/movie/${tmdbMovie.id}?append_to_response=videos,credits`;
-  const detailRes = await axios.get(detailUrl, {
-    headers: {
-      Authorization: `Bearer ${TMDB_KEY}`,
-    },
-  });
-  const details = detailRes.data;
+  let details: Record<string, unknown>;
+  try {
+    const detailRes = await axios.get(detailUrl, {
+      headers: {
+        Authorization: `Bearer ${TMDB_KEY}`,
+      },
+    });
+    details = detailRes.data as Record<string, unknown>;
+  } catch (err: unknown) {
+    const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+    logger.warn(
+      { imdbId, tmdbId: tmdbMovie.id, status },
+      'TMDB detail fetch failed, skipping movie',
+    );
+    return null;
+  }
 
   // helpers for null/invalid fields
   const parseDuration = (runtime: unknown): number | null => {
@@ -211,12 +221,12 @@ export async function getMetadata(imdbId: string) {
     }
     return [];
   };
+  const videos = details.videos as
+    | { results?: Array<{ site?: string; type?: string; key?: string }> }
+    | undefined;
   const youtubeTrailer =
-    details.videos && details.videos.results && Array.isArray(details.videos.results)
-      ? details.videos.results.find(
-          (v: { site?: string; type?: string }) =>
-            v && v.site === 'YouTube' && v.type === 'Trailer',
-        )
+    videos && videos.results && Array.isArray(videos.results)
+      ? videos.results.find((v) => v && v.site === 'YouTube' && v.type === 'Trailer')
       : undefined;
   const trailerUrl =
     youtubeTrailer && youtubeTrailer.key
@@ -225,7 +235,7 @@ export async function getMetadata(imdbId: string) {
 
   return {
     title: parseString(details.title),
-    tmdbId: details.id,
+    tmdbId: typeof details.id === 'number' ? details.id : 0,
     year: parseYear(details.release_date),
     synopsis: parseString(details.overview),
     duration: parseDuration(details.runtime),

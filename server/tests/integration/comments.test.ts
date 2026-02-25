@@ -7,7 +7,7 @@ import { IMovie } from '../../src/interfaces/movie.interface';
 import { Types } from 'mongoose';
 
 describe('Comment API Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
   let tmdbId: number;
 
   // Helper to create a user and get a valid access token via API
@@ -111,6 +111,7 @@ describe('Comment API Integration Tests', () => {
 
   beforeEach(async () => {
     await CommentModel.deleteMany({});
+    await UserModel.deleteMany({});
   });
 
   describe('GET /api/v1/comments - List all comments (public)', () => {

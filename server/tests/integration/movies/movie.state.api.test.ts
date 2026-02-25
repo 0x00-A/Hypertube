@@ -6,7 +6,7 @@ import { MovieModel } from '../../../src/models/Movie';
 import { MovieInteractionModel } from '../../../src/models/MovieInteraction';
 
 describe('Movie State Flags API (Optional Auth)', () => {
-  let app: ReturnType<typeof createApp>;
+  let app: ReturnType<typeof createApp>['app'];
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
@@ -58,7 +58,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
   beforeEach(async () => {
     await mongoose.connection.dropDatabase();
-    app = createApp();
+    app = createApp().app;
   });
 
   describe('Authenticated User - State Flags', () => {

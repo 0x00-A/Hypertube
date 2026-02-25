@@ -1,24 +1,24 @@
 services:
   # MongoDB Database
-  mongo:
-    image: mongo:7.0
-    container_name: hypertube-mongo-dev
-    restart: unless-stopped
-    env_file:
-      - ./server/.env
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo_dev_data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=hypertube
-    healthcheck:
-      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - hypertube-network
+  # mongo:
+  #   image: mongo:7.0
+  #   container_name: hypertube-mongo-dev
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ./server/.env
+  #   ports:
+  #     - '27017:27017'
+  #   volumes:
+  #     - mongo_dev_data:/data/db
+  #   environment:
+  #     - MONGO_INITDB_DATABASE=hypertube
+  #   healthcheck:
+  #     test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - hypertube-network
 
   # Backend Server (Express API)
   server:
@@ -26,9 +26,9 @@ services:
       context: ./server
       dockerfile: Dockerfile.dev
     container_name: hypertube-server-dev
-    depends_on:
-      mongo:
-        condition: service_healthy
+    # depends_on:
+    #   mongo:
+    #     condition: service_healthy
     env_file:
       - ./server/.env
     environment:
@@ -38,31 +38,33 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
+      - server_downloads:/app/downloads
     command: npm run dev
     networks:
       - hypertube-network
 
   # Frontend Client (React + Vite)
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile.dev
-    container_name: hypertube-client-dev
-    depends_on:
-      - server
-    env_file:
-      - ./client/.env
-    ports:
-      - '5173:5173'
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
-    networks:
-      - hypertube-network
+  # client:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile.dev
+  #   container_name: hypertube-client-dev
+  #   depends_on:
+  #     - server
+  #   env_file:
+  #     - ./client/.env
+  #   ports:
+  #     - '5173:5173'
+  #   volumes:
+  #     - ./client:/app
+  #     - /app/node_modules
+  #   command: npm run dev -- --host 0.0.0.0
+  #   networks:
+  #     - hypertube-network
 
 volumes:
-  mongo_dev_data:
+  # mongo_dev_data:
+  server_downloads:
 
 networks:
   hypertube-network:

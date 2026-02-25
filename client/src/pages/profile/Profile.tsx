@@ -1,5 +1,6 @@
 import { useAuthState } from '../../hooks/useAuth';
 import { useWatchlist } from '../../hooks/useWatchlist';
+import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { User, Film, Clock, Star, Settings, Calendar, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MovieCarousel } from '../../components/movie/MovieCarousel';
@@ -10,6 +11,7 @@ export default function Profile() {
   const { user } = useAuthState();
   const navigate = useNavigate();
   const { data: watchlistData, isLoading: watchlistLoading } = useWatchlist();
+  const { data: historyData, isLoading: historyLoading } = useWatchHistory();
   const [curtainsOpen, setCurtainsOpen] = useState(false);
 
   // Trigger curtain opening animation
@@ -23,20 +25,26 @@ export default function Profile() {
   // Calculate stats
   const stats = useMemo(() => {
     const watchlistCount = watchlistData?.pages?.[0]?.pagination?.total || 0;
-    const watchedCount = 0; // TODO: Implement watched movies tracking
+    const watchedCount = historyData?.pages?.[0]?.pagination?.total || 0;
     
     return {
       watchlist: watchlistCount,
       watched: watchedCount,
       avgRating: 0, // TODO: Calculate from user ratings
     };
-  }, [watchlistData]);
+  }, [watchlistData, historyData]);
 
   // Get watchlist movies (first 10 for carousel)
   const watchlistMovies = useMemo(() => {
     if (!watchlistData?.pages?.[0]?.data) return [];
     return watchlistData.pages[0].data.slice(0, 10);
   }, [watchlistData]);
+
+  // Get recently watched movies (first 10 for carousel)
+  const recentlyWatchedMovies = useMemo(() => {
+    if (!historyData?.pages?.[0]?.data) return [];
+    return historyData.pages[0].data.slice(0, 10);
+  }, [historyData]);
 
   // Format member since date
   const memberSince = useMemo(() => {
@@ -291,16 +299,52 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Recently Watched Section - Placeholder */}
+      {/* Recently Watched Section */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3">
-          <Clock className="w-7 h-7 text-primary" />
-          Recently Watched
-        </h2>
-        <div className="text-center py-12 rounded-xl bg-gray-800/20 border border-gray-700/30">
-          <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-text-secondary text-lg">No recently watched movies yet</p>
-        </div>
+        {recentlyWatchedMovies.length > 0 ? (
+          <MovieCarousel
+            title="Recently Watched"
+            movies={recentlyWatchedMovies}
+            icon={Clock}
+            onViewAll={() => navigate('/history')}
+            isLoading={historyLoading}
+          />
+        ) : !historyLoading ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3">
+                <Clock className="w-7 h-7 text-primary" />
+                Recently Watched
+              </h2>
+            </div>
+            <div className="text-center py-12 rounded-xl bg-gray-800/20 border border-gray-700/30">
+              <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-text-secondary text-lg mb-4">No recently watched movies yet</p>
+              <Link
+                to="/browse"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all duration-300 hover:scale-105"
+              >
+                Start Watching
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3">
+                <Clock className="w-7 h-7 text-primary" />
+                Recently Watched
+              </h2>
+            </div>
+            <div className="grid grid-flow-col auto-cols-[100%] sm:auto-cols-[calc(50%-4px)] md:auto-cols-[calc(33.333%-5.33px)] lg:auto-cols-[calc(25%-6px)] xl:auto-cols-[calc(20%-6.4px)] gap-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[2/3] bg-gray-700/30 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
