@@ -31,6 +31,7 @@ import {
   useRemoveFromWatchlist,
 } from "../../hooks/useMovieInteractions";
 import { useUserRating } from "../../hooks/useUserRating";
+import { useUpdateWatchProgress } from "../../hooks/useUpdateWatchProgress";
 import { CommentSection } from "../../components/comments";
 import { MovieRating } from "../../components/movie";
 import ShareModal from "../../components/common/ShareModal";
@@ -85,6 +86,9 @@ export default function Watch() {
     isLoading,
     error,
   } = useMovieDetails({ id: id || "", isTmdbMovie });
+
+  // Watch progress mutation
+  const updateWatchProgressMutation = useUpdateWatchProgress();
 
   // Video element ref
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -262,12 +266,12 @@ export default function Watch() {
     if (Math.abs(video.currentTime - lastSavedTimeRef.current) < 5) return;
 
     lastSavedTimeRef.current = video.currentTime;
-    movieInteractionService
-      .updateWatchProgress(movieId, video.currentTime, video.duration)
-      .catch(() => {
-        /* non-critical */
-      });
-  }, [movieId]);
+    updateWatchProgressMutation.mutate({
+      movieId,
+      lastWatchedPosition: video.currentTime,
+      duration: video.duration,
+    });
+  }, [movieId, updateWatchProgressMutation]);
 
   useEffect(() => {
     if (isPlaying) {
