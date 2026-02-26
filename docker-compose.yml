@@ -3,7 +3,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: hypertube-server
     env_file:
       - ./server/.env
@@ -13,6 +13,8 @@ services:
       - '3000:3000'
     volumes:
       - server_downloads:/app/downloads
+      - server_uploads:/app/uploads
+      - subs:/app/public/subtitles
     networks:
       - hypertube-network
 
@@ -20,7 +22,7 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: hypertube-client
     depends_on:
       - server
@@ -33,6 +35,8 @@ services:
 
 volumes:
   server_downloads:
+  server_uploads:
+  subs:
 
 networks:
   hypertube-network:
