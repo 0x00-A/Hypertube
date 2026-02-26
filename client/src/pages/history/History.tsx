@@ -69,8 +69,9 @@ export default function History() {
                 <h1 className="text-3xl font-bold text-white">Watch History</h1>
                 <p className="text-text-secondary text-sm mt-0.5">Your recently watched movies</p>
             </div>
-            {shouldShowControls && <HistoryFilterBar />}
         </div>
+
+        {shouldShowControls && <HistoryFilterBar />}
 
         {/* Error State */}
         {isError && (

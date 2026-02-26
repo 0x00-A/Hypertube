@@ -67,8 +67,9 @@ export default function Watchlist() {
                 <h1 className="text-3xl font-bold text-white">Your Watchlist</h1>
                 <p className="text-text-secondary text-sm mt-0.5">Manage and explore your watchlist</p>
             </div>
-            {shouldShowControls && <LibraryFilterBar />}
         </div>
+
+        {shouldShowControls && <LibraryFilterBar />}
 
         {/* Error State */}
         {isError && (
