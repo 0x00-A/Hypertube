@@ -24,8 +24,8 @@ import { getAvatarUrl } from "../../utils/avatarUtils";
 const navLinks = [
   { label: "Browse", path: "/browse", icon: Compass },
   { label: "Featured", path: "/featured", icon: Sparkles },
-  { label: "Movies", path: "/movies", icon: Film },
-  { label: "Library", path: "/library", icon: Library },
+  { label: "Library", path: "/library", icon: Film },
+  { label: "Watchlist", path: "/watchlist", icon: Library },
   { label: "History", path: "/history", icon: Clock },
 ];
 
@@ -226,6 +226,7 @@ export default function Header() {
               searchQuery={debouncedSearchQuery}
               onClose={closeSearchDropdown}
               hasResults={!!searchResults?.data && searchResults.data.length > 0}
+              isAuthenticated={isAuthenticated}
             />
           )}
         </div>
@@ -368,6 +369,7 @@ export default function Header() {
                 searchQuery={debouncedSearchQuery}
                 onClose={closeSearchDropdown}
                 hasResults={!!searchResults?.data && searchResults.data.length > 0}
+                isAuthenticated={isAuthenticated}
               />
             )}
           </div>

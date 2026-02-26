@@ -62,19 +62,15 @@ export default function History() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Watch History
-          </h1>
-          <p className="text-text-secondary text-base">
-            Your recently watched movies
-          </p>
+        <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="shrink-0">
+                <h1 className="text-3xl font-bold text-white">Watch History</h1>
+                <p className="text-text-secondary text-sm mt-0.5">Your recently watched movies</p>
+            </div>
+            {shouldShowControls && <HistoryFilterBar />}
         </div>
-
-        {/* Search & Filter Bar - Only show when there's data or active filters */}
-        {shouldShowControls && <HistoryFilterBar />}
 
         {/* Error State */}
         {isError && (

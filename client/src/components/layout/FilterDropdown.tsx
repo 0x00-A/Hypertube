@@ -62,7 +62,7 @@ export default function FilterDropdown({ isOpen, onClose, triggerRef }: FilterDr
   const handleGenreClick = (genre: string) => {
     dispatch(setGenre(genre));
     // Navigate to movies page with the selected genre
-    navigate(`/movies?genre=${encodeURIComponent(genre)}`);
+    navigate(`/library?genre=${encodeURIComponent(genre)}`);
     onClose();
   };
 

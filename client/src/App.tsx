@@ -15,7 +15,7 @@ import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import OAuthCallback from './pages/auth/OAuthCallback';
 import Browse from './pages/browse/Browse';
-import Library from './pages/library/Library';
+import Watchlist from './pages/watchlist/Watchlist';
 import History from './pages/history/History';
 import Profile from './pages/profile/Profile';
 import Settings from './pages/settings/Settings';
@@ -82,13 +82,13 @@ function App() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/featured" element={<Featured />} />
             <Route path="/trending" element={<Trending />} />
-            <Route path="/movies" element={<Movies />} />
             <Route path="/user/:id" element={<UserProfile />} />
 
             {/* Protected routes */}
+            <Route path="/library" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
             <Route path="/movies/:id" element={<ProtectedRoute><MovieDetails /></ProtectedRoute>} />
             <Route path="/watch/:id" element={<ProtectedRoute><Watch /></ProtectedRoute>} />
-            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+            <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
