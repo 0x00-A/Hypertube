@@ -671,10 +671,10 @@ export default function Watch() {
             Movie not found
           </h2>
           <button
-            onClick={() => navigate("/movies")}
+            onClick={() => navigate("/library")}
             className="text-primary hover:underline"
           >
-            Back to Movies
+            Back to Library
           </button>
         </div>
       </div>
@@ -750,10 +750,10 @@ export default function Watch() {
                 <AlertTriangle className="w-14 h-14 text-yellow-500" />
                 <p className="text-white text-lg font-medium">{streamError}</p>
                 <button
-                  onClick={() => navigate("/movies")}
+                  onClick={() => navigate("/library")}
                   className="px-5 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors"
                 >
-                  Back to Movies
+                  Back to Library
                 </button>
               </div>
             </div>

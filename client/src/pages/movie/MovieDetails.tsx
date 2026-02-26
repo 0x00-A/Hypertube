@@ -111,10 +111,10 @@ export default function MovieDetails() {
                 <div className="text-center">
                     <h2 className="text-2xl text-white font-bold mb-4">Movie not found</h2>
                     <button
-                        onClick={() => navigate('/movies')}
+                        onClick={() => navigate('/library')}
                         className="text-primary hover:underline"
                     >
-                        Back to Movies
+                        Back to Library
                     </button>
                 </div>
             </div>
@@ -137,10 +137,10 @@ export default function MovieDetails() {
                     </button>
                     <span className="text-text-muted">/</span>
                     <button
-                        onClick={() => navigate('/movies')}
+                        onClick={() => navigate('/library')}
                         className="text-text-secondary hover:text-white transition-colors"
                     >
-                        Movies
+                        Library
                     </button>
                     <span className="text-text-muted">/</span>
                     <span className="text-white">{movie.title}</span>

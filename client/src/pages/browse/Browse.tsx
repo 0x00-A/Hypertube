@@ -32,7 +32,7 @@ export default function Browse() {
   };
 
   const handleViewAllRecommended = () => {
-    navigate("/library?filter=recommended");
+    navigate("/watchlist?filter=recommended");
   };
 
   const handleViewAllTrending = () => {
@@ -41,7 +41,7 @@ export default function Browse() {
 
   const handleViewAllGenres = () => {
     // Navigate to all-movies with the selected genre pre-applied
-    navigate(`/movies?genre=${genreData.selectedGenre}`);
+    navigate(`/library?genre=${genreData.selectedGenre}`);
   };
 
   const handleGenreChange = (genre: string) => {

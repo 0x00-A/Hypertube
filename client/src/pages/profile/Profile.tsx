@@ -258,7 +258,7 @@ export default function Profile() {
             title="My Watchlist"
             movies={watchlistMovies}
             icon={Film}
-            onViewAll={() => navigate('/library')}
+            onViewAll={() => navigate('/watchlist')}
             isLoading={watchlistLoading}
           />
         ) : !watchlistLoading ? (
