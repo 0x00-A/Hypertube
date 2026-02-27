@@ -1,5 +1,5 @@
 import { Plus, Check } from 'lucide-react';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { MovieCardProps } from '../../types/movie.types';
 import { useAuthState } from '../../hooks/useAuth';
 import MoviePreviewModal from './MoviePreviewModal';

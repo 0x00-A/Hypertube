@@ -1,5 +1,5 @@
 import { Plus, Check } from 'lucide-react';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { IMovie } from '../../types/movie.types';
 import { useAuthState } from '../../hooks/useAuth';
 import MoviePreviewModal from './MoviePreviewModal';
@@ -18,7 +18,7 @@ export interface ArchiveMovieCardProps {
  * ArchiveMovieCard Component
  * Displays a movie card with a rank ribbon bar for the Archive section
  * Structure: Rank bar at top + Complete MovieCard below
- * 
+ *
  * Note: Parent should use a stable key (movie._id or movie.tmdbId) to ensure
  * component re-mounts when displaying a different movie.
  */
@@ -26,7 +26,7 @@ export const ArchiveMovieCard = ({ movie, rank, className }: ArchiveMovieCardPro
     const [isHovered, setIsHovered] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist || false);
-    
+
     const { isAuthenticated } = useAuthState();
     const navigate = useNavigate();
     const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
