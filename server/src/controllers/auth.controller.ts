@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { env } from '../config/env';
+import { env, MAX_AGE_ACCESS_TOKEN, MAX_AGE_REFRESH_TOKEN } from '../config/env';
 import { IJWTPayload, ILoginDTO, ISignupDTO } from '../interfaces/auth.interface';
 import { UnauthorizedError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -51,14 +51,14 @@ export class AuthController {
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: env.MAX_AGE_ACCESS_TOKEN
+      maxAge: MAX_AGE_ACCESS_TOKEN
     });
     res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/api/v1/auth/refresh-token',
-      maxAge: env.MAX_AGE_REFRESH_TOKEN
+      maxAge: MAX_AGE_REFRESH_TOKEN
     });
 
     return res.status(200).json({
@@ -79,7 +79,7 @@ export class AuthController {
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: env.MAX_AGE_ACCESS_TOKEN
+      maxAge: MAX_AGE_ACCESS_TOKEN
     });
     return res.status(200).json({
       status: 'success',
@@ -93,14 +93,14 @@ export class AuthController {
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: env.MAX_AGE_ACCESS_TOKEN
+      maxAge: MAX_AGE_ACCESS_TOKEN
     });
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/api/v1/auth/refresh-token',
-      maxAge: env.MAX_AGE_REFRESH_TOKEN
+      maxAge: MAX_AGE_REFRESH_TOKEN
     });
     return res.status(200).json({
       status: 'success',

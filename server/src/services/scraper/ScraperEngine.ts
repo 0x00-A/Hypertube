@@ -76,10 +76,6 @@ export class ScraperEngine {
       logger.info(`New Movie Found: ${partial.title}. Fetching metadata...`);
       let metadata = await getMetadata(partial.imdbId);
 
-      // if (!metadata) {
-      //   metadata = await getOmdbMetadata(partial.imdbId);
-      // }
-
       if (metadata) {
         const completeMovie = {
           ...metadata,

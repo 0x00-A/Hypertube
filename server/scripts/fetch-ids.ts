@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const API_KEY = process.env.TMDB_API_KEY; // Make sure this is in your .env
+const ACCESS_TOKEN = process.env.TMDB_API_ACCESS_TOKEN; // Make sure this is in your .env
 const INPUT_FILE = 'movies.csv';
 const OUTPUT_FILE = 'movies_complete.csv';
 
@@ -38,8 +38,8 @@ async function processMovies() {
           // A. Search for the movie by Title and Year to get TMDB ID
           const searchUrl = `https://api.themoviedb.org/3/search/movie`;
           const searchRes = await axios.get(searchUrl, {
+            headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
             params: {
-              api_key: API_KEY,
               query: movie.Title,
               year: movie.Year, // Helps strictly match the correct movie
             },
@@ -52,7 +52,7 @@ async function processMovies() {
             // B. Get Details to find IMDb ID (it's not in the search result)
             const detailsUrl = `https://api.themoviedb.org/3/movie/${tmdbId}`;
             const detailsRes = await axios.get(detailsUrl, {
-              params: { api_key: API_KEY },
+              headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
             });
 
             const imdbId = detailsRes.data.imdb_id;
