@@ -89,15 +89,17 @@ export default function Browse() {
           />
         </div>
 
-        <div className="mt-8 lg:mt-12">
-          <GenresSection
-            movies={genreData.movies}
-            selectedGenre={genreData.selectedGenre}
-            onGenreChange={handleGenreChange}
-            onViewAll={handleViewAllGenres}
-            isLoading={genreData.isLoading}
-          />
-        </div>
+        {isAuthenticated && (
+          <div className="mt-8 lg:mt-12">
+            <GenresSection
+              movies={genreData.movies}
+              selectedGenre={genreData.selectedGenre}
+              onGenreChange={handleGenreChange}
+              onViewAll={handleViewAllGenres}
+              isLoading={genreData.isLoading}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ export const createMovieRouter = (movieController: MovieController): Router => {
 
   router.get(
     '/',
-    optionalAuth,
+    auth,
     validate(MovieListQuerySchema),
     movieController.listMovies.bind(movieController),
   );
@@ -47,11 +47,11 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getPopularMovies.bind(movieController),
   );
 
-  router.get('/genres', optionalAuth, movieController.getGenres.bind(movieController));
+  router.get('/genres', auth, movieController.getGenres.bind(movieController));
 
   router.get(
     '/search',
-    optionalAuth,
+    auth,
     validate(MovieSearchQuerySchema),
     movieController.searchExternalMovies.bind(movieController),
   );
