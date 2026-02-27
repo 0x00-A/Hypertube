@@ -1,11 +1,9 @@
 .PHONY: help dev prod down clean logs test lint server down-server logs-server
 
 # Optional build flag: make dev build=true
-dev:
-	@echo "Starting development environment..."
-	docker compose -f docker-compose.dev.yml up -d --build
+all:
+	docker compose -f docker-compose.yml up -d --build
 	@echo "\nUse 'make logs' to follow logs"
-	@echo "Development environment started!"
 	@echo "Access the frontend at http://localhost:5173"
 	@echo "Access the backend at http://localhost:3000"
 
@@ -23,7 +21,7 @@ down-server:
 
 ## View logs for server services (only app, not MongoDB)
 logs-server:
-	docker logs hypertube-server-dev
+	docker logs hypertube-server
 
 ## View all server logs including MongoDB
 logs-server-all:
@@ -36,7 +34,7 @@ logs-server-all:
 ## Stop all services
 down:
 	@echo "Stopping all services..."
-	docker compose -f docker-compose.dev.yml down
+	docker compose -f docker-compose.yml down
 # 	docker-compose -f docker-compose.prod.yml down
 
 ## Remove all containers, volumes, and images
@@ -47,7 +45,7 @@ clean: down
 
 ## View logs
 logs:
-	docker compose -f docker-compose.dev.yml logs -f
+	docker compose -f docker-compose.yml logs -f
 
 ## View logs for a specific service (usage: make logs-service service=frontend)
 logs-service:

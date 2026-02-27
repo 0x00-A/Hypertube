@@ -26,8 +26,14 @@ const registerSchema = z
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
     confirmPassword: z.string(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
+    firstName: z.string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(10, 'First name must be less than 10 characters')
+    .regex(/^[a-zA-Z]+$/, 'First name can only contain letters'),
+    lastName: z.string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(10, 'Last name must be less than 10 characters')
+    .regex(/^[a-zA-Z]+$/, 'Last name can only contain letters'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -112,13 +118,13 @@ export default function Register() {
               <AuthInput
                 {...register('firstName')}
                 type="text"
-                placeholder="First Name (Optional)"
+                placeholder="First Name"
                 error={errors.firstName?.message}
               />
               <AuthInput
                 {...register('lastName')}
                 type="text"
-                placeholder="Last Name (Optional)"
+                placeholder="Last Name"
                 error={errors.lastName?.message}
               />
             </div>
