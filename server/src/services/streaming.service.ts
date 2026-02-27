@@ -313,6 +313,11 @@ export class StreamingService {
         'Reusing existing torrent engine',
       );
       await existing.readyPromise;
+
+      // Ensure subtitles for the newly requested language are fetched
+      const torrent = this.selectTorrent(movie);
+      this.fetchSubtitlesInBackground(movie, torrent, language);
+
       return existing;
     }
 
@@ -342,9 +347,9 @@ export class StreamingService {
     const movieDir = path.join(this._downloadsDir, movieId);
     const engine = torrentStream(magnetUri, {
       path: movieDir,
-      connections: 100, // Reduced from 200 for less overhead
-      uploads: 3, // Reduced uploads for more download bandwidth
-      verify: true, // Keep verification for data integrity & resume
+      connections: 100,
+      uploads: 5,
+      verify: true,
       dht: true,
       tracker: true,
     });
