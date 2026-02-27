@@ -364,8 +364,8 @@ describe('Movie State Flags API (Optional Auth)', () => {
     });
   });
 
-  describe('Unauthenticated User - Default State Flags', () => {
-    it('should return default state flags when no token provided', async () => {
+  describe('Unauthenticated User - Requires Auth on Private Endpoints', () => {
+    it('should return 401 when no token provided for GET /movies', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -379,14 +379,10 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
       const res = await request(app).get('/api/v1/movies');
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
 
-    it('should return default state flags for multiple movies', async () => {
+    it('should return 401 for multiple movies when unauthenticated', async () => {
       await MovieModel.create([
         {
           imdbId: 'tt0111161',
@@ -412,14 +408,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
       const res = await request(app).get('/api/v1/movies');
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(2);
-
-      res.body.data.forEach((movie: any) => {
-        expect(movie.isWatched).toBe(false);
-        expect(movie.inWatchlist).toBe(false);
-        expect(movie.userRating).toBeNull();
-      });
+      expect(res.status).toBe(401);
     });
 
     it('should work for GET /movies/trending without auth', async () => {
@@ -447,7 +436,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
       });
     });
 
-    it('should work for GET /movies/search without auth', async () => {
+    it('should return 401 for GET /movies/search without auth', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -463,10 +452,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
         .get('/api/v1/movies/search')
         .query({ search: 'Shawshank', page: 1, limit: 10 });
 
-      expect(res.status).toBe(200);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
 
     // it('should work for GET /movies/:id without auth', async () => {
@@ -489,7 +475,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
     //   expect(res.body.data.userRating).toBeNull();
     // });
 
-    it('should treat invalid token as unauthenticated', async () => {
+    it('should return 401 for invalid token on GET /movies', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -505,10 +491,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
         .get('/api/v1/movies')
         .set('Cookie', ['accessToken=invalid-token']);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
   });
 
