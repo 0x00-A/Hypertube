@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { Star, Bookmark, Loader2, LogIn } from "lucide-react";
+import { Star, Bookmark, Loader2, LogIn, X } from "lucide-react";
 import type { IMovie } from "../../types/movie.types";
 
 interface SearchDropdownProps {
@@ -59,6 +59,13 @@ export default function SearchDropdown({
 
     return (
         <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+             <button
+                onClick={onClose}
+                className="absolute top-2 right-2 p-1 rounded-full hover:bg-bg-tertiary text-text-muted hover:text-text-primary transition-colors z-[60]"
+            >
+                <X className="w-4 h-4" />
+            </button>
+
             {/* Loading State */}
             {isLoading && (
                 <div className="flex items-center justify-center py-8 gap-2">

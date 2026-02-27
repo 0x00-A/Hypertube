@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { HeroSliderProps } from '../../types/movie.types';
+import type { HeroSliderProps, IMovie } from '../../types/movie.types';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrailerModal from './TrailerModal';
+
+const SlideImage = ({ movie }: { movie: IMovie }) => {
+  const [hasError, setHasError] = useState(false);
+  const src = movie.images.backdrop || movie.images.poster || movie.images.thumbnail;
+
+  if (!src || hasError) return null;
+
+  return (
+    <img
+      src={src}
+      alt={movie.title}
+      className="w-full h-full object-cover"
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 export const SliderMovies = ({
   movies,
@@ -129,13 +145,9 @@ export const SliderMovies = ({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.7, ease: 'easeInOut' }}
-          className="absolute inset-0"
+          className="absolute inset-0 bg-zinc-900"
         >
-          <img
-            src={currentMovie.images.backdrop || currentMovie.images.poster || currentMovie.images.thumbnail || '/images/movies/placeholder.jpg'}
-            alt={currentMovie.title}
-            className="w-full h-full object-cover"
-          />
+          <SlideImage movie={currentMovie} />
           {/* Multi-layer gradient overlays for depth and readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/80 via-transparent to-bg-primary/40" />
