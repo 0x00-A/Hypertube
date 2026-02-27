@@ -21,8 +21,8 @@ COPY src/templates/emails ./dist/src/templates/emails
 COPY public ./public
 COPY uploads ./uploads
 # Create directories if they don't exist and set proper permissions
-RUN mkdir -p /app/public/subtitles /app/uploads/avatars && \
-    chown -R node:node /app/public /app/uploads /app/dist/src/templates
+RUN mkdir -p /app/public/subtitles /app/uploads/avatars /app/downloads && \
+    chown -R node:node /app/public /app/uploads /app/downloads /app/dist/src/templates
 EXPOSE 3000
 USER node
 CMD ["node", "dist/src/server.js"]
