@@ -154,9 +154,14 @@ export class MovieRepository {
 
     const existingSubs = movie.subtitles.get(language) || [];
 
-    existingSubs.push(subtitle);
+    // Replace any existing entry for the same torrent (hash + quality) to avoid duplicates.
+    // This handles the case where a subtitle file was deleted and re-downloaded.
+    const filteredSubs = existingSubs.filter(
+      (s) => !(s.forHash === subtitle.forHash && s.forQuality === subtitle.forQuality),
+    );
+    filteredSubs.push(subtitle);
 
-    movie.subtitles.set(language, existingSubs);
+    movie.subtitles.set(language, filteredSubs);
 
     await movie.save();
     return movie;
