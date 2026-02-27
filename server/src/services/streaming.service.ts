@@ -23,23 +23,22 @@ interface ActiveEngine {
     name: string;
     path: string;
     length: number;
-    createReadStream: (opts?: { start?: number; end?: number }) => Readable;
   } | null;
   ready: boolean;
   readyPromise: Promise<void>;
 }
 
 export interface StreamableFile {
-  /** Absolute path to the file on disk (for already-downloaded movies) */
-  filePath?: string;
+  /** Absolute path to the file on disk (for both downloaded and downloading movies) */
+  filePath: string;
   /** Total size in bytes */
   fileSize: number;
   /** MIME type - video/mp4, video/webm, video/x-matroska */
   mimeType: string;
   /** Whether the file needs ffmpeg transcoding for browser playback */
   needsTranscoding: boolean;
-  /** If not fully downloaded, a function to create a readable stream from the torrent */
-  createTorrentStream?: (start?: number, end?: number) => Readable;
+  /** Whether the file is still downloading */
+  isDownloading: boolean;
   /** The movie document */
   movie: IMovieDocument;
 }
@@ -130,7 +129,7 @@ export class StreamingService {
             { movieId, filePath, ext, fileSize: stats.size },
             'Serving already-downloaded movie',
           );
-          return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
+          return { filePath, fileSize: stats.size, mimeType, needsTranscoding, isDownloading: false, movie };
         }
       } else {
         // File is gone — reset status and re-download
@@ -156,16 +155,20 @@ export class StreamingService {
     movie.lastWatched = new Date();
     await movie.save();
 
+    // Get the file path from the downloading torrent
+    const movieDir = path.join(this._downloadsDir, movie._id.toString());
+    const filePath = path.join(movieDir, activeEngine.file.path);
+
+    // Wait for the file to exist before we can stream from it
+    // Torrent-stream creates the file as it downloads, so we need to wait
+    await this.waitForFileToExist(filePath, 30000); // 30 second timeout
+
     return {
+      filePath,
       fileSize: activeEngine.file.length,
       mimeType,
       needsTranscoding,
-      createTorrentStream: (start?: number, end?: number) => {
-        const opts: { start?: number; end?: number } = {};
-        if (start !== undefined) opts.start = start;
-        if (end !== undefined) opts.end = end;
-        return activeEngine.file!.createReadStream(opts);
-      },
+      isDownloading: true,
       movie,
     };
   }
@@ -270,6 +273,35 @@ export class StreamingService {
   // ============================================================================
   // Private Methods
   // ============================================================================
+
+  /**
+   * Wait for a file to exist on disk with timeout.
+   * Torrent-stream creates files as it downloads, so we need to wait for initial creation.
+   */
+  private async waitForFileToExist(filePath: string, timeoutMs: number = 30000): Promise<void> {
+    const startTime = Date.now();
+    const checkInterval = 50; // Check every 50ms (reduced from 100ms)
+
+    while (Date.now() - startTime < timeoutMs) {
+      if (fs.existsSync(filePath)) {
+        // File exists - check if it has some initial data
+        // Wait for at least 1KB to be written (enough to start streaming)
+        const stats = fs.statSync(filePath);
+        if (stats.size >= 1024) { // 1KB minimum
+          logger.info({ filePath, fileSize: stats.size }, 'File now exists on disk, ready to stream');
+          return;
+        }
+        // File exists but no data yet, continue waiting
+        await new Promise((resolve) => setTimeout(resolve, checkInterval));
+        continue;
+      }
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
+    }
+
+    throw new BadRequestError(
+      `Timeout waiting for file to be created: ${path.basename(filePath)}`,
+    );
+  }
 
   /**
    * Select the best torrent from the movie's torrent list.
@@ -394,6 +426,8 @@ export class StreamingService {
         if (f !== videoFile) {
           f.deselect();
         } else {
+          // Select the video file for download
+          // torrent-stream will automatically prioritize initial pieces
           f.select();
         }
       }
@@ -486,6 +520,8 @@ export class StreamingService {
     language: string = 'en',
   ): void {
     const key = `${movie.imdbId}:multi:${language}`;
+    
+    // Check if fetch is already in progress
     if (this._subtitleFetchesInFlight.has(key)) {
       logger.debug(
         { imdbId: movie.imdbId, language },
@@ -493,6 +529,23 @@ export class StreamingService {
       );
       return;
     }
+
+    // Check if we've recently failed to fetch subtitles (rate limiting)
+    const lastFailKey = `${key}:lastFail`;
+    const lastFailTime = (this._subtitleFetchesInFlight as any)[lastFailKey];
+    if (lastFailTime) {
+      const timeSinceLastFail = Date.now() - lastFailTime;
+      const MIN_RETRY_INTERVAL = 5 * 60 * 1000; // 5 minutes
+      
+      if (timeSinceLastFail < MIN_RETRY_INTERVAL) {
+        logger.debug(
+          { imdbId: movie.imdbId, language, timeSinceLastFail },
+          'Subtitle fetch recently failed, skipping retry (rate limiting)',
+        );
+        return;
+      }
+    }
+
     this._subtitleFetchesInFlight.add(key);
 
     this._subtitleService
@@ -506,6 +559,8 @@ export class StreamingService {
           },
           'Multi-language subtitles fetched',
         );
+        // Clear failure timestamp on success
+        delete (this._subtitleFetchesInFlight as any)[lastFailKey];
       })
       .catch((err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));
@@ -513,6 +568,8 @@ export class StreamingService {
           { err: error, imdbId: movie.imdbId, userLanguage: language },
           'Multi-language subtitle fetch failed (non-critical)',
         );
+        // Record failure timestamp for rate limiting
+        (this._subtitleFetchesInFlight as any)[lastFailKey] = Date.now();
       })
       .finally(() => {
         this._subtitleFetchesInFlight.delete(key);

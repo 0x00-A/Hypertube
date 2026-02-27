@@ -3,7 +3,7 @@
 # Optional build flag: make dev build=true
 dev:
 	@echo "Starting development environment..."
-	docker compose -f docker-compose.dev.yml up -d --build
+	docker compose -f docker-compose.yml up -d --build
 	@echo "\nUse 'make logs' to follow logs"
 	@echo "Development environment started!"
 	@echo "Access the frontend at http://localhost:5173"
@@ -12,14 +12,14 @@ dev:
 ## Start only the server services (MongoDB, Mongo Express, and Backend)
 server:
 	@echo "Starting server services..."
-	docker compose -f server/docker-compose.dev.yml up -d --build
+	docker compose -f server/docker-compose.yml up -d --build
 	@echo "\nServer services started!"
 	@echo "Use 'make logs-server' to follow server logs"
 
 ## Stop server services
 down-server:
 	@echo "Stopping server services..."
-	docker compose -f server/docker-compose.dev.yml down
+	docker compose -f server/docker-compose.yml down
 
 ## View logs for server services (only app, not MongoDB)
 logs-server:
@@ -27,7 +27,7 @@ logs-server:
 
 ## View all server logs including MongoDB
 logs-server-all:
-	docker compose -f server/docker-compose.dev.yml logs -f
+	docker compose -f server/docker-compose.yml logs -f
 ## Start production environment
 # prod:
 # 	@echo "Starting production environment..."
@@ -36,7 +36,7 @@ logs-server-all:
 ## Stop all services
 down:
 	@echo "Stopping all services..."
-	docker compose -f docker-compose.dev.yml down
+	docker compose -f docker-compose.yml down
 # 	docker-compose -f docker-compose.prod.yml down
 
 ## Remove all containers, volumes, and images
@@ -47,11 +47,11 @@ clean: down
 
 ## View logs
 logs:
-	docker compose -f docker-compose.dev.yml logs -f
+	docker compose -f docker-compose.yml logs -f
 
 ## View logs for a specific service (usage: make logs-service service=frontend)
 logs-service:
-	docker-compose -f docker-compose.dev.yml logs -f $(service)
+	docker-compose -f docker-compose.yml logs -f $(service)
 
 ## Run tests
 test:
@@ -62,7 +62,7 @@ test:
 ## Run server tests in Docker
 test-server:
 	@echo "Running server tests in Docker..."
-	cd ./server && docker compose -f docker-compose.dev.yml exec app npm test -- --passWithNoTests
+	cd ./server && docker compose -f docker-compose.yml exec app npm test -- --passWithNoTests
 
 ## Run linting
 lint:
@@ -74,7 +74,7 @@ lint:
 ## Run server lint in Docker
 lint-server:
 	@echo "Running server lint in Docker..."
-	cd ./server && docker compose -f docker-compose.dev.yml exec app npm run lint
+	cd ./server && docker compose -f docker-compose.yml exec app npm run lint
 
 ## Build for production
 # build:
@@ -83,12 +83,12 @@ lint-server:
 
 ## Restart a specific service (usage: make restart service=frontend)
 restart:
-	docker-compose -f docker-compose.dev.yml restart $(service)
+	docker-compose -f docker-compose.yml restart $(service)
 
 ## Show status of services
 status:
-	docker-compose -f docker-compose.dev.yml ps
+	docker-compose -f docker-compose.yml ps
 
 ## Enter shell in a container (usage: make shell service=frontend)
 shell:
-	docker-compose -f docker-compose.dev.yml exec $(service) sh
+	docker-compose -f docker-compose.yml exec $(service) sh

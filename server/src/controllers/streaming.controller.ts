@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-import { Readable } from 'stream';
 import { StreamingService } from '../services/streaming.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { logger } from '../utils/logger';
-import { BadRequestError } from '../core/errors/customErrors';
 
 export class StreamingController {
   private _streamingService: StreamingService;
@@ -25,14 +23,8 @@ export class StreamingController {
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Transfer-Encoding', 'chunked');
 
-      let inputStream: Readable;
-      if (streamable.filePath) {
-        inputStream = fs.createReadStream(streamable.filePath);
-      } else if (streamable.createTorrentStream) {
-        inputStream = streamable.createTorrentStream() as Readable;
-      } else {
-        throw new BadRequestError('No stream source available');
-      }
+      // Always use file path for transcoding
+      const inputStream = fs.createReadStream(streamable.filePath);
 
       const transcodedStream = this._streamingService.createTranscodingStream(inputStream);
 
@@ -69,16 +61,8 @@ export class StreamingController {
       res.setHeader('Content-Length', chunkSize);
       res.setHeader('Content-Type', streamable.mimeType);
 
-      let readStream: Readable;
-      if (streamable.filePath) {
-        // Serve from local file
-        readStream = fs.createReadStream(streamable.filePath, { start, end });
-      } else if (streamable.createTorrentStream) {
-        // Serve from active torrent engine
-        readStream = streamable.createTorrentStream(start, end);
-      } else {
-        throw new BadRequestError('No stream source available');
-      }
+      // Always stream from file path (works for both downloaded and downloading files)
+      const readStream = fs.createReadStream(streamable.filePath, { start, end });
 
       res.on('close', () => {
         readStream.destroy();
@@ -92,14 +76,8 @@ export class StreamingController {
       res.setHeader('Content-Type', streamable.mimeType);
       res.setHeader('Accept-Ranges', 'bytes');
 
-      let readStream: Readable;
-      if (streamable.filePath) {
-        readStream = fs.createReadStream(streamable.filePath);
-      } else if (streamable.createTorrentStream) {
-        readStream = streamable.createTorrentStream();
-      } else {
-        throw new BadRequestError('No stream source available');
-      }
+      // Always stream from file path
+      const readStream = fs.createReadStream(streamable.filePath);
 
       res.on('close', () => {
         readStream.destroy();

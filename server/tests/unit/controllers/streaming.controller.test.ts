@@ -132,6 +132,7 @@ describe('StreamingController', () => {
       mimeType: 'video/mp4',
       needsTranscoding: false,
       filePath: '/downloads/movie.mp4',
+      isDownloading: false,
       movie: {} as StreamableFile['movie'],
     };
 
@@ -201,13 +202,13 @@ describe('StreamingController', () => {
         expect(mockCreateTranscodingStream).toHaveBeenCalled();
       });
 
-      it('should use createTorrentStream when no filePath available', async () => {
-        const mockTorrentStream = createReadableStream('torrent-data');
+      it('should use filePath for transcoding when downloading', async () => {
         const transcodingStreamable: StreamableFile = {
           fileSize: 800_000_000,
           mimeType: 'video/x-matroska',
           needsTranscoding: true,
-          createTorrentStream: jest.fn().mockReturnValue(mockTorrentStream),
+          filePath: '/downloads/downloading-movie.mkv',
+          isDownloading: true,
           movie: {} as StreamableFile['movie'],
         };
         mockGetStreamableFile.mockResolvedValue(transcodingStreamable);
@@ -220,7 +221,6 @@ describe('StreamingController', () => {
 
         await controller.stream(req, res, jest.fn());
 
-        expect(transcodingStreamable.createTorrentStream).toHaveBeenCalled();
         expect(mockCreateTranscodingStream).toHaveBeenCalled();
       });
     });
