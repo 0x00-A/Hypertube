@@ -39,8 +39,8 @@ describe('Movie Search API', () => {
     const crypto = await import('crypto');
     const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
-    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
-    const testUsername = `testuser_${unique}`;
+    const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const testUsername = `u_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
 
