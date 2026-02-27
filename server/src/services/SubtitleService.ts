@@ -9,6 +9,7 @@ import {
 } from '../interfaces/subtitle.interface';
 import { MovieRepository } from '../repositories/movie.repository';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import { gunzip } from 'zlib';
 import { promisify } from 'util';
@@ -57,9 +58,19 @@ export class SubtitleService {
     const subsForLang = movie.subtitles?.get(language);
     if (!subsForLang || subsForLang.length === 0) return false;
 
-    return subsForLang.some(
-      (sub) => sub.forHash === torrentHash && sub.forQuality === torrentQuality,
-    );
+    return subsForLang.some((sub) => {
+      if (sub.forHash !== torrentHash || sub.forQuality !== torrentQuality) return false;
+      // If we have a localPath, verify the file still exists on disk.
+      // A stale DB record (file deleted) must trigger a re-download.
+      if (sub.localPath && !fsSync.existsSync(sub.localPath)) {
+        logger.warn(
+          { language, torrentHash, torrentQuality, localPath: sub.localPath },
+          'Subtitle file missing from disk — will re-download',
+        );
+        return false;
+      }
+      return true;
+    });
   }
 
   /**

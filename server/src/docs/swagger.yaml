@@ -1168,15 +1168,13 @@ paths:
     get:
       summary: List movies with pagination and filters
       description: |
-        Returns a paginated list of movies with optional filters. Supports **optional authentication** via cookies.
+        Returns a paginated list of movies with optional filters. **Requires authentication** via cookies.
 
-        - **Authenticated users**: Each movie includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
-        - **Unauthenticated users**: Movies include these fields with default values (`false`, `null`).
+        Authenticated users receive personalized state flags (`isWatched`, `inWatchlist`, `userRating`) per movie.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: query
           name: page
@@ -1338,6 +1336,12 @@ paths:
                     message: 'year must be between 1900 and 2026'
                   - path: 'minRating'
                     message: 'minRating must be between 0 and 10'
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -1421,12 +1425,11 @@ paths:
       summary: Search movies from external sources and database
       description: |
         Searches movies in the local database first. If fewer than 10 results are found, scrapes external sources.
-        Supports **optional authentication** - authenticated users receive personalized state flags.
+        **Requires authentication** - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: query
           name: page
@@ -1563,6 +1566,12 @@ paths:
                     message: 'year must be between 1900 and 2026'
                   - path: 'minRating'
                     message: 'minRating must be between 0 and 10'
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -1900,10 +1909,12 @@ paths:
   /api/v1/movies/genres:
     get:
       summary: Get list of available genres from local DB
+      description: |
+        Returns all distinct genres present in the local movie database. **Requires authentication**.
       tags:
         - Movies
       security:
-        - {}
+        - cookieAuth: []
       responses:
         '200':
           description: Array of genre strings
@@ -1921,10 +1932,12 @@ paths:
               example:
                 data: ['Action', 'Drama', 'Comedy']
                 message: Genres fetched successfully.
-                properties:
-                  status:
-                    type: string
-                    example: success
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/movies/slider:
     get:

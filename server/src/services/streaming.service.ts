@@ -228,11 +228,24 @@ export class StreamingService {
     const subtitles: Record<string, { language: string; label: string; url: string }[]> = {};
     if (movie.subtitles) {
       for (const [lang, subs] of movie.subtitles.entries()) {
-        subtitles[lang] = subs.map((s) => ({
-          language: s.language,
-          label: s.label,
-          url: s.url || '',
-        }));
+        const validSubs = subs.filter((s) => {
+          // Skip entries whose file has been deleted from disk
+          if (s.localPath && !fs.existsSync(s.localPath)) {
+            logger.warn(
+              { lang, localPath: s.localPath },
+              'Subtitle file missing from disk — omitting from status response',
+            );
+            return false;
+          }
+          return true;
+        });
+        if (validSubs.length > 0) {
+          subtitles[lang] = validSubs.map((s) => ({
+            language: s.language,
+            label: s.label,
+            url: s.url || '',
+          }));
+        }
       }
     }
 
