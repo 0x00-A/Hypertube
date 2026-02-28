@@ -72,25 +72,25 @@ export const authService = {
   /**
    * Update user profile
    */
-  updateProfile: async (data: UpdateProfileData): Promise<void> => {
+  updateProfile: async (id: string, data: UpdateProfileData): Promise<void> => {
     // Create FormData for file upload
     const formData = new FormData();
-    
+
     // Append file if present
     if (data.avatar) {
       formData.append('avatar', data.avatar);
     }
-    
+
     // Append other fields
     if (data.username) formData.append('username', data.username);
     if (data.email) formData.append('email', data.email);
     if (data.firstName) formData.append('firstName', data.firstName);
     if (data.lastName) formData.append('lastName', data.lastName);
     if (data.language) formData.append('language', data.language);
-    
+
     // Override default JSON content type so the request is sent as multipart/form-data
-    await httpClient.post<{ status: string; message: string }>(
-      '/users/update-profile',
+    await httpClient.patch<{ status: string; message: string }>(
+      `/users/${id}`,
       formData,
       {
         headers: {

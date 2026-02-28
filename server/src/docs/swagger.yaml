@@ -710,7 +710,7 @@ paths:
                     type: string
                     example: User not found
 
-  /api/v1/users/{identifier}:
+  /api/v1/users/{id}:
     get:
       summary: Get user profile by username or MongoDB ID
       tags:
@@ -719,7 +719,7 @@ paths:
         Returns public profile information for any user. Automatically detects whether the identifier is a username or MongoDB ObjectId (24 hex characters).
         Email, password, and OAuth fields are never exposed in public profiles. No authentication required.
       parameters:
-        - name: identifier
+        - name: id
           in: path
           required: true
           schema:
@@ -769,7 +769,7 @@ paths:
                       properties:
                         path:
                           type: string
-                          example: params.identifier
+                          example: params.id
                         message:
                           type: string
                           example: Identifier must be at least 3 characters long
@@ -786,9 +786,7 @@ paths:
                   message:
                     type: string
                     example: User not found
-
-  /api/v1/users/update-profile:
-    post:
+    patch:
       summary: Update authenticated user's profile
       tags:
         - Users
@@ -796,7 +794,8 @@ paths:
         - bearerAuth: []
       description: |
         Updates the authenticated user's profile information. All fields are optional - only provided fields will be updated.
-        Requires valid JWT token in cookie. Users can update their username, email, name, language, and avatar.
+        Requires valid JWT token in cookie. The `:id` in the path must match the authenticated user's own ID.
+        Users can update their username, email, name, language, and avatar.
 
         **Avatar Upload:**
         - Supports direct file upload via multipart/form-data (recommended for file uploads)
@@ -804,6 +803,15 @@ paths:
         - Accepted formats: JPEG, PNG, GIF, WebP
         - Maximum file size: 5MB
         - When uploading a new avatar, the old avatar file is automatically deleted
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: MongoDB ObjectId of the user to update (must match the authenticated user)
+          example: 507f1f77bcf86cd799439011
       requestBody:
         required: false
         content:
@@ -992,6 +1000,19 @@ paths:
                   message:
                     type: string
                     example: Unauthorized, No access token provided
+        '403':
+          description: Forbidden - attempting to update another user's profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: You can only update your own profile
         '404':
           description: User not found
           content:

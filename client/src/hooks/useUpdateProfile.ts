@@ -11,15 +11,15 @@ export const useUpdateProfile = () => {
   const dispatch = useAppDispatch();
 
   return useMutation({
-    mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateProfileData }) => authService.updateProfile(id, data),
     onSuccess: async () => {
       // Invalidate and refetch user data
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.currentUser() });
-      
+
       // Fetch fresh user data and update Redux store
       const updatedUser = await authService.getCurrentUser();
       dispatch(setUser(updatedUser));
-      
+
       toast.success('Profile updated successfully!');
     },
     onError: (error: unknown) => {

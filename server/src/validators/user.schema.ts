@@ -55,11 +55,16 @@ export const ListUsersSchema = z.object({
 
 export const GetUserSchema = z.object({
   params: z.object({
-    identifier: z.string().trim().min(3, 'Identifier must be at least 3 characters long'),
+    id: z.string().trim().min(3, 'Identifier must be at least 3 characters long'),
   }),
 });
 
 export const UpdateProfileSchema = z.object({
+  params: z.object({
+    id: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid user ID format'),
+  }),
   body: z.object({
     email: z.string().trim().email('Invalid email address').optional(),
     username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),

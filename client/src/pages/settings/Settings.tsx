@@ -30,7 +30,7 @@ export default function Settings() {
     lastName: user?.lastName || '',
     avatarUrl: user?.avatarUrl || '',
   });
-  
+
   // Store the actual file for upload
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
@@ -120,6 +120,8 @@ export default function Settings() {
   const handleSaveProfile = () => {
     setErrorMessage('');
 
+    if (!user) return;
+
     // Basic validation
     if (!formData.email.trim()) {
       setErrorMessage('Email is required');
@@ -140,12 +142,15 @@ export default function Settings() {
 
     updateProfile(
       {
-        email: formData.email,
-        username: formData.username,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        avatar: avatarFile || undefined, // Send file object instead of base64
-        language: formData.language,
+        id: user._id,
+        data: {
+          email: formData.email,
+          username: formData.username,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          avatar: avatarFile || undefined, // Send file object instead of base64
+          language: formData.language,
+        },
       },
       {
         onSuccess: () => {
@@ -238,7 +243,7 @@ export default function Settings() {
             {SETTINGS_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
@@ -281,8 +286,8 @@ export default function Settings() {
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-primary/30 flex items-center justify-center text-2xl font-bold text-primary shadow-lg overflow-hidden">
                       {previewAvatar ? (
-                        <img 
-                          src={previewAvatar} 
+                        <img
+                          src={previewAvatar}
                           alt="Profile"
                           className="w-full h-full object-cover"
                         />
@@ -493,7 +498,7 @@ export default function Settings() {
                     <div className="flex-1">
                       <h4 className="font-medium text-text-primary mb-2">No Password Required</h4>
                       <p className="text-sm text-text-secondary leading-relaxed">
-                        Since you're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} OAuth to log in, 
+                        Since you're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} OAuth to log in,
                         you don't need a password for this account. You can always sign in using your{' '}
                         {user.oauth.provider === 'google' ? 'Google' : '42'} account.
                       </p>

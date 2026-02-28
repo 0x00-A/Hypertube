@@ -12,6 +12,7 @@ describe('User Profile Integration Tests', () => {
   let passwordService: PasswordService;
   let hashedPassword: string;
   let authToken: string;
+  let testUserId: string;
   let testUser: {
     username: string;
     email: string;
@@ -47,7 +48,7 @@ describe('User Profile Integration Tests', () => {
       lastName: 'User',
     };
 
-    await UserModel.create({
+    const createdUser = await UserModel.create({
       username: testUser.username,
       email: testUser.email,
       password: hashedPassword,
@@ -55,6 +56,7 @@ describe('User Profile Integration Tests', () => {
       lastName: testUser.lastName,
       isActive: true,
     });
+    testUserId = createdUser._id.toString();
 
     // Login to get auth token
     const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -647,7 +649,7 @@ describe('User Profile Integration Tests', () => {
     });
   });
 
-  describe('POST /api/v1/users/update-profile', () => {
+  describe('PATCH /api/v1/users/:id', () => {
     it('should successfully update user profile with valid data', async () => {
       const updateData = {
         username: 'updateduser',
@@ -658,7 +660,7 @@ describe('User Profile Integration Tests', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send(updateData);
 
@@ -676,7 +678,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update only username', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ username: 'newusername' });
 
@@ -693,7 +695,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update only email', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ email: 'newemail@example.com' });
 
@@ -706,7 +708,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update only firstName', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ firstName: 'NewFirstName' });
 
@@ -719,7 +721,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update only lastName', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ lastName: 'NewLastName' });
 
@@ -732,7 +734,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update only avatarUrl', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: 'https://example.com/new-avatar.png' });
 
@@ -744,7 +746,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 401 when not authenticated', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .send({ username: 'newuser' });
 
       expect(res.status).toBe(401);
@@ -756,7 +758,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 401 with invalid token', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', ['accessToken=invalidtoken123'])
         .send({ username: 'newuser' });
 
@@ -765,7 +767,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for invalid email format', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ email: 'invalid-email' });
 
@@ -784,7 +786,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for username shorter than 3 characters', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ username: 'ab' });
 
@@ -803,7 +805,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update firstName and lastName together', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ firstName: 'John', lastName: 'Doe' });
 
@@ -816,7 +818,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for invalid avatarUrl format', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: 'not-a-url' });
 
@@ -835,7 +837,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should accept valid https URL for avatarUrl', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: 'https://cdn.example.com/avatar.jpg' });
 
@@ -844,7 +846,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should accept valid http URL for avatarUrl', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: 'http://example.com/avatar.png' });
 
@@ -853,7 +855,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should handle multiple validation errors at once', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
           username: 'ab',
@@ -869,7 +871,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should allow empty body (no updates)', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({});
 
@@ -882,7 +884,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should trim whitespace from fields during validation', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
           username: '   validuser   ',
@@ -899,7 +901,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should accept valid language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: 'en' });
 
@@ -914,7 +916,7 @@ describe('User Profile Integration Tests', () => {
 
       for (const lang of supportedLanguages) {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .send({ language: lang });
 
@@ -924,7 +926,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for invalid language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: 'invalid' });
 
@@ -942,7 +944,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for empty string language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: '' });
 
@@ -952,7 +954,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return 400 for numeric language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: '123' });
 
@@ -972,7 +974,7 @@ describe('User Profile Integration Tests', () => {
       });
 
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ username: 'existinguser' });
 
@@ -992,7 +994,7 @@ describe('User Profile Integration Tests', () => {
       });
 
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ email: 'existing.email@example.com' });
 
@@ -1003,11 +1005,11 @@ describe('User Profile Integration Tests', () => {
     it('should handle concurrent update requests', async () => {
       const requests = [
         request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .send({ firstName: 'First' }),
         request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .send({ firstName: 'Second' }),
       ];
@@ -1026,7 +1028,7 @@ describe('User Profile Integration Tests', () => {
       const originalFirstName = originalUser?.firstName;
 
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ lastName: 'NewLastNameOnly' });
 
@@ -1040,7 +1042,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should update successfully with username containing valid characters', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ username: 'user_name_123' });
 
@@ -1052,7 +1054,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return consistent response structure on success', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ firstName: 'TestName' });
 
@@ -1064,7 +1066,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should return consistent error response structure on validation failure', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ email: 'invalid' });
 
@@ -1078,7 +1080,7 @@ describe('User Profile Integration Tests', () => {
     it('should handle very long valid email', async () => {
       const longEmail = 'a'.repeat(50) + '@' + 'b'.repeat(50) + '.com';
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ email: longEmail });
 
@@ -1088,7 +1090,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should not expose sensitive fields in any response', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ firstName: 'Test' });
 
@@ -1099,7 +1101,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject additional unknown fields gracefully', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
           username: 'validuser',
@@ -1113,7 +1115,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should handle null values in optional fields', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
           firstName: null,
@@ -1127,7 +1129,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should successfully update profile with valid language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: 'en' });
 
@@ -1146,7 +1148,7 @@ describe('User Profile Integration Tests', () => {
 
       for (const lang of validLanguages) {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .send({ language: lang });
 
@@ -1158,7 +1160,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject invalid language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: 'invalid' });
 
@@ -1177,7 +1179,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject empty string language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: '' });
 
@@ -1189,7 +1191,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject numeric language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: '123' });
 
@@ -1208,7 +1210,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject uppercase language code', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: 'EN' });
 
@@ -1227,7 +1229,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should allow null language value', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ language: null });
 
@@ -1236,7 +1238,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should handle undefined values in optional fields', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
           firstName: undefined,
@@ -1246,9 +1248,33 @@ describe('User Profile Integration Tests', () => {
 
       expect([200, 400]).toContain(res.status);
     });
+
+    it('should return 403 when patching another user\'s id', async () => {
+      // Create a second user
+      const otherUser = await UserModel.create({
+        username: 'otheruser',
+        email: 'other@example.com',
+        password: hashedPassword,
+        firstName: 'Other',
+        lastName: 'User',
+        isActive: true,
+      });
+      const otherId = otherUser._id.toString();
+
+      const res = await request(app)
+        .patch(`/api/v1/users/${otherId}`)
+        .set('Cookie', [`accessToken=${authToken}`])
+        .send({ firstName: 'Hacked' });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({
+        status: 'fail',
+        message: 'You can only update your own profile',
+      });
+    });
   });
 
-  describe('POST /api/v1/users/update-profile (Avatar Upload)', () => {
+  describe('PATCH /api/v1/users/:id (Avatar Upload)', () => {
     const testImagePath = path.join(__dirname, '../fixtures/test-avatar.png');
     const uploadsDir = path.join(__dirname, '../../uploads/avatars');
 
@@ -1276,7 +1302,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should successfully upload avatar image', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1293,7 +1319,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should upload avatar and update other fields simultaneously', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath)
         .field('firstName', 'AvatarTest')
@@ -1309,7 +1335,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should save uploaded file to disk', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1325,7 +1351,7 @@ describe('User Profile Integration Tests', () => {
     it('should generate unique filename for uploaded avatar', async () => {
       // Upload first avatar
       await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1334,7 +1360,7 @@ describe('User Profile Integration Tests', () => {
 
       // Upload second avatar
       await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1349,7 +1375,7 @@ describe('User Profile Integration Tests', () => {
       // When sending multipart/form-data without auth, the server may close the connection
       // before the upload completes. Test using field() instead of attach() to avoid this.
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .field('firstName', 'Unauthorized');
 
       expect(res.status).toBe(401);
@@ -1366,7 +1392,7 @@ describe('User Profile Integration Tests', () => {
 
       try {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .attach('avatar', textFilePath);
 
@@ -1389,7 +1415,7 @@ describe('User Profile Integration Tests', () => {
 
       try {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .attach('avatar', largeFilePath);
 
@@ -1437,7 +1463,7 @@ describe('User Profile Integration Tests', () => {
 
       try {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .attach('avatar', jpegFilePath);
 
@@ -1463,7 +1489,7 @@ describe('User Profile Integration Tests', () => {
 
       try {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .attach('avatar', webpFilePath);
 
@@ -1489,7 +1515,7 @@ describe('User Profile Integration Tests', () => {
 
       try {
         const res = await request(app)
-          .post('/api/v1/users/update-profile')
+          .patch(`/api/v1/users/${testUserId}`)
           .set('Cookie', [`accessToken=${authToken}`])
           .attach('avatar', gifFilePath);
 
@@ -1504,7 +1530,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should preserve file extension from original filename', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1517,7 +1543,7 @@ describe('User Profile Integration Tests', () => {
     it('should delete old avatar when uploading new one', async () => {
       // Upload first avatar
       await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1531,7 +1557,7 @@ describe('User Profile Integration Tests', () => {
 
       // Upload second avatar
       await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1557,7 +1583,7 @@ describe('User Profile Integration Tests', () => {
 
       // Upload new avatar - should not try to delete external URL
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .attach('avatar', testImagePath);
 
@@ -1569,7 +1595,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should handle request with no file gracefully', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .field('firstName', 'NoAvatar');
 
@@ -1581,7 +1607,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject path traversal in avatarUrl field', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: '../../../etc/passwd' });
 
@@ -1591,7 +1617,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should reject backslash path traversal in avatarUrl', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: '..\\..\\..\\etc\\passwd' });
 
@@ -1600,7 +1626,7 @@ describe('User Profile Integration Tests', () => {
 
     it('should allow valid uploads/avatars path in avatarUrl', async () => {
       const res = await request(app)
-        .post('/api/v1/users/update-profile')
+        .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
         .send({ avatarUrl: '/uploads/avatars/valid-uuid-12345.png' });
 
