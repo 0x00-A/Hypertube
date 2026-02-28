@@ -115,6 +115,8 @@ export default function Watch() {
   const [buffered, setBuffered] = useState(0);
   const [isBuffering, setIsBuffering] = useState(true);
   const [volume, setVolume] = useState(1);
+  const [isTranscoded, setIsTranscoded] = useState(false);
+  const [runtimeSeconds, setRuntimeSeconds] = useState<number | null>(null);
   // Subtitle state
   const [availableSubtitles, setAvailableSubtitles] =
     useState<IAvailableSubtitles>({});
@@ -183,6 +185,12 @@ export default function Watch() {
         .getStreamStatus(movieId)
         .then((status) => {
           if (cancelled) return;
+
+          // Store transcoding metadata from the first status response
+          setIsTranscoded(status.needsTranscoding ?? false);
+          if (status.runtimeSeconds != null) {
+            setRuntimeSeconds(status.runtimeSeconds);
+          }
 
           // Collect English and user language subtitles
           const available: IAvailableSubtitles = {
@@ -489,7 +497,13 @@ export default function Watch() {
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (!video) return;
-    setDuration(video.duration);
+    // For transcoded streams the browser only sees the current fragment (~10s).
+    // If we already have the real runtime from the status API, use that instead.
+    if (isTranscoded && runtimeSeconds != null) {
+      setDuration(runtimeSeconds);
+    } else {
+      setDuration(video.duration);
+    }
     setIsBuffering(false);
 
     // Resume from saved position (set in useEffect above)
@@ -771,29 +785,43 @@ export default function Watch() {
           >
             {/* Progress Bar */}
             <div
-              className="w-full py-1 sm:py-1.5 cursor-pointer group/progress touch-none"
-              onClick={handleProgressClick}
+              className={`w-full py-1 sm:py-1.5 touch-none ${
+                isTranscoded
+                  ? "cursor-default"
+                  : "cursor-pointer group/progress"
+              }`}
+              onClick={isTranscoded ? undefined : handleProgressClick}
             >
-              <div className="w-full h-0.5 sm:h-1 bg-white/20 rounded-full relative group-hover/progress:h-1.5 transition-all">
+              <div
+                className={`w-full h-0.5 sm:h-1 bg-white/20 rounded-full relative transition-all ${
+                  isTranscoded ? "" : "group-hover/progress:h-1.5"
+                }`}
+              >
                 {/* Buffered bar */}
                 <div
-                  className="absolute h-full bg-white/30 rounded-full transition-all"
+                  className={`absolute h-full rounded-full transition-all ${
+                    isTranscoded ? "bg-white/15" : "bg-white/30"
+                  }`}
                   style={{ width: `${bufferedPercent}%` }}
                 />
                 {/* Progress bar */}
                 <div
-                  className="absolute h-full bg-primary rounded-full transition-all"
+                  className={`absolute h-full rounded-full transition-all ${
+                    isTranscoded ? "bg-primary/50" : "bg-primary"
+                  }`}
                   style={{ width: `${progressPercent}%` }}
                 />
-                {/* Scrub handle */}
-                <div
-                  className="absolute w-3 h-3 sm:w-3 sm:h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
-                  style={{
-                    left: `${progressPercent}%`,
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                />
+                {/* Scrub handle — hidden for transcoded streams */}
+                {!isTranscoded && (
+                  <div
+                    className="absolute w-3 h-3 sm:w-3 sm:h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
+                    style={{
+                      left: `${progressPercent}%`,
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  />
+                )}
               </div>
             </div>
 

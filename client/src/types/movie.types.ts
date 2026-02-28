@@ -46,6 +46,8 @@ export interface ISubtitleTrack {
 export interface IStreamStatus {
   downloadStatus: "not_downloaded" | "downloading" | "downloaded";
   hasActiveEngine: boolean;
+  needsTranscoding?: boolean;
+  runtimeSeconds?: number | null;
   subtitles: Record<string, ISubtitleTrack[]>;
 }
 

@@ -209,6 +209,8 @@ export class StreamingService {
   ): Promise<{
     downloadStatus: string;
     hasActiveEngine: boolean;
+    needsTranscoding: boolean;
+    runtimeSeconds: number | null;
     subtitles: Record<string, { language: string; label: string; url: string }[]>;
   }> {
     const movie = await this._movieRepository.findById(movieId);
@@ -264,9 +266,27 @@ export class StreamingService {
       }
     }
 
+    // Determine needsTranscoding: check localPath extension if downloaded,
+    // otherwise fall back to the torrent type field.
+    let needsTranscoding = false;
+    if (movie.downloadStatus === 'downloaded' && movie.localPath) {
+      const ext = path.extname(movie.localPath).toLowerCase();
+      needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+    } else if (movie.torrents && movie.torrents.length > 0) {
+      const torrent = this.selectTorrent(movie);
+      const torrentExt = torrent.type ? `.${torrent.type.toLowerCase()}` : '';
+      needsTranscoding = torrentExt !== '' && !BROWSER_PLAYABLE.has(torrentExt);
+    }
+
+    // Convert duration from minutes (DB) to seconds for the video element.
+    const runtimeSeconds =
+      movie.duration != null && movie.duration > 0 ? movie.duration * 60 : null;
+
     return {
       downloadStatus: movie.downloadStatus,
       hasActiveEngine: this._activeEngines.has(movieId),
+      needsTranscoding,
+      runtimeSeconds,
       subtitles,
     };
   }
