@@ -216,10 +216,25 @@ export class StreamingService {
       throw new NotFoundError('Movie not found');
     }
 
-    // If a language is requested and no subtitles exist yet, trigger multi-language fetch
+    // If a language is requested, ensure we have the required subtitles based on multi-language rules
     if (language && movie.torrents && movie.torrents.length > 0) {
-      const hasAnySubtitles = movie.subtitles && movie.subtitles.size > 0;
-      if (!hasAnySubtitles) {
+      let needsFetch = false;
+
+      // Rule 1: We always want English subtitles (if not already present)
+      const hasEnglish = movie.subtitles?.has('en') && movie.subtitles.get('en')!.length > 0;
+      if (!hasEnglish) {
+        needsFetch = true;
+      }
+
+      // Rule 2: We want the user's language if it's not English and not the movie's original language
+      if (!needsFetch && language !== 'en' && language !== movie.originalLanguage) {
+        const hasUserLang = movie.subtitles?.has(language) && movie.subtitles.get(language)!.length > 0;
+        if (!hasUserLang) {
+          needsFetch = true;
+        }
+      }
+
+      if (needsFetch) {
         const torrent = this.selectTorrent(movie);
         this.fetchSubtitlesInBackground(movie, torrent, language);
       }
