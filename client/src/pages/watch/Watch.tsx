@@ -124,6 +124,7 @@ export default function Watch() {
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [activeCueText, setActiveCueText] = useState<string>("");
   const [isSubtitlePanelOpen, setIsSubtitlePanelOpen] = useState(false);
+
   const [isMobileVolumeHovered, setIsMobileVolumeHovered] = useState(false);
   const [subtitleOffset, setSubtitleOffset] = useState(() => {
     // Initialize from localStorage if movieId is available
@@ -255,13 +256,15 @@ export default function Watch() {
 
     // Get the selected track
     let selectedTrack: ISubtitleTrack | undefined;
-    if (selectedSubtitleLanguage === "en" && availableSubtitles.english) {
-      selectedTrack = availableSubtitles.english[0]; // Use first English track
+    if (selectedSubtitleLanguage?.startsWith("en-") && availableSubtitles.english) {
+      const idx = parseInt(selectedSubtitleLanguage.split("-")[1], 10);
+      selectedTrack = availableSubtitles.english[idx] || availableSubtitles.english[0];
     } else if (
-      selectedSubtitleLanguage === availableSubtitles.userLanguageCode &&
+      selectedSubtitleLanguage?.startsWith(`${availableSubtitles.userLanguageCode}-`) &&
       availableSubtitles.userLanguage
     ) {
-      selectedTrack = availableSubtitles.userLanguage[0]; // Use first user language track
+      const idx = parseInt(selectedSubtitleLanguage.split("-")[1], 10);
+      selectedTrack = availableSubtitles.userLanguage[idx] || availableSubtitles.userLanguage[0];
     }
 
     if (!selectedTrack) {
@@ -496,6 +499,7 @@ export default function Watch() {
         .then((progress) => {
           if (progress?.lastWatchedPosition && video) {
             video.currentTime = progress.lastWatchedPosition;
+            setCurrentTime(progress.lastWatchedPosition);
           }
         })
         .catch(() => {
@@ -577,7 +581,9 @@ export default function Watch() {
     const languages: { code: string; label: string }[] = [];
 
     if (availableSubtitles.english) {
-      languages.push({ code: "en", label: "English" });
+      availableSubtitles.english.forEach((track, i) => {
+        languages.push({ code: `en-${i}`, label: track.label || `English ${i > 0 ? i + 1 : ''}` });
+      });
     }
 
     if (
@@ -585,12 +591,11 @@ export default function Watch() {
       availableSubtitles.userLanguageCode &&
       availableSubtitles.userLanguageCode !== "en"
     ) {
-      const userLangLabel =
-        availableSubtitles.userLanguage[0]?.label ||
-        availableSubtitles.userLanguageCode.toUpperCase();
-      languages.push({
-        code: availableSubtitles.userLanguageCode,
-        label: userLangLabel,
+      availableSubtitles.userLanguage.forEach((track, i) => {
+        languages.push({
+          code: `${availableSubtitles.userLanguageCode}-${i}`,
+          label: track.label || `${availableSubtitles.userLanguageCode!.toUpperCase()} ${i > 0 ? i + 1 : ''}`,
+        });
       });
     }
 
@@ -600,41 +605,6 @@ export default function Watch() {
   const availableLanguages = getAvailableSubtitleLanguages();
   const hasSubtitles = availableLanguages.length > 0;
 
-  // Manual subtitle refresh function
-  const refreshSubtitles = useCallback(() => {
-    if (!movieId) return;
-
-    // Clear current subtitles and force re-fetch
-    setAvailableSubtitles({});
-    setSelectedSubtitleLanguage(null);
-    setSubtitlesEnabled(false);
-
-    // Trigger subtitle fetch by accessing the status endpoint directly
-    streamingService
-      .getStreamStatus(movieId)
-      .then((status) => {
-        const available: IAvailableSubtitles = {
-          userLanguageCode: userLanguage,
-        };
-
-        const englishSubs = status.subtitles["en"];
-        if (englishSubs && englishSubs.length > 0) {
-          available.english = englishSubs.filter((sub) => sub.url);
-        }
-
-        if (userLanguage !== "en") {
-          const userLangSubs = status.subtitles[userLanguage];
-          if (userLangSubs && userLangSubs.length > 0) {
-            available.userLanguage = userLangSubs.filter((sub) => sub.url);
-          }
-        }
-
-        setAvailableSubtitles(available);
-      })
-      .catch(() => {
-        // Silent fail, polling will handle retries
-      });
-  }, [movieId, userLanguage]);
 
   // Handle watchlist toggle
   const handleWatchlistClick = (e: React.MouseEvent) => {
@@ -743,7 +713,7 @@ export default function Watch() {
           {/* Stream error overlay */}
           {streamError && (
             <div
-              className="absolute inset-0 flex items-center justify-center bg-black z-99"
+              className="absolute inset-0 flex items-center justify-center bg-black z-40"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
@@ -1063,17 +1033,6 @@ export default function Watch() {
                 </>
               )}
 
-              {/* Refresh */}
-              <div className="h-px bg-white/10 mx-3" />
-              <div className="px-2 py-2">
-                <button
-                  onClick={refreshSubtitles}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/8 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                  Refresh subtitles
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -1192,17 +1151,6 @@ export default function Watch() {
               </>
             )}
 
-            {/* Refresh */}
-            <div className="h-px bg-white/10 mx-2 sm:mx-3" />
-            <div className="px-1 py-0.5 sm:px-2 sm:py-2">
-              <button
-                onClick={refreshSubtitles}
-                className="flex items-center gap-1.5 w-full px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm text-white/55 hover:text-white hover:bg-white/8 transition-colors"
-              >
-                <RotateCcw className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0" />
-                Refresh subtitles
-              </button>
-            </div>
           </div>
         )}
         </div>
