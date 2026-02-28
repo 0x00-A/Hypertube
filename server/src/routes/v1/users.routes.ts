@@ -8,6 +8,7 @@ import {
   UpdateProfileSchema,
 } from '../../validators/user.schema';
 import { auth } from '../../middleware/auth';
+import { methodNotAllowed } from '../../middleware/methodNotAllowed';
 import { handleAvatarUpload } from '../../middleware/uploadAvatar';
 
 export const createUserRoutes = (controller: UserController) => {
@@ -31,5 +32,13 @@ export const createUserRoutes = (controller: UserController) => {
   router.post('/change-password', auth, validate(ChangePasswordSchema), (req, res, next) =>
     controller.changePassword(req, res, next),
   );
+
+  // 405 catch-alls: fires when path matches but method is not supported
+  router.all('/', methodNotAllowed);
+  router.all('/me', methodNotAllowed);
+  router.all('/update-profile', methodNotAllowed);
+  router.all('/change-password', methodNotAllowed);
+  router.all('/:identifier', methodNotAllowed);
+
   return router;
 };

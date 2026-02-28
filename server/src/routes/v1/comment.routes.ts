@@ -3,6 +3,7 @@ import { validate } from '../../middleware/validate';
 import { IdParamSchema } from '../../validators/common.schema';
 import { auth } from '../../middleware/auth';
 import { CommentController } from '../../controllers/comment.controller';
+import { methodNotAllowed } from '../../middleware/methodNotAllowed';
 import {
   commentListByMovieQuerySchema,
   createCommentSchema,
@@ -50,6 +51,11 @@ export const createCommentRouter = (commentController: CommentController): Route
     validate(IdParamSchema),
     commentController.deleteComment.bind(commentController),
   );
+
+  // 405 catch-alls: fires when path matches but method is not supported
+  router.all('/', methodNotAllowed);
+  router.all('/movie/:tmdbId', methodNotAllowed);
+  router.all('/:id', methodNotAllowed);
 
   return router;
 };
