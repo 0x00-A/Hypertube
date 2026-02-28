@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
 import { AuthProvider } from './components/auth/AuthProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import GuestRoute from './components/auth/GuestRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 
 // Pages
@@ -68,12 +69,12 @@ function App() {
         />
         <Routes>
           {/* Auth routes without layout */}
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
-          <Route path="/auth/oauth-callback" element={<OAuthCallback />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/auth/login" element={<GuestRoute><Login /></GuestRoute>} />
+          <Route path="/auth/register" element={<GuestRoute><Register /></GuestRoute>} />
+          <Route path="/auth/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+          <Route path="/auth/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
+          <Route path="/auth/oauth-callback" element={<GuestRoute><OAuthCallback /></GuestRoute>} />
+          <Route path="/verify-email" element={<GuestRoute><VerifyEmail /></GuestRoute>} />
 
           {/* Main app routes with layout */}
           <Route element={<MainLayout />}>
@@ -102,4 +103,3 @@ function App() {
 }
 
 export default App;
-
