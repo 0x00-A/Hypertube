@@ -12,10 +12,6 @@ import { NotFoundError, BadRequestError } from '../core/errors/customErrors';
 import { IMovieDocument } from '../models/movie.model.types';
 import { ITorrent } from '../interfaces/movie.interface';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface ActiveEngine {
   engine: ReturnType<typeof torrentStream>;
   movieId: string;
@@ -30,21 +26,14 @@ interface ActiveEngine {
 }
 
 export interface StreamableFile {
-  /** Absolute path to the file on disk (for already-downloaded movies) */
   filePath?: string;
-  /** Total size in bytes */
   fileSize: number;
-  /** MIME type - video/mp4, video/webm, video/x-matroska */
   mimeType: string;
-  /** Whether the file needs ffmpeg transcoding for browser playback */
   needsTranscoding: boolean;
-  /** If not fully downloaded, a function to create a readable stream from the torrent */
   createTorrentStream?: (start?: number, end?: number) => Readable;
-  /** The movie document */
   movie: IMovieDocument;
 }
 
-// Map of file extensions to MIME types
 const VIDEO_MIME_TYPES: Record<string, string> = {
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
@@ -53,19 +42,15 @@ const VIDEO_MIME_TYPES: Record<string, string> = {
   '.m4v': 'video/mp4',
 };
 
-// Extensions that browsers can play natively (no transcoding needed)
+// formats browsers can play natively without transcoding
 const BROWSER_PLAYABLE = new Set(['.mp4', '.webm', '.m4v']);
-
-// ============================================================================
-// Streaming Service
-// ============================================================================
 
 export class StreamingService {
   private _movieRepository: MovieRepository;
   private _subtitleService: SubtitleService;
   private _activeEngines: Map<string, ActiveEngine> = new Map();
   private _downloadsDir: string;
-  /** Tracks in-flight subtitle fetches to prevent duplicate concurrent calls */
+  // prevents duplicate concurrent subtitle fetches for the same movie+language
   private _subtitleFetchesInFlight: Set<string> = new Set();
 
   constructor(movieRepository: MovieRepository, subtitleService: SubtitleService) {
@@ -73,19 +58,14 @@ export class StreamingService {
     this._subtitleService = subtitleService;
     this._downloadsDir = path.resolve(env.DOWNLOADS_DIR);
 
-    // Ensure downloads directory exists
     if (!fs.existsSync(this._downloadsDir)) {
       fs.mkdirSync(this._downloadsDir, { recursive: true });
     }
   }
 
-  /**
-   * Get a streamable file for a movie. This is the main entry point.
-   *
-   * 1. If movie is already downloaded, return the local file path.
-   * 2. If movie is currently downloading (engine active), return the torrent stream.
-   * 3. If movie is not downloaded, start a new torrent engine and return the stream.
-   */
+  // Resolves the best stream source for a movie:
+  //   1. local file if already downloaded
+  //   2. torrent engine stream otherwise (starts one if needed)
   async getStreamableFile(movieId: string, language: string = 'en'): Promise<StreamableFile> {
     const movie = await this._movieRepository.findById(movieId);
     if (!movie) {
@@ -96,15 +76,13 @@ export class StreamingService {
       throw new BadRequestError('No torrents available for this movie');
     }
 
-    // Case 1: Already fully downloaded — serve from disk
     if (movie.downloadStatus === 'downloaded' && movie.localPath) {
       const filePath = path.resolve(movie.localPath);
       if (fs.existsSync(filePath)) {
         const stats = fs.statSync(filePath);
 
-        // Sanity check: a real movie file should be at least 10 MB.
-        // If it's smaller, the file was probably marked complete prematurely.
-        const MIN_MOVIE_SIZE = 10 * 1024 * 1024; // 10 MB
+        // anything under 10 MB was probably marked complete prematurely
+        const MIN_MOVIE_SIZE = 10 * 1024 * 1024;
         if (stats.size < MIN_MOVIE_SIZE) {
           logger.warn(
             { movieId, filePath, fileSize: stats.size },
@@ -118,11 +96,9 @@ export class StreamingService {
           const mimeType = VIDEO_MIME_TYPES[ext] || 'application/octet-stream';
           const needsTranscoding = !BROWSER_PLAYABLE.has(ext);
 
-          // Update lastWatched
           movie.lastWatched = new Date();
           await movie.save();
 
-          // Ensure subtitles for user's current language (non-blocking)
           const torrent = this.selectTorrent(movie);
           this.fetchSubtitlesInBackground(movie, torrent, language);
 
@@ -133,7 +109,6 @@ export class StreamingService {
           return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
         }
       } else {
-        // File is gone — reset status and re-download
         logger.warn({ movieId }, 'Local file missing, re-downloading');
         movie.downloadStatus = 'not_downloaded';
         movie.localPath = undefined;
@@ -141,7 +116,6 @@ export class StreamingService {
       }
     }
 
-    // Case 2 & 3: Use torrent engine (active or new)
     const activeEngine = await this.getOrCreateEngine(movie, language);
 
     if (!activeEngine.file) {
@@ -152,7 +126,6 @@ export class StreamingService {
     const mimeType = VIDEO_MIME_TYPES[ext] || 'video/mp4';
     const needsTranscoding = !BROWSER_PLAYABLE.has(ext);
 
-    // Update lastWatched
     movie.lastWatched = new Date();
     await movie.save();
 
@@ -170,10 +143,7 @@ export class StreamingService {
     };
   }
 
-  /**
-   * Create a transcoding stream through ffmpeg for non-browser-playable formats.
-   * Converts to MP4 (H.264/AAC) on-the-fly.
-   */
+  // Pipes the input through ffmpeg and returns a fragmented MP4 stream.
   createTranscodingStream(inputStream: Readable): Readable {
     const passthrough = new PassThrough();
 
@@ -182,10 +152,10 @@ export class StreamingService {
       .videoCodec('libx264')
       .audioCodec('aac')
       .outputOptions([
-        '-preset ultrafast', // Fastest encoding for real-time
-        '-tune zerolatency', // Minimize latency
-        '-movflags frag_keyframe+empty_moov+faststart', // Fragmented MP4 for streaming
-        '-crf 23', // Reasonable quality
+        '-preset ultrafast',
+        '-tune zerolatency',
+        '-movflags frag_keyframe+empty_moov+faststart',
+        '-crf 23',
       ])
       .on('error', (err: Error) => {
         logger.error({ err }, 'FFmpeg transcoding error');
@@ -199,10 +169,6 @@ export class StreamingService {
     return passthrough;
   }
 
-  /**
-   * Get the status of a movie's streaming readiness.
-   * Optionally triggers subtitle fetch for the given language if not already available.
-   */
   async getStatus(
     movieId: string,
     language?: string,
@@ -218,17 +184,14 @@ export class StreamingService {
       throw new NotFoundError('Movie not found');
     }
 
-    // If a language is requested, ensure we have the required subtitles based on multi-language rules
     if (language && movie.torrents && movie.torrents.length > 0) {
       let needsFetch = false;
 
-      // Rule 1: We always want English subtitles (if not already present)
       const hasEnglish = movie.subtitles?.has('en') && movie.subtitles.get('en')!.length > 0;
       if (!hasEnglish) {
         needsFetch = true;
       }
 
-      // Rule 2: We want the user's language if it's not English and not the movie's original language
       if (!needsFetch && language !== 'en' && language !== movie.originalLanguage) {
         const hasUserLang = movie.subtitles?.has(language) && movie.subtitles.get(language)!.length > 0;
         if (!hasUserLang) {
@@ -246,7 +209,6 @@ export class StreamingService {
     if (movie.subtitles) {
       for (const [lang, subs] of movie.subtitles.entries()) {
         const validSubs = subs.filter((s) => {
-          // Skip entries whose file has been deleted from disk
           if (s.localPath && !fs.existsSync(s.localPath)) {
             logger.warn(
               { lang, localPath: s.localPath },
@@ -266,8 +228,7 @@ export class StreamingService {
       }
     }
 
-    // Determine needsTranscoding: check localPath extension if downloaded,
-    // otherwise fall back to the torrent type field.
+    // prefer the actual file extension once downloaded; fall back to the torrent type field
     let needsTranscoding = false;
     if (movie.downloadStatus === 'downloaded' && movie.localPath) {
       const ext = path.extname(movie.localPath).toLowerCase();
@@ -278,7 +239,7 @@ export class StreamingService {
       needsTranscoding = torrentExt !== '' && !BROWSER_PLAYABLE.has(torrentExt);
     }
 
-    // Convert duration from minutes (DB) to seconds for the video element.
+    // duration is stored in minutes; the client needs seconds
     const runtimeSeconds =
       movie.duration != null && movie.duration > 0 ? movie.duration * 60 : null;
 
@@ -291,9 +252,6 @@ export class StreamingService {
     };
   }
 
-  /**
-   * Destroy all active torrent engines. Called on server shutdown.
-   */
   destroyAll(): void {
     for (const [movieId, active] of this._activeEngines) {
       logger.info({ movieId }, 'Destroying torrent engine on shutdown');
@@ -302,14 +260,7 @@ export class StreamingService {
     this._activeEngines.clear();
   }
 
-  // ============================================================================
-  // Private Methods
-  // ============================================================================
-
-  /**
-   * Select the best torrent from the movie's torrent list.
-   * Priority: 720p → 480p → 1080p → anything with most seeds.
-   */
+  // Picks the best torrent quality: 480p first, then 720p, 1080p, then most seeds.
   private selectTorrent(movie: IMovieDocument): ITorrent {
     const torrents = movie.torrents;
     const qualityPriority = ['480p', '720p', '1080p'];
@@ -319,36 +270,28 @@ export class StreamingService {
       if (match) return match;
     }
 
-    // Fallback: torrent with most seeds
     const sorted = [...torrents].sort((a, b) => b.seeds - a.seeds);
     return sorted[0];
   }
 
-  /**
-   * Get an existing active engine or create a new one for the movie.
-   */
   private async getOrCreateEngine(
     movie: IMovieDocument,
     language: string = 'en',
   ): Promise<ActiveEngine> {
     const movieId = movie._id.toString();
 
-    // Log current active engines
     const activeEngineIds = Array.from(this._activeEngines.keys());
     logger.info(
       { movieId, activeEngines: activeEngineIds, totalActive: activeEngineIds.length },
       'Checking for existing torrent engines',
     );
 
-    // Reuse existing engine if available
     const existing = this._activeEngines.get(movieId);
     if (existing) {
       await existing.readyPromise;
 
-      // If the underlying file was deleted from disk, the engine's internal
-      // piece state still considers everything downloaded — it will never
-      // re-create the file.  Destroy the stale engine and fall through to
-      // start a fresh one.
+      // torrent-stream considers everything downloaded once pieces are verified,
+      // so if the file was deleted from disk we have to destroy and restart
       if (existing.file) {
         const movieDir = path.join(this._downloadsDir, movieId);
         const filePath = path.join(movieDir, existing.file.path);
@@ -360,11 +303,9 @@ export class StreamingService {
           existing.engine.destroy();
           this._activeEngines.delete(movieId);
 
-          // Also reset movie download status so it re-downloads properly
           movie.downloadStatus = 'not_downloaded';
           movie.localPath = undefined;
           await movie.save();
-          // Fall through to create a new engine below
         } else {
           logger.info(
             { movieId, ready: existing.ready, fileName: existing.file.name },
@@ -382,7 +323,6 @@ export class StreamingService {
       }
     }
 
-    // Select best torrent and build magnet link
     const torrent = this.selectTorrent(movie);
     const magnetLinks = movie.getMagnetLinks();
     const magnetResult = magnetLinks.find(
@@ -400,7 +340,6 @@ export class StreamingService {
       'Starting torrent engine',
     );
 
-    // Update status to downloading
     movie.downloadStatus = 'downloading';
     await movie.save();
 
@@ -438,7 +377,6 @@ export class StreamingService {
 
     // Handle engine ready event
     engine.on('ready', () => {
-      // Select the largest file (the actual video)
       const files = engine.files;
       if (files.length === 0) {
         logger.error({ movieId }, 'Torrent has no files');
@@ -473,35 +411,26 @@ export class StreamingService {
       );
 
       resolveReady!();
-
-      // Trigger subtitle download in background (non-blocking)
       this.fetchSubtitlesInBackground(movie, torrent, language);
     });
 
-    // Handle download completion — mark as downloaded
-    // IMPORTANT: 'idle' fires whenever there are no pending piece requests,
-    // which also happens when we deselect files (pause). We must verify the
-    // file is actually complete by comparing its size on disk to the expected
-    // torrent file length before marking the movie as downloaded.
+    // 'idle' fires when piece requests dry up, which can also happen when files
+    // are deselected — verify file size before marking as downloaded
     engine.on('idle', () => {
       if (!activeEngine.file) return;
 
       const localPath = path.join(movieDir, activeEngine.file.path);
       const expectedSize = activeEngine.file.length;
 
-      // Check actual file size on disk
       let actualSize = 0;
       try {
         if (fs.existsSync(localPath)) {
           actualSize = fs.statSync(localPath).size;
         }
       } catch {
-        // File may not exist yet
         return;
       }
 
-      // Only mark as downloaded if file is fully written (within 1% tolerance
-      // to account for filesystem block alignment)
       const completionRatio = actualSize / expectedSize;
       if (completionRatio < 0.99) {
         logger.debug(
@@ -537,10 +466,6 @@ export class StreamingService {
     return activeEngine;
   }
 
-  /**
-   * Fetch multi-language subtitles in the background. Non-blocking.
-   * Downloads English + user language according to new multi-language rules.
-   */
   private fetchSubtitlesInBackground(
     movie: IMovieDocument,
     torrent: ITorrent,
