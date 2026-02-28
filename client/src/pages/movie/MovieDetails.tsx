@@ -250,9 +250,16 @@ export default function MovieDetails() {
                             <div className="flex flex-wrap items-center gap-3 md:gap-4">
                                 <button
                                     onClick={() => navigate(`/watch/${id}`, { state: { isTmdbMovie } })}
-                                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-black font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/20"
+                                    disabled={!movie.torrents || movie.torrents.length === 0}
+                                    className={clsx(
+                                        "flex items-center gap-2 font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all shadow-lg",
+                                        (!movie.torrents || movie.torrents.length === 0)
+                                            ? "bg-gray-600/50 text-white/50 cursor-not-allowed"
+                                            : "bg-primary hover:bg-primary-dark text-black active:scale-95 shadow-primary/20"
+                                    )}
+                                    title={(!movie.torrents || movie.torrents.length === 0) ? "No streaming sources available" : undefined}
                                 >
-                                    <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
+                                    <Play className={clsx("w-4 h-4 md:w-5 md:h-5", (!movie.torrents || movie.torrents.length === 0) ? "fill-white/30" : "fill-black")} />
                                     Play
                                 </button>
                                 {movie.trailer && (movie.trailer.startsWith('http') || movie.trailer.startsWith('//')) && (
