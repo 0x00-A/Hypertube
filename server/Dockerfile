@@ -17,6 +17,8 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 # Copy email templates (not compiled by TypeScript)
 COPY src/templates/emails ./dist/src/templates/emails
+# Copy swagger yaml specs
+COPY src/docs ./src/docs
 # Copy static directories for file serving
 COPY public ./public
 COPY uploads ./uploads

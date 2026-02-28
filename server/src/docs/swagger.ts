@@ -1,6 +1,10 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 
+const isProd = __dirname.includes('dist');
+const yamlDir = path.join(process.cwd(), 'src/docs');
+const sourceDir = isProd ? 'dist/src' : 'src';
+
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.1.0',
@@ -21,13 +25,13 @@ const options: swaggerJsdoc.Options = {
     },
   },
   apis: [
-    path.join(__dirname, 'swagger.yaml'),
-    path.join(__dirname, 'swagger.curated.yaml'),
-    path.join(__dirname, 'swagger.interactions.yaml'),
-    path.join(__dirname, 'swagger.comments.yaml'),
-    path.join(__dirname, 'swagger.streaming.yaml'),
-    'src/routes/v1/*.routes.ts',
-    'src/controllers/*.controller.ts',
+    path.join(yamlDir, 'swagger.yaml'),
+    path.join(yamlDir, 'swagger.curated.yaml'),
+    path.join(yamlDir, 'swagger.interactions.yaml'),
+    path.join(yamlDir, 'swagger.comments.yaml'),
+    path.join(yamlDir, 'swagger.streaming.yaml'),
+    `${sourceDir}/routes/v1/*.routes.{ts,js}`,
+    `${sourceDir}/controllers/*.controller.{ts,js}`,
   ],
 };
 

@@ -110,7 +110,7 @@ process.on('SIGTERM', () => {
     const { app, streamingService: sService } = createApp();
     streamingService = sService;
     const port = env.PORT;
-    server = app.listen(port, () => logger.info({ port }, 'Server started'));
+    server = app.listen(port as number, '0.0.0.0', () => logger.info({ port }, 'Server started on 0.0.0.0'));
 
     scheduler.init();
     cleanupService.init();
