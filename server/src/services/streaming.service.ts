@@ -323,17 +323,43 @@ export class StreamingService {
     // Reuse existing engine if available
     const existing = this._activeEngines.get(movieId);
     if (existing) {
-      logger.info(
-        { movieId, ready: existing.ready, fileName: existing.file?.name },
-        'Reusing existing torrent engine',
-      );
       await existing.readyPromise;
 
-      // Ensure subtitles for the newly requested language are fetched
-      const torrent = this.selectTorrent(movie);
-      this.fetchSubtitlesInBackground(movie, torrent, language);
+      // If the underlying file was deleted from disk, the engine's internal
+      // piece state still considers everything downloaded — it will never
+      // re-create the file.  Destroy the stale engine and fall through to
+      // start a fresh one.
+      if (existing.file) {
+        const movieDir = path.join(this._downloadsDir, movieId);
+        const filePath = path.join(movieDir, existing.file.path);
+        if (!fs.existsSync(filePath)) {
+          logger.warn(
+            { movieId, filePath },
+            'Cached engine file missing from disk — destroying stale engine and re-creating',
+          );
+          existing.engine.destroy();
+          this._activeEngines.delete(movieId);
 
-      return existing;
+          // Also reset movie download status so it re-downloads properly
+          movie.downloadStatus = 'not_downloaded';
+          movie.localPath = undefined;
+          await movie.save();
+          // Fall through to create a new engine below
+        } else {
+          logger.info(
+            { movieId, ready: existing.ready, fileName: existing.file.name },
+            'Reusing existing torrent engine',
+          );
+          const torrent = this.selectTorrent(movie);
+          this.fetchSubtitlesInBackground(movie, torrent, language);
+          return existing;
+        }
+      } else {
+        logger.info({ movieId }, 'Reusing existing torrent engine (no file yet)');
+        const torrent = this.selectTorrent(movie);
+        this.fetchSubtitlesInBackground(movie, torrent, language);
+        return existing;
+      }
     }
 
     // Select best torrent and build magnet link

@@ -224,7 +224,7 @@ export default function MovieDetails() {
                                         {genre}
                                     </span>
                                 ))}
-                                {movie.rating && (
+                                {movie.rating != null && movie.rating > 0 && (
                                     <div className="flex items-center gap-3 ml-2">
                                         <div className="flex items-center gap-2">
                                             <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
@@ -426,7 +426,7 @@ export default function MovieDetails() {
                                     </div>
                                 )}
 
-                                {movie.rating && (
+                                {movie.rating != null && movie.rating > 0 && (
                                     <div className="flex items-center justify-between py-4 border-b border-white/10">
                                         <div className="flex items-center gap-3">
                                             <Star className="w-5 h-5 text-primary" />
