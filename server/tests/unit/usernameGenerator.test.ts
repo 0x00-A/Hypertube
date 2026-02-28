@@ -38,7 +38,7 @@ describe('Username Generator Utils', () => {
 
     it('should append number if base username exists', async () => {
       // Use a short unique base for parallel safety and max length
-      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const base = `tst_${unique}`; // keep base short
       await userRepo.create({
         username: base,
@@ -54,7 +54,7 @@ describe('Username Generator Utils', () => {
 
     it('should increment number until unique username is found', async () => {
       // Use a short unique base for parallel safety and max length
-      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const base = `tst_${unique}`;
       await userRepo.create({
         username: base,
@@ -116,7 +116,7 @@ describe('Username Generator Utils', () => {
 
     it('should throw error after max attempts', async () => {
       // Use a short unique base for parallel safety and max length
-      const unique = Math.random().toString(36).substring(2, 6) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const base = `lim_${unique}`;
       for (let i = 1; i <= 6; i++) {
         const suffix = i === 1 ? '' : i.toString();
@@ -148,7 +148,7 @@ describe('Username Generator Utils', () => {
   describe('Integration with OAuth flow', () => {
     it('should generate unique usernames for multiple Google users with same email prefix', async () => {
       // Use a unique base for parallel safety
-      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const users = [];
       for (let i = 0; i < 3; i++) {
         // Extract email prefix as base username (mimicking OAuth service logic)
@@ -176,7 +176,7 @@ describe('Username Generator Utils', () => {
 
     it('should generate unique usernames for 42 users with same login', async () => {
       // Use a unique base for parallel safety
-      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const users = [];
       for (let i = 0; i < 2; i++) {
         // Use login as base username (mimicking OAuth service logic)
@@ -201,7 +201,7 @@ describe('Username Generator Utils', () => {
 
     it('should handle username collision between regular user and OAuth user', async () => {
       // Use a unique base for parallel safety
-      const unique = Math.random().toString(36).substring(2, 10) + Date.now();
+      const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
       const baseUsername = `john_${unique}`;
       // Create a regular user with username baseUsername
       await userRepo.create({

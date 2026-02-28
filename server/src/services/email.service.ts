@@ -45,8 +45,8 @@ export class EmailService {
       const verificationLink = `${env.CLIENT_URL}/verify-email?token=${token}`;
       const html = EmailBuilder.renderVerification({ verificationLink });
       await this.sendEmail(user.email!, 'Verify your email', html);
-    } else {
-      const resetLink = `${env.CLIENT_URL}/auth/reset-password?token=${token}`;
+    } else { // /auth/reset-password/:token
+      const resetLink = `${env.CLIENT_URL}/auth/reset-password/${token}`;
       const html = EmailBuilder.renderPasswordReset({
         username: user.username!,
         resetLink,

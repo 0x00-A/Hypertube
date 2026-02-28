@@ -2,11 +2,9 @@ import { MovieService } from '../../../src/services/movie.service';
 import { ScraperEngine } from '../../../src/services/scraper/ScraperEngine';
 import { getImdbIdFromTmdbId, getMetadata } from '../../../src/services/metadata/tmdb';
 import { getYtsMovieDetailsByImdbId } from '../../../src/services/metadata/yts';
-import { getOmdbMetadata } from '../../../src/services/metadata/omdb';
 
 jest.mock('../../../src/services/metadata/tmdb');
 jest.mock('../../../src/services/metadata/yts');
-jest.mock('../../../src/services/metadata/omdb');
 
 const mockMovieRepository = {
   findByImdbId: jest.fn(),
@@ -51,7 +49,6 @@ describe('MovieService.completeMovieData', () => {
     (getImdbIdFromTmdbId as jest.Mock).mockResolvedValue('tt1234567');
     mockMovieRepository.findByImdbId.mockResolvedValue(null);
     (getMetadata as jest.Mock).mockResolvedValue(null);
-    (getOmdbMetadata as jest.Mock).mockResolvedValue(null);
     const result = await movieService.completeMovieData(12345);
     expect(result).toBeNull();
   });

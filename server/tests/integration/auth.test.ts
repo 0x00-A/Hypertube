@@ -9,9 +9,9 @@ describe('Auth Signup Integration Tests', () => {
 
   // Helper to generate unique user data per test
   function generateUniqueUserData(suffix?: string) {
-    const unique = suffix || `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const unique = suffix || Date.now().toString(36) + Math.floor(Math.random() * 1000);
     return {
-      username: `testuser_${unique}`,
+      username: `u_${unique}`,
       email: `test_${unique}@example.com`,
       password: 'SecurePass123!',
       firstName: 'Test',
@@ -147,7 +147,7 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: expect.stringContaining('6 characters'),
+            message: expect.stringContaining('8 characters'),
           }),
         ]),
       );
@@ -177,7 +177,7 @@ describe('Auth Signup Integration Tests', () => {
       // Try to register again with same email
       const duplicateData = {
         ...validUserData,
-        username: `different_${validUserData.username}`,
+        username: `diff_${validUserData.username}`,
       };
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
@@ -787,11 +787,11 @@ describe('Auth Signup Integration Tests', () => {
       expect(healthRes.status).toBe(200);
 
       // Test auth endpoints (public)
-      const unique = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+      const unique = Date.now().toString(36) + Math.floor(Math.random() * 1000);
       const signupRes = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          username: `newuser_${unique}`,
+          username: `u_${unique}`,
           email: `new_${unique}@example.com`,
           password: 'Password123!',
           firstName: 'New',
