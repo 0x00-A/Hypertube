@@ -1,0 +1,47 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ "main" ]
+    # 1. Trigger only when files in 'client' folder change
+    paths:
+      - 'client/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'client/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./client
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          # Tell the cache action where to find the lock file
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Code
+        # Fails if there are linting errors (make sure you have a lint script)
+        run: npm run lint
+
+      # Optional: Run tests if you have Vitest/Jest set up
+      # - name: Run Tests
+      #   run: npm run test
+
+      - name: Build Project
+        # Ensures the app actually compiles without error
+        run: npm run build
