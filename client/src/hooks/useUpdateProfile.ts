@@ -22,7 +22,7 @@ export const useUpdateProfile = () => {
 
       toast.success('Profile updated successfully!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       const errorMessage = error?.message || 'Failed to update profile';
       toast.error(errorMessage);
     },

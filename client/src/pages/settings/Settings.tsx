@@ -193,7 +193,7 @@ export default function Settings() {
         onSuccess: () => {
           setAvatarFile(null); // Clear the file after successful upload
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           setErrorMessage(error?.message || 'Failed to update profile. Please try again.');
         },
       }
@@ -259,7 +259,7 @@ export default function Settings() {
             confirmPassword: '',
           });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           setErrorMessage(error?.message || 'Failed to change password. Please try again.');
         },
       }
