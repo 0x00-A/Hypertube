@@ -6,6 +6,6 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup-inmemory-db.ts'],
   verbose: false,
   collectCoverage: false,
-  // maxWorkers: 2,
-  testTimeout: 30000,
+  maxWorkers: 2,
+  testTimeout: 60000,
 };

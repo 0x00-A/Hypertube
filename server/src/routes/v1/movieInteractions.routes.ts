@@ -9,6 +9,7 @@ import {
   LimitQuerySchema,
 } from '../../validators/movieInteraction.schema';
 import { MovieListQuerySchema } from '../../validators/movie.schema';
+import { methodNotAllowed } from '../../middleware/methodNotAllowed';
 
 export const createMovieInteractionRouter = (controller: MovieInteractionController): Router => {
   const router = Router();
@@ -59,7 +60,11 @@ export const createMovieInteractionRouter = (controller: MovieInteractionControl
 
   router.get('/user/stats', controller.getUserStats.bind(controller));
 
-  router.get('/history', validate(LimitQuerySchema), controller.getWatchHistory.bind(controller));
+  router.get(
+    '/history',
+    validate(MovieListQuerySchema),
+    controller.getWatchHistory.bind(controller),
+  );
 
   router.get(
     '/watchlist',
@@ -72,6 +77,16 @@ export const createMovieInteractionRouter = (controller: MovieInteractionControl
     validate(LimitQuerySchema),
     controller.getContinueWatching.bind(controller),
   );
+
+  // 405 catch-alls: fires when path matches but method is not supported
+  router.all('/movies/:movieId/progress', methodNotAllowed);
+  router.all('/movies/:movieId/rating', methodNotAllowed);
+  router.all('/movies/:movieId/watchlist', methodNotAllowed);
+  router.all('/movies/:movieId/stats', methodNotAllowed);
+  router.all('/user/stats', methodNotAllowed);
+  router.all('/history', methodNotAllowed);
+  router.all('/watchlist', methodNotAllowed);
+  router.all('/continue-watching', methodNotAllowed);
 
   return router;
 };

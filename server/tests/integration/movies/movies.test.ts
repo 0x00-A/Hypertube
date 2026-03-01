@@ -15,15 +15,15 @@ afterEach(async () => {
 });
 
 describe('Movies API Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
     const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
-    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
-    const testUsername = `testuser_${unique}`;
+    const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const testUsername = `u_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
 
@@ -67,7 +67,7 @@ describe('Movies API Integration Tests', () => {
   }
 
   // Use a unique suffix for all sample movies in this test run
-  const unique = Math.random().toString(36).substring(2, 8) + Date.now();
+  const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
   const sampleMovie1: Partial<IMovie> = {
     imdbId: `tt1234567_${unique}`,
     tmdbId: 1001,
@@ -177,13 +177,19 @@ describe('Movies API Integration Tests', () => {
   });
 
   describe('GET /api/v1/movies', () => {
+    let accessToken: string;
+
     beforeEach(async () => {
+      const auth = await createUserAndLogin();
+      accessToken = auth.accessToken;
       // Insert sample movies for list tests (already unique)
       await MovieModel.create([sampleMovie1, sampleMovie2, sampleMovie3]);
     });
 
     it('should return paginated list of movies with default parameters', async () => {
-      const res = await request(app).get('/api/v1/movies');
+      const res = await request(app)
+        .get('/api/v1/movies')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('data');
@@ -199,7 +205,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return movies with custom pagination (page 1, limit 2)', async () => {
-      const res = await request(app).get('/api/v1/movies?page=1&limit=2');
+      const res = await request(app)
+        .get('/api/v1/movies?page=1&limit=2')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(2);
@@ -212,7 +220,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return second page with custom pagination', async () => {
-      const res = await request(app).get('/api/v1/movies?page=2&limit=2');
+      const res = await request(app)
+        .get('/api/v1/movies?page=2&limit=2')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
@@ -225,7 +235,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should filter movies by search term (title)', async () => {
-      const res = await request(app).get('/api/v1/movies?search=Searchable');
+      const res = await request(app)
+        .get('/api/v1/movies?search=Searchable')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
@@ -233,7 +245,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should filter movies by genre', async () => {
-      const res = await request(app).get('/api/v1/movies?genre=Action');
+      const res = await request(app)
+        .get('/api/v1/movies?genre=Action')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -241,7 +255,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should filter movies by minimum rating', async () => {
-      const res = await request(app).get('/api/v1/movies?minRating=8.0');
+      const res = await request(app)
+        .get('/api/v1/movies?minRating=8.0')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -251,7 +267,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should filter movies by year', async () => {
-      const res = await request(app).get('/api/v1/movies?year=2023');
+      const res = await request(app)
+        .get('/api/v1/movies?year=2023')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
@@ -259,7 +277,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should sort movies by rating descending', async () => {
-      const res = await request(app).get('/api/v1/movies?sortBy=rating&sortOrder=desc');
+      const res = await request(app)
+        .get('/api/v1/movies?sortBy=rating&sortOrder=desc')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(3);
@@ -268,7 +288,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should sort movies by year ascending', async () => {
-      const res = await request(app).get('/api/v1/movies?sortBy=year&sortOrder=asc');
+      const res = await request(app)
+        .get('/api/v1/movies?sortBy=year&sortOrder=asc')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(3);
@@ -277,7 +299,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should sort movies by title ascending', async () => {
-      const res = await request(app).get('/api/v1/movies?sortBy=title&sortOrder=asc');
+      const res = await request(app)
+        .get('/api/v1/movies?sortBy=title&sortOrder=asc')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(3);
@@ -290,7 +314,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should combine multiple filters (genre + minRating + year)', async () => {
-      const res = await request(app).get('/api/v1/movies?genre=Action&minRating=8.0&year=2023');
+      const res = await request(app)
+        .get('/api/v1/movies?genre=Action&minRating=8.0&year=2023')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -302,7 +328,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid page parameter', async () => {
-      const res = await request(app).get('/api/v1/movies?page=0');
+      const res = await request(app)
+        .get('/api/v1/movies?page=0')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -313,7 +341,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid limit parameter (exceeds max)', async () => {
-      const res = await request(app).get('/api/v1/movies?limit=200');
+      const res = await request(app)
+        .get('/api/v1/movies?limit=200')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -323,7 +353,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid minRating parameter', async () => {
-      const res = await request(app).get('/api/v1/movies?minRating=15');
+      const res = await request(app)
+        .get('/api/v1/movies?minRating=15')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -333,7 +365,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid year parameter', async () => {
-      const res = await request(app).get('/api/v1/movies?year=1800');
+      const res = await request(app)
+        .get('/api/v1/movies?year=1800')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -343,7 +377,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid sortBy parameter', async () => {
-      const res = await request(app).get('/api/v1/movies?sortBy=invalid');
+      const res = await request(app)
+        .get('/api/v1/movies?sortBy=invalid')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -353,7 +389,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return 400 for invalid sortOrder parameter', async () => {
-      const res = await request(app).get('/api/v1/movies?sortOrder=invalid');
+      const res = await request(app)
+        .get('/api/v1/movies?sortOrder=invalid')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -363,7 +401,9 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return empty array when no movies match filters', async () => {
-      const res = await request(app).get('/api/v1/movies?genre=NonExistentGenre');
+      const res = await request(app)
+        .get('/api/v1/movies?genre=NonExistentGenre')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -371,21 +411,27 @@ describe('Movies API Integration Tests', () => {
     });
 
     it('should return empty array for page beyond total pages', async () => {
-      const res = await request(app).get('/api/v1/movies?page=999');
+      const res = await request(app)
+        .get('/api/v1/movies?page=999')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
     });
 
     it('should handle search with special characters', async () => {
-      const res = await request(app).get('/api/v1/movies?search=Test%20Movie');
+      const res = await request(app)
+        .get('/api/v1/movies?search=Test%20Movie')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
     });
 
     it('should return movies sorted by lastUpdated (default)', async () => {
-      const res = await request(app).get('/api/v1/movies?sortBy=lastUpdated&sortOrder=desc');
+      const res = await request(app)
+        .get('/api/v1/movies?sortBy=lastUpdated&sortOrder=desc')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(3);
@@ -395,6 +441,11 @@ describe('Movies API Integration Tests', () => {
         const date2 = new Date(res.body.data[i + 1].lastUpdated);
         expect(date1.getTime()).toBeGreaterThanOrEqual(date2.getTime());
       }
+    });
+
+    it('should return 401 for unauthenticated request', async () => {
+      const res = await request(app).get('/api/v1/movies');
+      expect(res.status).toBe(401);
     });
   });
 
@@ -679,7 +730,9 @@ describe('Movies API Integration Tests', () => {
     it('should handle search with no results', async () => {
       await MovieModel.create(sampleMovie1);
 
-      const res = await request(app).get('/api/v1/movies?search=NonExistentMovieTitle12345');
+      const res = await request(app)
+        .get('/api/v1/movies?search=NonExistentMovieTitle12345')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -689,7 +742,9 @@ describe('Movies API Integration Tests', () => {
     it('should handle very high page number gracefully', async () => {
       await MovieModel.create(sampleMovie1);
 
-      const res = await request(app).get('/api/v1/movies?page=1000000');
+      const res = await request(app)
+        .get('/api/v1/movies?page=1000000')
+        .set('Cookie', [`accessToken=${accessToken}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);

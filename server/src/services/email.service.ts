@@ -5,6 +5,7 @@ import { IUser } from '../interfaces/user.interface';
 import { VerificationEmailRepository } from '../repositories/verificationEmail.repository';
 import { EmailBuilder } from '../templates/email.builder';
 import { IVerificationEmail } from '../interfaces/auth.interface';
+import { logger } from '../utils/logger';
 
 export class EmailService {
   private _transporter;
@@ -14,7 +15,8 @@ export class EmailService {
     this._transporter = nodemailer.createTransport({
       host: env.EMAIL_HOST,
       port: Number(env.EMAIL_PORT),
-      secure: false,
+      secure: false, // false for 587, true for 465
+      requireTLS: true, // Required for Gmail SMTP
       auth: {
         user: env.EMAIL_USER,
         pass: env.EMAIL_PASS,
@@ -23,7 +25,10 @@ export class EmailService {
     this._verificationEmailRepo = verificationEmailRepo;
   }
 
-  async createEmailToken(user: Partial<IUser>, type: 'verification' | 'password_reset'): Promise<void> {
+  async createEmailToken(
+    user: Partial<IUser>,
+    type: 'verification' | 'password_reset',
+  ): Promise<void> {
     const token = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -40,8 +45,8 @@ export class EmailService {
       const verificationLink = `${env.CLIENT_URL}/verify-email?token=${token}`;
       const html = EmailBuilder.renderVerification({ verificationLink });
       await this.sendEmail(user.email!, 'Verify your email', html);
-    } else {
-      const resetLink = `${env.CLIENT_URL}/reset-password?token=${token}`;
+    } else { // /auth/reset-password?token=
+      const resetLink = `${env.CLIENT_URL}/auth/reset-password?token=${token}`;
       const html = EmailBuilder.renderPasswordReset({
         username: user.username!,
         resetLink,
@@ -87,7 +92,7 @@ export class EmailService {
     await this.sendEmail(user.email!, 'Welcome to Hypertube!', html);
   }
 
-  async sendEmail(to: string, subject: string, html: string): Promise<void> {
+  async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
     const mailOptions = {
       from: `"Hypertube" <${env.EMAIL_USER}>`,
       to,
@@ -95,6 +100,13 @@ export class EmailService {
       html,
     };
 
-    await this._transporter.sendMail(mailOptions);
+    try {
+      await this._transporter.sendMail(mailOptions);
+      return true;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown email error';
+      logger.error({ to, subject, err: errorMessage }, 'Failed to send email');
+      return false;
+    }
   }
 }

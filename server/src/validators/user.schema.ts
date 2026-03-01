@@ -55,16 +55,33 @@ export const ListUsersSchema = z.object({
 
 export const GetUserSchema = z.object({
   params: z.object({
-    identifier: z.string().trim().min(3, 'Identifier must be at least 3 characters long'),
+    id: z.string().trim().min(3, 'Identifier must be at least 3 characters long'),
   }),
 });
 
 export const UpdateProfileSchema = z.object({
+  params: z.object({
+    id: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'Invalid user ID format'),
+  }),
   body: z.object({
     email: z.string().trim().email('Invalid email address').optional(),
-    username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
-    firstName: z.string().nullish(),
-    lastName: z.string().nullish(),
+    username: z.string().trim()
+      .min(3, 'Username must be at least 3 characters long')
+      .max(20, 'Username must be less than 20 characters')
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+      .optional(),
+    firstName: z.string().trim()
+      .min(2, 'First name is required')
+      .max(10, 'First name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'First name can only contain letters')
+      .nullish(),
+    lastName: z.string().trim()
+      .min(2, 'Last name is required')
+      .max(10, 'Last name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'Last name can only contain letters')
+      .nullish(),
     // avatarUrl can be either a file path (from multer) or an external URL
     avatarUrl: z
       .string()
@@ -101,7 +118,11 @@ export const UpdateProfileSchema = z.object({
 
 export const ChangePasswordSchema = z.object({
   body: z.object({
-    currentPassword: z.string().min(6, 'Current password must be at least 6 characters long'),
-    newPassword: z.string().min(6, 'New password must be at least 6 characters long'),
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters long')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
   }),
 });

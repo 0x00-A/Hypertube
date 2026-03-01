@@ -5,13 +5,13 @@ import { UserModel } from '../../src/models/User';
 import mongoose from 'mongoose';
 
 describe('Auth Signup Integration Tests', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   // Helper to generate unique user data per test
   function generateUniqueUserData(suffix?: string) {
-    const unique = suffix || `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const unique = suffix || Date.now().toString(36) + Math.floor(Math.random() * 1000);
     return {
-      username: `testuser_${unique}`,
+      username: `u_${unique}`,
       email: `test_${unique}@example.com`,
       password: 'SecurePass123!',
       firstName: 'Test',
@@ -35,7 +35,7 @@ describe('Auth Signup Integration Tests', () => {
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     await VerificationEmailModel.findOneAndUpdate(
       { userId: user?._id, type: 'verification' },
-      { token: hashedToken }
+      { token: hashedToken },
     );
 
     // Verify email through the endpoint
@@ -147,7 +147,7 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: expect.stringContaining('6 characters'),
+            message: expect.stringContaining('8 characters'),
           }),
         ]),
       );
@@ -177,7 +177,7 @@ describe('Auth Signup Integration Tests', () => {
       // Try to register again with same email
       const duplicateData = {
         ...validUserData,
-        username: `different_${validUserData.username}`,
+        username: `diff_${validUserData.username}`,
       };
 
       const res = await request(app).post('/api/v1/auth/signup').send(duplicateData);
@@ -240,10 +240,13 @@ describe('Auth Signup Integration Tests', () => {
       // Get the verification token from database (simulating email link)
       const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
       const user = await UserModel.findOne({ email: validUserData.email });
-      const verification = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const verification = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
 
       expect(verification).toBeTruthy();
-      const _token = verification?.token;      // Since we hash the token, we need to create a raw token
+      const _token = verification?.token; // Since we hash the token, we need to create a raw token
       // In real scenario, this would come from the email link
       const crypto = await import('crypto');
       const rawToken = crypto.randomBytes(32).toString('hex');
@@ -252,12 +255,10 @@ describe('Auth Signup Integration Tests', () => {
       // Update the verification record with our test token
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'verification' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
-      const res = await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: rawToken });
+      const res = await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
@@ -270,7 +271,10 @@ describe('Auth Signup Integration Tests', () => {
       expect(updatedUser?.isActive).toBe(true);
 
       // Verify token is deleted after use
-      const deletedVerification = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const deletedVerification = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(deletedVerification).toBeNull();
     });
 
@@ -297,44 +301,36 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'verification' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       // Verify once
-      await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: rawToken });
+      await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
 
       // Manually set isActive and create a new verification token (edge case)
       await UserModel.findByIdAndUpdate(user?._id, { isActive: true });
       await VerificationEmailModel.create({
         userId: user?._id,
         token: hashedToken,
-        type: 'verification'
+        type: 'verification',
       });
 
       // Try to verify again
-      const res = await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: rawToken });
+      const res = await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
 
       expect(res.status).toBe(409);
       expect(res.body.message).toContain('Email already verified');
     });
 
     it('should return 400 when token is missing', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({});
+      const res = await request(app).post('/api/v1/auth/verify-email').send({});
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('validationErrors');
     });
 
     it('should return 400 when token is empty string', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: '' });
+      const res = await request(app).post('/api/v1/auth/verify-email').send({ token: '' });
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('validationErrors');
@@ -791,11 +787,11 @@ describe('Auth Signup Integration Tests', () => {
       expect(healthRes.status).toBe(200);
 
       // Test auth endpoints (public)
-      const unique = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+      const unique = Date.now().toString(36) + Math.floor(Math.random() * 1000);
       const signupRes = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          username: `newuser_${unique}`,
+          username: `u_${unique}`,
           email: `new_${unique}@example.com`,
           password: 'Password123!',
           firstName: 'New',
@@ -823,7 +819,10 @@ describe('Auth Signup Integration Tests', () => {
       // Verify a password reset token was created
       const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
       const user = await UserModel.findOne({ email: validUserData.email });
-      const resetToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const resetToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       expect(resetToken).toBeTruthy();
     });
 
@@ -840,9 +839,7 @@ describe('Auth Signup Integration Tests', () => {
     });
 
     it('should return 400 when email is missing', async () => {
-      const res = await request(app)
-        .post('/api/v1/auth/request-password-reset')
-        .send({});
+      const res = await request(app).post('/api/v1/auth/request-password-reset').send({});
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('validationErrors');
@@ -897,7 +894,10 @@ describe('Auth Signup Integration Tests', () => {
 
       const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
       const user = await UserModel.findOne({ email: validUserData.email });
-      const firstToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const firstToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       const firstTokenValue = firstToken?.token;
 
       // Second request
@@ -905,7 +905,10 @@ describe('Auth Signup Integration Tests', () => {
         .post('/api/v1/auth/request-password-reset')
         .send({ email: validUserData.email });
 
-      const secondToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const secondToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       const secondTokenValue = secondToken?.token;
 
       // Tokens should be different
@@ -968,10 +971,9 @@ describe('Auth Signup Integration Tests', () => {
       // Create OAuth user with randomly generated password
       const crypto = await import('crypto');
       const randomPassword = crypto.randomBytes(32).toString('hex');
-      const hashedPassword = await (await import('../../src/services/password.service')).PasswordService.prototype.hashPassword.call(
-        { argon2: require('argon2') },
-        randomPassword
-      );
+      const hashedPassword = await (
+        await import('../../src/services/password.service')
+      ).PasswordService.prototype.hashPassword.call({ argon2: require('argon2') }, randomPassword);
 
       const oauthUser = await UserModel.create({
         username: `oauth_user_${Date.now()}`,
@@ -999,17 +1001,19 @@ describe('Auth Signup Integration Tests', () => {
 
       // Verify no reset token was created
       const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
-      const resetToken = await VerificationEmailModel.findOne({ userId: oauthUser._id, type: 'password_reset' });
+      const resetToken = await VerificationEmailModel.findOne({
+        userId: oauthUser._id,
+        type: 'password_reset',
+      });
       expect(resetToken).toBeNull();
     });
 
     it('should allow password reset for OAuth user with password set (isPasswordSet=true)', async () => {
       // Create OAuth user who has explicitly set a password
       const userPassword = 'SecurePass123!';
-      const hashedPassword = await (await import('../../src/services/password.service')).PasswordService.prototype.hashPassword.call(
-        { argon2: require('argon2') },
-        userPassword
-      );
+      const hashedPassword = await (
+        await import('../../src/services/password.service')
+      ).PasswordService.prototype.hashPassword.call({ argon2: require('argon2') }, userPassword);
 
       const oauthUser = await UserModel.create({
         username: `oauth_pwset_${Date.now()}`,
@@ -1037,7 +1041,10 @@ describe('Auth Signup Integration Tests', () => {
 
       // Verify reset token was created
       const { VerificationEmailModel } = await import('../../src/models/VerificationEmail.model');
-      const resetToken = await VerificationEmailModel.findOne({ userId: oauthUser._id, type: 'password_reset' });
+      const resetToken = await VerificationEmailModel.findOne({
+        userId: oauthUser._id,
+        type: 'password_reset',
+      });
       expect(resetToken).toBeTruthy();
     });
 
@@ -1096,7 +1103,7 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       const newPassword = 'NewSecurePass456!';
@@ -1111,7 +1118,10 @@ describe('Auth Signup Integration Tests', () => {
       });
 
       // Verify token is deleted after use
-      const deletedToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const deletedToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       expect(deletedToken).toBeNull();
 
       // Verify can login with new password
@@ -1143,14 +1153,12 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       // Reset password
       const newPassword = 'NewSecurePass456!';
-      await request(app)
-        .post('/api/v1/auth/reset-password')
-        .send({ token: rawToken, newPassword });
+      await request(app).post('/api/v1/auth/reset-password').send({ token: rawToken, newPassword });
 
       // Try to login with old password
       const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -1219,7 +1227,7 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: expect.stringContaining('6 characters'),
+            message: expect.stringContaining('8 characters'),
           }),
         ]),
       );
@@ -1260,16 +1268,16 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       const newPassword = 'NewSecurePass456!';
-      await request(app)
-        .post('/api/v1/auth/reset-password')
-        .send({ token: rawToken, newPassword });
+      await request(app).post('/api/v1/auth/reset-password').send({ token: rawToken, newPassword });
 
       // Verify password is hashed in database
-      const updatedUser = await UserModel.findOne({ email: validUserData.email }).select('+password');
+      const updatedUser = await UserModel.findOne({ email: validUserData.email }).select(
+        '+password',
+      );
       expect(updatedUser?.password).toBeDefined();
       expect(updatedUser?.password).not.toBe(newPassword);
       expect(updatedUser?.password?.length).toBeGreaterThan(20);
@@ -1294,14 +1302,12 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       // Reset password
       const newPassword = 'NewSecurePass456!';
-      await request(app)
-        .post('/api/v1/auth/reset-password')
-        .send({ token: rawToken, newPassword });
+      await request(app).post('/api/v1/auth/reset-password').send({ token: rawToken, newPassword });
 
       // Try to use the same token again
       const res = await request(app)
@@ -1327,7 +1333,10 @@ describe('Auth Signup Integration Tests', () => {
       const user = await UserModel.findOne({ email: validUserData.email });
 
       // Verify email verification token exists
-      const emailVerificationToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const emailVerificationToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(emailVerificationToken).toBeTruthy();
 
       // Request password reset (should NOT delete email verification token)
@@ -1336,11 +1345,17 @@ describe('Auth Signup Integration Tests', () => {
         .send({ email: validUserData.email });
 
       // Verify password reset token was created
-      const passwordResetToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const passwordResetToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       expect(passwordResetToken).toBeTruthy();
 
       // Verify email verification token still exists (same collection, different type)
-      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(emailVerificationTokenAfter).toBeTruthy();
       expect(emailVerificationTokenAfter?.token).toBe(emailVerificationToken?.token);
     });
@@ -1364,7 +1379,7 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       const newPassword = 'NewSecurePass456!';
@@ -1408,13 +1423,11 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       const newPassword = 'NewSecurePass456!';
-      await request(app)
-        .post('/api/v1/auth/reset-password')
-        .send({ token: rawToken, newPassword });
+      await request(app).post('/api/v1/auth/reset-password').send({ token: rawToken, newPassword });
 
       // Try to login with new password (should fail - email not verified)
       const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -1440,7 +1453,10 @@ describe('Auth Signup Integration Tests', () => {
       const user = await UserModel.findOne({ email: validUserData.email });
 
       // Get email verification token
-      const emailVerificationRecord = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const emailVerificationRecord = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(emailVerificationRecord).toBeTruthy();
 
       // Create raw token that matches the stored hash
@@ -1449,7 +1465,7 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'verification' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       // Try to use email verification token for password reset (should fail)
@@ -1486,13 +1502,11 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       // Try to use password reset token for email verification (should fail)
-      const res = await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: rawToken });
+      const res = await request(app).post('/api/v1/auth/verify-email').send({ token: rawToken });
 
       expect(res.status).toBe(409);
       expect(res.body).toMatchObject({
@@ -1522,7 +1536,7 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'verification' },
-        { token: emailHashedToken }
+        { token: emailHashedToken },
       );
 
       const verifyRes = await request(app)
@@ -1555,8 +1569,14 @@ describe('Auth Signup Integration Tests', () => {
         .send({ email: validUserData.email });
 
       // Both tokens should exist
-      const emailVerificationToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
-      const passwordResetToken = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const emailVerificationToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
+      const passwordResetToken = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
 
       expect(emailVerificationToken).toBeTruthy();
       expect(passwordResetToken).toBeTruthy();
@@ -1584,20 +1604,24 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'password_reset' },
-        { token: hashedToken }
+        { token: hashedToken },
       );
 
       const newPassword = 'NewSecurePass456!';
-      await request(app)
-        .post('/api/v1/auth/reset-password')
-        .send({ token: rawToken, newPassword });
+      await request(app).post('/api/v1/auth/reset-password').send({ token: rawToken, newPassword });
 
       // Password reset token should be deleted
-      const passwordResetTokenAfter = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const passwordResetTokenAfter = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       expect(passwordResetTokenAfter).toBeNull();
 
       // Email verification token should still exist
-      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(emailVerificationTokenAfter).toBeTruthy();
     });
 
@@ -1622,19 +1646,23 @@ describe('Auth Signup Integration Tests', () => {
 
       await VerificationEmailModel.findOneAndUpdate(
         { userId: user?._id, type: 'verification' },
-        { token: emailHashedToken }
+        { token: emailHashedToken },
       );
 
-      await request(app)
-        .post('/api/v1/auth/verify-email')
-        .send({ token: emailRawToken });
+      await request(app).post('/api/v1/auth/verify-email').send({ token: emailRawToken });
 
       // Email verification token should be deleted
-      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({ userId: user?._id, type: 'verification' });
+      const emailVerificationTokenAfter = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'verification',
+      });
       expect(emailVerificationTokenAfter).toBeNull();
 
       // Password reset token should still exist
-      const passwordResetTokenAfter = await VerificationEmailModel.findOne({ userId: user?._id, type: 'password_reset' });
+      const passwordResetTokenAfter = await VerificationEmailModel.findOne({
+        userId: user?._id,
+        type: 'password_reset',
+      });
       expect(passwordResetTokenAfter).toBeTruthy();
     });
   });

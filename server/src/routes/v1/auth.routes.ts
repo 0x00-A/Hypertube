@@ -3,6 +3,7 @@ import { AuthController } from '../../controllers/auth.controller';
 import { validate } from '../../middleware/validate';
 import { SignUpSchema, LogInSchema, VerifyEmailSchema, RequestPasswordResetSchema, ResetPasswordSchema } from '../../validators/auth.schema';
 import { passwordResetLimiter } from '../../middleware/rateLimiter';
+import { methodNotAllowed } from '../../middleware/methodNotAllowed';
 
 
 export const createAuthRoutes = (controller: AuthController) => {
@@ -19,6 +20,16 @@ export const createAuthRoutes = (controller: AuthController) => {
   router.post('/logout', (req, res, next) => controller.logout(req, res, next));
   router.post('/request-password-reset', passwordResetLimiter, validate(RequestPasswordResetSchema), (req, res, next) => controller.requestPasswordReset(req, res, next));
   router.post('/reset-password', validate(ResetPasswordSchema), (req, res, next) => controller.resetPassword(req, res, next));
+
+  // 405 catch-alls: fires when path matches but method is not supported
+  router.all('/', methodNotAllowed);
+  router.all('/signup', methodNotAllowed);
+  router.all('/verify-email', methodNotAllowed);
+  router.all('/login', methodNotAllowed);
+  router.all('/logout', methodNotAllowed);
+  router.all('/refresh-token', methodNotAllowed);
+  router.all('/request-password-reset', methodNotAllowed);
+  router.all('/reset-password', methodNotAllowed);
 
   return router;
 };

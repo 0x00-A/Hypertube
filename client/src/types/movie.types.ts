@@ -24,11 +24,46 @@ export interface IProductionCompany {
   originCountry?: string;
 }
 
+export interface ITorrent {
+  url: string;
+  hash: string;
+  quality: string;
+  type?: string;
+  videoCodec?: string;
+  seeds: number;
+  peers: number;
+  size: string;
+  sizeBytes: number;
+  provider?: string;
+}
+
+export interface ISubtitleTrack {
+  language: string;
+  label: string;
+  url: string;
+}
+
+export interface IStreamStatus {
+  downloadStatus: "not_downloaded" | "downloading" | "downloaded";
+  hasActiveEngine: boolean;
+  needsTranscoding?: boolean;
+  runtimeSeconds?: number | null;
+  subtitles: Record<string, ISubtitleTrack[]>;
+}
+
+export interface IAvailableSubtitles {
+  english?: ISubtitleTrack[];
+  userLanguage?: ISubtitleTrack[];
+  userLanguageCode?: string;
+}
+
 export interface IMovieDetails extends IMovie {
   cast?: ICastMember[];
   director?: ICrewMember | null;
   producer?: ICrewMember | null;
   productionCompanies?: IProductionCompany[];
+  torrents?: ITorrent[];
+  subtitles?: Record<string, ISubtitleTrack[]>;
 }
 
 export interface IMovie {
@@ -87,7 +122,7 @@ export interface IMovieInteraction {
   _id?: string;
   userId: string;
   movieId: string;
-  interactionType: 'watched' | 'rated' | 'watchlist' | 'downloaded';
+  interactionType: "watched" | "rated" | "watchlist" | "downloaded";
   lastWatchedPosition?: number;
   duration?: number;
   watchProgress?: number;
@@ -98,7 +133,6 @@ export interface IMovieInteraction {
   createdAt: string;
   updatedAt: string;
 }
-
 
 export type MovieCardProps = {
   movie: IMovie;
@@ -117,7 +151,6 @@ export type HeroSliderProps = {
   className?: string;
 };
 
-
 export type LastWatchingCardProps = {
   progress: IWatchProgress;
   onPlayClick?: (movie: IMovie) => void;
@@ -131,4 +164,3 @@ export type MovieListProps = {
   onViewAll?: () => void;
   className?: string;
 };
-

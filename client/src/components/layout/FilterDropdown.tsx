@@ -62,7 +62,7 @@ export default function FilterDropdown({ isOpen, onClose, triggerRef }: FilterDr
   const handleGenreClick = (genre: string) => {
     dispatch(setGenre(genre));
     // Navigate to movies page with the selected genre
-    navigate(`/movies?genre=${encodeURIComponent(genre)}`);
+    navigate(`/library?genre=${encodeURIComponent(genre)}`);
     onClose();
   };
 
@@ -71,7 +71,7 @@ export default function FilterDropdown({ isOpen, onClose, triggerRef }: FilterDr
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-[calc(100%+8px)] w-[600px] max-w-[calc(100vw-2rem)] bg-black rounded-2xl border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden"
+      className="absolute right-0 top-[calc(100%+8px)] w-[600px] max-w-[calc(100vw-2rem)] bg-black rounded-2xl border border-border shadow-2xl z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden"
     >
       {/* Genre Grid with Dashed Border */}
       <div className="p-6">

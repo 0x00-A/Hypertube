@@ -24,8 +24,8 @@ import { getAvatarUrl } from "../../utils/avatarUtils";
 const navLinks = [
   { label: "Browse", path: "/browse", icon: Compass },
   { label: "Featured", path: "/featured", icon: Sparkles },
-  { label: "Movies", path: "/movies", icon: Film },
-  { label: "Library", path: "/library", icon: Library },
+  { label: "Library", path: "/library", icon: Film },
+  { label: "Watchlist", path: "/watchlist", icon: Library },
   { label: "History", path: "/history", icon: Clock },
 ];
 
@@ -181,7 +181,7 @@ export default function Header() {
         {/* CENTER SECTION - Desktop Search Bar */}
         <div ref={searchContainerRef} className="hidden md:flex flex-1 max-w-[600px] relative">
           <form onSubmit={handleSearch} className="w-full">
-            <div className="relative w-full">
+            <div className="relative w-full z-[70]">
               <input
                 type="text"
                 placeholder="Search the movies..."
@@ -191,7 +191,7 @@ export default function Header() {
                 className="w-full pl-10 pr-10 py-2 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-[60]">
                 <button
                   ref={filterTriggerRef}
                   type="button"
@@ -226,6 +226,7 @@ export default function Header() {
               searchQuery={debouncedSearchQuery}
               onClose={closeSearchDropdown}
               hasResults={!!searchResults?.data && searchResults.data.length > 0}
+              isAuthenticated={isAuthenticated}
             />
           )}
         </div>
@@ -368,6 +369,7 @@ export default function Header() {
                 searchQuery={debouncedSearchQuery}
                 onClose={closeSearchDropdown}
                 hasResults={!!searchResults?.data && searchResults.data.length > 0}
+                isAuthenticated={isAuthenticated}
               />
             )}
           </div>

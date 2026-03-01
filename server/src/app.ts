@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-// import { rateLimit } from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import { createMovieRouter } from './routes/v1/movies.routes';
 import { createAuthRoutes } from './routes/v1/auth.routes';
 import { createMovieInteractionRouter } from './routes/v1/movieInteractions.routes';
@@ -20,8 +20,14 @@ import { createOAuthRoutes } from './routes/v1/oauth.routes';
 import { passport } from './config/passport';
 import { createUserRoutes } from './routes/v1/users.routes';
 import { createCommentRouter } from './routes/v1/comment.routes';
+import { createStreamingRouter } from './routes/v1/streaming.routes';
 
-export const createApp = () => {
+import { StreamingService } from './services/streaming.service';
+
+export const createApp = (): {
+  app: ReturnType<typeof express>;
+  streamingService: StreamingService;
+} => {
   const app = express();
   app.disable('x-powered-by');
 
@@ -46,19 +52,38 @@ export const createApp = () => {
   app.use(cookieParser());
   app.use(passport.initialize());
 
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  // Static file serving (use process.cwd() instead of __dirname for production compatibility)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  app.use('/api/subtitles', express.static(path.join(process.cwd(), 'public/subtitles')));
 
-  // Disable rate limiting in test environment to prevent 429 errors
-  // if (env.NODE_ENV === 'production') {
-  //   app.use(
-  //     rateLimit({
-  //       windowMs: 15 * 60 * 1000,
-  //       limit: 100,
-  //       standardHeaders: 'draft-8',
-  //       legacyHeaders: false,
-  //     }),
-  //   );
-  // }
+  // Global rate limit — loose, only blocks scripts hammering the API
+  // Skipped in test environment to avoid 429 interference
+  const isTest = env.NODE_ENV === 'test';
+
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,       // 15 minutes
+    limit: 500,                      // 500 req per IP per window — a browser user never hits this
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skip: () => isTest,
+    message: { status: 'fail', message: 'Too many requests, please try again later.' },
+  });
+
+  // Stricter limiter on auth endpoints (login, register, password reset)
+  // Prevents brute-force but still allows ~1 req/45s sustained
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,       // 15 minutes
+    limit: 20,                       // 20 attempts per IP per window
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skip: () => isTest,
+    message: { status: 'fail', message: 'Too many login attempts, please try again later.' },
+  });
+
+  app.use('/api/v1', globalLimiter);
+  app.use('/api/v1/auth/login', authLimiter);
+  app.use('/api/v1/auth/register', authLimiter);
+  app.use('/api/v1/users/change-password', authLimiter);
 
   if (env.isDev) {
     app.use(requestLogger);
@@ -80,6 +105,8 @@ export const createApp = () => {
     userController,
     movieInteractionController,
     commentController,
+    streamingController,
+    streamingService: sService,
   } = createControllers();
 
   app.use('/api/v1/auth', createAuthRoutes(authController));
@@ -88,6 +115,7 @@ export const createApp = () => {
   app.use('/api/v1/users', createUserRoutes(userController));
   app.use('/api/v1/interactions', createMovieInteractionRouter(movieInteractionController));
   app.use('/api/v1/comments', createCommentRouter(commentController));
+  app.use('/api/v1/stream', createStreamingRouter(streamingController));
 
   // Test endpoint for auth middleware (protected)
   app.get('/api/v1/protected', auth, (_req, res) => {
@@ -97,5 +125,5 @@ export const createApp = () => {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  return app;
+  return { app, streamingService: sService };
 };

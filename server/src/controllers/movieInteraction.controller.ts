@@ -79,12 +79,27 @@ export class MovieInteractionController {
 
   getWatchHistory = asyncHandler(async (req: Request, res: Response) => {
     const userId = new Types.ObjectId(req.user?._id);
-    const { limit } = req.validated?.query as { limit?: number };
 
-    const history = await this._service.getWatchHistory(userId, limit);
+    const query = req.validated?.query as IPaginationOptions & MovieFilterOptions;
 
-    const response: IResponse<typeof history> = {
-      data: history,
+    const paginationOptions: IPaginationOptions = {
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    };
+
+    const filterOptions: MovieFilterOptions = {
+      search: query.search,
+      genre: query.genre,
+      minRating: query.minRating,
+      year: query.year,
+    };
+
+    const history = await this._service.getWatchHistory(userId, paginationOptions, filterOptions);
+
+    const response: IPaginatedResponse<IMovie> = {
+      ...history,
       message: 'User watch history fetched successfully.',
     };
     res.json(response);

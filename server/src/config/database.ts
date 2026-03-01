@@ -9,7 +9,7 @@ const RETRY_DELAY_MS = 2000;
 export async function connectDatabase(): Promise<void> {
   try {
     await mongoose.connect(env.MONGODB_URI, {
-      autoIndex: env.isDev,
+      autoIndex: true,
       maxPoolSize: 20,
     });
     logger.info({ state: mongoose.connection.readyState }, 'MongoDB connected');

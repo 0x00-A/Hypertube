@@ -10,13 +10,14 @@ import {
   RecommendedTmdbSchema,
 } from '../../validators/movie.schema';
 import { auth, optionalAuth } from '../../middleware/auth';
+import { methodNotAllowed } from '../../middleware/methodNotAllowed';
 
 export const createMovieRouter = (movieController: MovieController): Router => {
   const router = Router();
 
   router.get(
     '/',
-    optionalAuth,
+    auth,
     validate(MovieListQuerySchema),
     movieController.listMovies.bind(movieController),
   );
@@ -47,11 +48,11 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     movieController.getPopularMovies.bind(movieController),
   );
 
-  router.get('/genres', optionalAuth, movieController.getGenres.bind(movieController));
+  router.get('/genres', auth, movieController.getGenres.bind(movieController));
 
   router.get(
     '/search',
-    optionalAuth,
+    auth,
     validate(MovieSearchQuerySchema),
     movieController.searchExternalMovies.bind(movieController),
   );
@@ -90,6 +91,21 @@ export const createMovieRouter = (movieController: MovieController): Router => {
     validate(MovieIdParamSchema),
     movieController.getMovie.bind(movieController),
   );
+
+  // 405 catch-alls: fires when path matches but method is not supported
+  router.all('/', methodNotAllowed);
+  router.all('/trending', methodNotAllowed);
+  router.all('/slider', methodNotAllowed);
+  router.all('/curated', methodNotAllowed);
+  router.all('/random', methodNotAllowed);
+  router.all('/popular', methodNotAllowed);
+  router.all('/genres', methodNotAllowed);
+  router.all('/search', methodNotAllowed);
+  router.all('/recommended', methodNotAllowed);
+  router.all('/tmdb/:tmdbId', methodNotAllowed);
+  router.all('/recommended/:tmdbId', methodNotAllowed);
+  router.all('/watchlist/:tmdbId', methodNotAllowed);
+  router.all('/:id', methodNotAllowed);
 
   return router;
 };

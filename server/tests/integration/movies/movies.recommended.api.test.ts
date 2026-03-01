@@ -4,15 +4,15 @@ import { Types } from 'mongoose';
 import { UserModel } from '../../../src/models/User';
 
 describe('Movies API - Recommended Endpoint', () => {
-  const app = createApp();
+  const { app } = createApp();
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
     const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
-    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
-    const testUsername = `testuser_${unique}`;
+    const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const testUsername = `u_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { env } from '../config/env';
+import { env, MAX_AGE_ACCESS_TOKEN, MAX_AGE_REFRESH_TOKEN } from '../config/env';
 import { passport } from '../config/passport';
 import { JWTService } from '../services/jwt.service';
 import { IUser } from '../interfaces/user.interface';
@@ -13,18 +13,18 @@ export class OAuthController {
 
     res.cookie('accessToken', tokens.access_token, {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production' && env.CLIENT_URL.startsWith('https'),
+      sameSite: 'lax',
       path: '/',
-      maxAge: env.MAX_AGE_ACCESS_TOKEN
+      maxAge: MAX_AGE_ACCESS_TOKEN
     });
 
     res.cookie('refreshToken', tokens.refresh_token, {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production' && env.CLIENT_URL.startsWith('https'),
+      sameSite: 'lax',
       path: '/api/v1/auth/refresh-token',
-      maxAge: env.MAX_AGE_REFRESH_TOKEN
+      maxAge: MAX_AGE_REFRESH_TOKEN
     });
   }
 

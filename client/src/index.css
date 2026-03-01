@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ============================================================================
    THEME VARIABLES - Your Movie App Colors
@@ -55,8 +56,6 @@
    GLOBAL STYLES
    ============================================================================ */
 
-/* Import Google Fonts for editorial typography */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 body {
   margin: 0;
@@ -173,4 +172,13 @@ body {
   100% {
     transform: translateX(-100%);
   }
+}
+
+/* ============================================================================
+   VIDEO SUBTITLE STYLING
+   ============================================================================ */
+
+video::cue {
+  background: transparent;
+  color: transparent;
 }

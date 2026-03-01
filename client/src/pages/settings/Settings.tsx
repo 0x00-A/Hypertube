@@ -2,7 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuthState } from '../../hooks/useAuth';
 import { useUpdateProfile } from '../../hooks/useUpdateProfile';
 import { useChangePassword } from '../../hooks/useChangePassword';
-import { Camera, Loader2, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Camera, Loader2, AlertCircle, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Select } from '../../components/ui/Select';
 import { clsx } from 'clsx';
 import { SaveButton } from '../../components/ui/SaveButton';
@@ -29,7 +30,7 @@ export default function Settings() {
     lastName: user?.lastName || '',
     avatarUrl: user?.avatarUrl || '',
   });
-  
+
   // Store the actual file for upload
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
@@ -40,7 +41,6 @@ export default function Settings() {
   });
 
   const [previewAvatar, setPreviewAvatar] = useState<string>(getAvatarUrl(user?.avatarUrl));
-  const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Cleanup object URL on unmount to prevent memory leaks
@@ -76,13 +76,11 @@ export default function Settings() {
 
   const handleInputChange = (field: keyof SettingsFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setSuccessMessage('');
     setErrorMessage('');
   };
 
   const handlePasswordChange = (field: keyof PasswordData, value: string) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
-    setSuccessMessage('');
     setErrorMessage('');
   };
 
@@ -107,9 +105,6 @@ export default function Settings() {
     }
 
     setErrorMessage('');
-    setSuccessMessage('');
-
-    // Store the file for upload
     setAvatarFile(file);
 
     // Revoke previous preview URL (if any) to avoid memory leaks
@@ -123,8 +118,9 @@ export default function Settings() {
   };
 
   const handleSaveProfile = () => {
-    setSuccessMessage('');
     setErrorMessage('');
+
+    if (!user) return;
 
     // Basic validation
     if (!formData.email.trim()) {
@@ -132,8 +128,45 @@ export default function Settings() {
       return;
     }
 
-    if (!formData.username.trim()) {
-      setErrorMessage('Username is required');
+    const username = formData.username.trim();
+    if (username.length < 3) {
+      setErrorMessage('Username must be at least 3 characters');
+      return;
+    }
+    if (username.length > 20) {
+      setErrorMessage('Username must be less than 20 characters');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setErrorMessage('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    const firstName = formData.firstName.trim();
+    if (firstName.length < 2) {
+      setErrorMessage('First name must be at least 2 characters');
+      return;
+    }
+    if (firstName.length > 10) {
+      setErrorMessage('First name must be less than 10 characters');
+      return;
+    }
+    if (!/^[a-zA-Z]+$/.test(firstName)) {
+      setErrorMessage('First name can only contain letters');
+      return;
+    }
+
+    const lastName = formData.lastName.trim();
+    if (lastName.length < 2) {
+      setErrorMessage('Last name must be at least 2 characters');
+      return;
+    }
+    if (lastName.length > 10) {
+      setErrorMessage('Last name must be less than 10 characters');
+      return;
+    }
+    if (!/^[a-zA-Z]+$/.test(lastName)) {
+      setErrorMessage('Last name can only contain letters');
       return;
     }
 
@@ -146,32 +179,28 @@ export default function Settings() {
 
     updateProfile(
       {
-        email: formData.email,
-        username: formData.username,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        avatar: avatarFile || undefined, // Send file object instead of base64
-        language: formData.language,
+        id: user._id,
+        data: {
+          email: formData.email,
+          username: formData.username,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          avatar: avatarFile || undefined, // Send file object instead of base64
+          language: formData.language,
+        },
       },
       {
         onSuccess: () => {
-          setSuccessMessage('Profile updated successfully!');
           setAvatarFile(null); // Clear the file after successful upload
-          setTimeout(() => setSuccessMessage(''), 3000);
         },
-        onError: (error: unknown) => {
-          if (error instanceof Error) {
-            setErrorMessage(error.message || 'Failed to update profile');
-          } else {
-            setErrorMessage('Failed to update profile. Please try again.');
-          }
+        onError: (error: Error) => {
+          setErrorMessage(error?.message || 'Failed to update profile. Please try again.');
         },
       }
     );
   };
 
   const handleChangePasswordSubmit = () => {
-    setSuccessMessage('');
     setErrorMessage('');
 
     // Validate passwords
@@ -190,6 +219,26 @@ export default function Settings() {
       return;
     }
 
+    if (!/[A-Z]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[a-z]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/[0-9]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one number');
+      return;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one special character');
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setErrorMessage('Passwords do not match');
       return;
@@ -203,20 +252,15 @@ export default function Settings() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage('Password changed successfully!');
+          toast.success('Password changed successfully!');
           setPasswordData({
             currentPassword: '',
             newPassword: '',
             confirmPassword: '',
           });
-          setTimeout(() => setSuccessMessage(''), 3000);
         },
-        onError: (error: unknown) => {
-          if (error instanceof Error) {
-            setErrorMessage(error.message || 'Failed to change password');
-          } else {
-            setErrorMessage('Failed to change password. Please try again.');
-          }
+        onError: (error: Error) => {
+          setErrorMessage(error?.message || 'Failed to change password. Please try again.');
         },
       }
     );
@@ -248,7 +292,7 @@ export default function Settings() {
             {SETTINGS_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
@@ -268,14 +312,7 @@ export default function Settings() {
           </nav>
         </div>
 
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="mb-6 flex items-center gap-3 p-4 bg-success/10 border border-success/30 rounded-lg">
-            <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-            <p className="text-success font-medium">{successMessage}</p>
-          </div>
-        )}
-
+        {/* Error Messages */}
         {errorMessage && (
           <div className="mb-6 flex items-center gap-3 p-4 bg-error/10 border border-error/30 rounded-lg">
             <AlertCircle className="w-5 h-5 text-error shrink-0" />
@@ -298,8 +335,8 @@ export default function Settings() {
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-primary/30 flex items-center justify-center text-2xl font-bold text-primary shadow-lg overflow-hidden">
                       {previewAvatar ? (
-                        <img 
-                          src={previewAvatar} 
+                        <img
+                          src={previewAvatar}
                           alt="Profile"
                           className="w-full h-full object-cover"
                         />
@@ -510,7 +547,7 @@ export default function Settings() {
                     <div className="flex-1">
                       <h4 className="font-medium text-text-primary mb-2">No Password Required</h4>
                       <p className="text-sm text-text-secondary leading-relaxed">
-                        Since you're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} OAuth to log in, 
+                        Since you're using {user.oauth.provider === 'google' ? 'Google' : 'Intra 42'} OAuth to log in,
                         you don't need a password for this account. You can always sign in using your{' '}
                         {user.oauth.provider === 'google' ? 'Google' : '42'} account.
                       </p>
@@ -579,7 +616,7 @@ export default function Settings() {
                         )}
                         placeholder="••••••••"
                       />
-                      <p className="text-xs text-text-muted">Must be at least 8 characters</p>
+                      <p className="text-xs text-text-muted">Min 8 chars, with uppercase, lowercase, number & special character</p>
                     </div>
 
                     {/* Confirm Password */}

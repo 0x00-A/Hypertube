@@ -359,8 +359,14 @@ paths:
                 newPassword:
                   type: string
                   format: password
-                  minLength: 6
-                  description: New password for the account
+                  minLength: 8
+                  description: |
+                    New password for the account. Must meet all requirements:
+                    - At least 8 characters long
+                    - At least one uppercase letter
+                    - At least one lowercase letter
+                    - At least one number
+                    - At least one special character (!@#$%^&*(),.?":{}|<>)
                   example: NewSecurePass456!
       responses:
         '200':
@@ -377,7 +383,7 @@ paths:
                     type: string
                     example: Password has been reset successfully
         '400':
-          description: Validation error - missing fields or password too short
+          description: Validation error - missing fields or password does not meet policy requirements
           content:
             application/json:
               schema:
@@ -399,7 +405,7 @@ paths:
                           example: body.newPassword
                         message:
                           type: string
-                          example: New password must be at least 6 characters long
+                          example: Password must be at least 8 characters long
         '409':
           description: Invalid or expired reset token
           content:
@@ -710,7 +716,7 @@ paths:
                     type: string
                     example: User not found
 
-  /api/v1/users/{identifier}:
+  /api/v1/users/{id}:
     get:
       summary: Get user profile by username or MongoDB ID
       tags:
@@ -719,7 +725,7 @@ paths:
         Returns public profile information for any user. Automatically detects whether the identifier is a username or MongoDB ObjectId (24 hex characters).
         Email, password, and OAuth fields are never exposed in public profiles. No authentication required.
       parameters:
-        - name: identifier
+        - name: id
           in: path
           required: true
           schema:
@@ -769,7 +775,7 @@ paths:
                       properties:
                         path:
                           type: string
-                          example: params.identifier
+                          example: params.id
                         message:
                           type: string
                           example: Identifier must be at least 3 characters long
@@ -786,9 +792,7 @@ paths:
                   message:
                     type: string
                     example: User not found
-
-  /api/v1/users/update-profile:
-    post:
+    patch:
       summary: Update authenticated user's profile
       tags:
         - Users
@@ -796,7 +800,8 @@ paths:
         - bearerAuth: []
       description: |
         Updates the authenticated user's profile information. All fields are optional - only provided fields will be updated.
-        Requires valid JWT token in cookie. Users can update their username, email, name, language, and avatar.
+        Requires valid JWT token in cookie. The `:id` in the path must match the authenticated user's own ID.
+        Users can update their username, email, name, language, and avatar.
 
         **Avatar Upload:**
         - Supports direct file upload via multipart/form-data (recommended for file uploads)
@@ -804,6 +809,15 @@ paths:
         - Accepted formats: JPEG, PNG, GIF, WebP
         - Maximum file size: 5MB
         - When uploading a new avatar, the old avatar file is automatically deleted
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: MongoDB ObjectId of the user to update (must match the authenticated user)
+          example: 507f1f77bcf86cd799439011
       requestBody:
         required: false
         content:
@@ -992,6 +1006,19 @@ paths:
                   message:
                     type: string
                     example: Unauthorized, No access token provided
+        '403':
+          description: Forbidden - attempting to update another user's profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: fail
+                  message:
+                    type: string
+                    example: You can only update your own profile
         '404':
           description: User not found
           content:
@@ -1028,12 +1055,12 @@ paths:
         - bearerAuth: []
       description: |
         Changes the password for the authenticated user. Requires the current password for verification
-        and a new password that meets minimum security requirements.
+        and a new password that meets the password policy requirements.
 
         **Requirements:**
         - User must be authenticated (JWT token in cookie)
         - Current password must be correct
-        - New password must be at least 8 characters long
+        - New password must be at least 8 characters long, with uppercase, lowercase, number, and special character
         - OAuth users without a password set cannot use this endpoint
 
         **Security Notes:**
@@ -1052,14 +1079,19 @@ paths:
                 currentPassword:
                   type: string
                   format: password
-                  minLength: 8
                   description: User's current password for verification
                   example: CurrentPass123!
                 newPassword:
                   type: string
                   format: password
                   minLength: 8
-                  description: New password (minimum 8 characters)
+                  description: |
+                    New password. Must meet all requirements:
+                    - At least 8 characters long
+                    - At least one uppercase letter
+                    - At least one lowercase letter
+                    - At least one number
+                    - At least one special character (!@#$%^&*(),.?":{}|<>)
                   example: NewSecurePass456!
             examples:
               changePassword:
@@ -1112,14 +1144,14 @@ paths:
                     message: Current password is incorrect
                     path: /api/v1/users/change-password
                 passwordTooShort:
-                  summary: New password too short
+                  summary: New password does not meet policy
                   value:
                     status: fail
                     message: Validation Error
                     path: /api/v1/users/change-password
                     validationErrors:
                       - path: body.newPassword
-                        message: New password must be at least 8 characters long
+                        message: Password must be at least 8 characters long
                 missingFields:
                   summary: Missing required fields
                   value:
@@ -1168,15 +1200,13 @@ paths:
     get:
       summary: List movies with pagination and filters
       description: |
-        Returns a paginated list of movies with optional filters. Supports **optional authentication** via cookies.
+        Returns a paginated list of movies with optional filters. **Requires authentication** via cookies.
 
-        - **Authenticated users**: Each movie includes `isWatched`, `inWatchlist`, and `userRating` based on user interactions.
-        - **Unauthenticated users**: Movies include these fields with default values (`false`, `null`).
+        Authenticated users receive personalized state flags (`isWatched`, `inWatchlist`, `userRating`) per movie.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: query
           name: page
@@ -1338,6 +1368,12 @@ paths:
                     message: 'year must be between 1900 and 2026'
                   - path: 'minRating'
                     message: 'minRating must be between 0 and 10'
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -1421,12 +1457,11 @@ paths:
       summary: Search movies from external sources and database
       description: |
         Searches movies in the local database first. If fewer than 10 results are found, scrapes external sources.
-        Supports **optional authentication** - authenticated users receive personalized state flags.
+        **Requires authentication** - authenticated users receive personalized state flags.
       tags:
         - Movies
       security:
         - cookieAuth: []
-        - {}
       parameters:
         - in: query
           name: page
@@ -1563,6 +1598,12 @@ paths:
                     message: 'year must be between 1900 and 2026'
                   - path: 'minRating'
                     message: 'minRating must be between 0 and 10'
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -1900,10 +1941,12 @@ paths:
   /api/v1/movies/genres:
     get:
       summary: Get list of available genres from local DB
+      description: |
+        Returns all distinct genres present in the local movie database. **Requires authentication**.
       tags:
         - Movies
       security:
-        - {}
+        - cookieAuth: []
       responses:
         '200':
           description: Array of genre strings
@@ -1921,10 +1964,12 @@ paths:
               example:
                 data: ['Action', 'Drama', 'Comedy']
                 message: Genres fetched successfully.
-                properties:
-                  status:
-                    type: string
-                    example: success
+        '401':
+          description: Unauthorized — missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/movies/slider:
     get:

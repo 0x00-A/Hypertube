@@ -1,18 +1,94 @@
+jest.mock('../../../src/services/metadata/tmdb', () => ({
+  getMetadata: jest.fn().mockImplementation((id: number | string) => {
+    return Promise.resolve({
+      tmdbId: typeof id === 'number' ? id : parseInt(id as string, 10) || 12345,
+      imdbId: 'tt1234567',
+      title: 'Mocked Movie',
+      year: 2024,
+      description: 'Mock desc.',
+      rating: 8.5,
+      genres: ['Action'],
+      director: 'Mock Director',
+      cast: [{ name: 'Actor 1', character: 'Hero', profileImageUrl: '' }],
+      length: 120,
+      images: {
+        thumbnail: 'https://example.com/thumb.jpg',
+        poster: 'https://example.com/poster.jpg',
+        backdrop: 'https://example.com/backdrop.jpg',
+      },
+      trailer: 'https://youtube.com/watch?v=mock',
+    });
+  }),
+  getImdbIdFromTmdbId: jest.fn().mockResolvedValue('tt1234567')
+}));
+
+jest.mock('axios', () => {
+  const mockGet = jest.fn((url: string, config?: any) => {
+    let page = 1;
+    if (url.includes('page=')) {
+        const match = url.match(/page=(\d+)/);
+        if (match) page = parseInt(match[1], 10);
+    } else if (config && config.params && config.params.page) {
+        page = config.params.page;
+    }
+
+    if (url.includes('/trending/') || url.includes('/popular') || url.includes('/recommendations')) {
+      return Promise.resolve({
+        data: {
+          page: page,
+          total_results: 1,
+          total_pages: 5,
+          results: [
+            {
+              id: 278,
+              title: 'The Shawshank Redemption',
+              release_date: '1994-09-23',
+              poster_path: '/poster.jpg',
+              backdrop_path: '/backdrop.jpg',
+              overview: 'Mocked overview',
+              vote_average: 9.3,
+              genre_ids: [18, 80],
+              original_language: 'en'
+            }
+          ]
+        }
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  return {
+    get: mockGet,
+    create: jest.fn(() => ({
+      get: mockGet,
+      post: jest.fn(() => Promise.resolve({ data: {} })),
+      put: jest.fn(() => Promise.resolve({ data: {} })),
+      delete: jest.fn(() => Promise.resolve({ data: {} })),
+      interceptors: {
+        request: { use: jest.fn(), eject: jest.fn() },
+        response: { use: jest.fn(), eject: jest.fn() }
+      }
+    }))
+  };
+});
+
 import request from 'supertest';
 import { createApp } from '../../../src/app';
 import { Types } from 'mongoose';
 import { UserModel } from '../../../src/models/User';
 
 describe('Movies API - New Endpoints (Integration)', () => {
-  const app = createApp();
+
+
+  const { app } = createApp();
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
     const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
-    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
-    const testUsername = `testuser_${unique}`;
+    const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const testUsername = `u_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
 

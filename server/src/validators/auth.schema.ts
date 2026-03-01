@@ -2,11 +2,18 @@ import { z } from 'zod';
 
 export const SignUpSchema = z.object({
   body: z.object({
-    username: z.string().trim().min(3, 'Username must be at least 3 characters long'),
-    firstName: z.string().trim().min(2, 'First name is required'),
-    lastName: z.string().trim().min(2, 'Last name is required'),
+    username: z.string().trim().min(3, 'Username must be at least 3 characters long').max(20, 'Username must be less than 20 characters')
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    firstName: z.string().trim().min(2, 'First name is required').max(10, 'First name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'First name can only contain letters'),
+    lastName: z.string().trim().min(2, 'Last name is required').max(10, 'Last name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'Last name can only contain letters'),
     email: z.string().trim().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters long'),
+    password: z.string().min(8, 'Password must be at least 8 characters long')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
   }),
 });
 
@@ -40,6 +47,10 @@ export const RequestPasswordResetSchema = z.object({
 export const ResetPasswordSchema = z.object({
   body: z.object({
     token: z.string().trim().min(1, 'Token is required'),
-    newPassword: z.string().min(6, 'New password must be at least 6 characters long'),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters long')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
   }),
 });

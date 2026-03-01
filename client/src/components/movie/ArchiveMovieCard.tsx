@@ -18,7 +18,7 @@ export interface ArchiveMovieCardProps {
  * ArchiveMovieCard Component
  * Displays a movie card with a rank ribbon bar for the Archive section
  * Structure: Rank bar at top + Complete MovieCard below
- * 
+ *
  * Note: Parent should use a stable key (movie._id or movie.tmdbId) to ensure
  * component re-mounts when displaying a different movie.
  */
@@ -26,7 +26,7 @@ export const ArchiveMovieCard = ({ movie, rank, className }: ArchiveMovieCardPro
     const [isHovered, setIsHovered] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(movie.inWatchlist || false);
-    
+
     const { isAuthenticated } = useAuthState();
     const navigate = useNavigate();
     const { mutate: addToWatchlist, isPending: isAdding } = useAddToWatchlist();
@@ -39,8 +39,15 @@ export const ArchiveMovieCard = ({ movie, rank, className }: ArchiveMovieCardPro
             if ('poster' in images && images.poster) return images.poster;
             if ('thumbnail' in images && images.thumbnail) return images.thumbnail;
         }
-        return '/images/movies/placeholder.jpg';
+        return '';
     }, [movie]);
+
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+    const hasError = failedImages.has(posterImage);
+
+    const handleImageError = useCallback(() => {
+        setFailedImages(prev => new Set(prev).add(posterImage));
+    }, [posterImage]);
 
     // Format rating to one decimal place
     const formattedRating = useMemo(() => {
@@ -179,17 +186,33 @@ export const ArchiveMovieCard = ({ movie, rank, className }: ArchiveMovieCardPro
                     role="button"
                     aria-label={`View details for ${movie.title}`}
                 >
-                    <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg flex-1">
-                        {/* Poster Image */}
-                        <img
-                            src={posterImage}
-                            alt={`${movie.title} poster`}
-                            className={clsx(
-                                'w-full h-full object-cover transition-all duration-700 ease-in-out',
-                                isHovered && 'scale-110 brightness-[0.4]'
-                            )}
-                            loading="lazy"
-                        />
+                    <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg flex-1 bg-zinc-900">
+                        {/* Poster Image or Clean Background */}
+                        {!posterImage || hasError ? (
+                            <div className={clsx(
+                                "w-full h-full flex flex-col items-center justify-center bg-zinc-900 overflow-hidden",
+                                "transition-all duration-700 ease-in-out",
+                                isHovered && 'scale-110 brightness-[0.4]',
+                                movie.isWatched && !isHovered && 'grayscale brightness-50'
+                            )}>
+                                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
+                                <div className="w-16 h-24 border-2 border-zinc-800 rounded-lg flex items-center justify-center rotate-[-12deg] mb-2 shadow-2xl">
+                                    <span className="text-zinc-800 font-black text-4xl select-none">?</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <img
+                                src={posterImage}
+                                alt={`${movie.title} poster`}
+                                className={clsx(
+                                    'w-full h-full object-cover transition-all duration-700 ease-in-out',
+                                    isHovered && 'scale-110 brightness-[0.4]',
+                                    movie.isWatched && !isHovered && 'grayscale brightness-50 blur-[1px]'
+                                )}
+                                loading="lazy"
+                                onError={handleImageError}
+                            />
+                        )}
 
                         {/* Watchlist Button - ribbon style at top-left corner, always visible */}
                         <button

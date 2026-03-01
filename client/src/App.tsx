@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import { setNavigate } from './utils/navigation';
 import { AuthProvider } from './components/auth/AuthProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import GuestRoute from './components/auth/GuestRoute';
 import ScrollToTop from './components/common/ScrollToTop';
 
 // Pages
@@ -15,7 +16,7 @@ import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import OAuthCallback from './pages/auth/OAuthCallback';
 import Browse from './pages/browse/Browse';
-import Library from './pages/library/Library';
+import Watchlist from './pages/watchlist/Watchlist';
 import History from './pages/history/History';
 import Profile from './pages/profile/Profile';
 import Settings from './pages/settings/Settings';
@@ -68,12 +69,12 @@ function App() {
         />
         <Routes>
           {/* Auth routes without layout */}
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/auth/oauth-callback" element={<OAuthCallback />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/auth/login" element={<GuestRoute><Login /></GuestRoute>} />
+          <Route path="/auth/register" element={<GuestRoute><Register /></GuestRoute>} />
+          <Route path="/auth/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+          <Route path="/auth/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
+          <Route path="/auth/oauth-callback" element={<GuestRoute><OAuthCallback /></GuestRoute>} />
+          <Route path="/verify-email" element={<GuestRoute><VerifyEmail /></GuestRoute>} />
 
           {/* Main app routes with layout */}
           <Route element={<MainLayout />}>
@@ -82,13 +83,13 @@ function App() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/featured" element={<Featured />} />
             <Route path="/trending" element={<Trending />} />
-            <Route path="/movies" element={<Movies />} />
             <Route path="/user/:id" element={<UserProfile />} />
 
             {/* Protected routes */}
+            <Route path="/library" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
             <Route path="/movies/:id" element={<ProtectedRoute><MovieDetails /></ProtectedRoute>} />
             <Route path="/watch/:id" element={<ProtectedRoute><Watch /></ProtectedRoute>} />
-            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+            <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -102,4 +103,3 @@ function App() {
 }
 
 export default App;
-

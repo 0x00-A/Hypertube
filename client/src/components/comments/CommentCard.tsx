@@ -23,8 +23,6 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
 
     const [isDeletingState, setIsDeletingState] = useState(false);
 
-    const isOwner = user?._id === comment.user._id;
-
     // Click outside handler
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -35,6 +33,13 @@ export const CommentCard = ({ comment, tmdbId }: CommentCardProps) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showMenu]);
+
+    // Guard against null user data - must be after all hooks
+    if (!comment.user) {
+        return null;
+    }
+
+    const isOwner = user?._id === comment.user._id;
 
     const handleEdit = () => {
         if (editContent.trim() && editContent !== comment.content) {

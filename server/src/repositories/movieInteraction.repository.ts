@@ -4,6 +4,7 @@ import {
   IUpdateWatchProgress,
   IMovieInteractionStats,
   IUserInteractionStats,
+  IContinueWatchingItem,
 } from '../interfaces/movieInteraction.interface';
 import { Types, PipelineStage } from 'mongoose';
 import { IMovieInteractionDocument } from '../models/movieInteraction.model.types';
@@ -122,21 +123,94 @@ export class MovieInteractionRepository {
     return result.deletedCount > 0;
   }
 
-  async getUserWatchHistory(userId: Types.ObjectId, limit = 20): Promise<IMovie[]> {
-    const interactions = await MovieInteractionModel.find({
-      userId,
-      interactionType: 'watched',
-    })
-      .sort({ watchedAt: -1 })
-      .limit(limit)
-      .populate('movieId')
-      .exec();
+  async getUserWatchHistory(
+    userId: Types.ObjectId,
+    paginationOptions: IPaginationOptions,
+    filterOptions: MovieFilterOptions,
+  ): Promise<IPaginatedResponse<IMovie>> {
+    const { page, limit, sortBy, sortOrder } = paginationOptions;
+    const skip = (page - 1) * limit;
 
-    return interactions
-      .filter(
-        (interaction) => interaction.movieId && !(interaction.movieId instanceof Types.ObjectId),
-      )
-      .map((interaction) => (interaction.movieId as unknown as IMovieDocument).toObject());
+    // Build aggregation pipeline
+    const filterPipeline: PipelineStage[] = [
+      { $match: { userId, interactionType: 'watched' } },
+      {
+        $lookup: {
+          from: 'movies',
+          localField: 'movieId',
+          foreignField: '_id',
+          as: 'movie',
+        },
+      },
+      { $unwind: '$movie' },
+    ];
+
+    // Apply movie filters
+    const movieFilters: Record<string, unknown> = {};
+
+    if (filterOptions.search) {
+      const sanitized = filterOptions.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      movieFilters.$or = [{ 'movie.title': { $regex: sanitized, $options: 'i' } }];
+    }
+
+    if (filterOptions.genre) {
+      movieFilters['movie.genres'] = { $in: [filterOptions.genre] };
+    }
+
+    if (filterOptions.minRating !== undefined) {
+      movieFilters['movie.rating'] = { $gte: filterOptions.minRating };
+    }
+
+    if (filterOptions.year) {
+      movieFilters['movie.year'] = filterOptions.year;
+    }
+
+    if (Object.keys(movieFilters).length > 0) {
+      filterPipeline.push({ $match: movieFilters });
+    }
+
+    // Determine sort field
+    let sortField: string;
+    if (sortBy === 'lastUpdated') {
+      sortField = 'watchedAt';
+    } else {
+      sortField = `movie.${sortBy}`;
+    }
+    const sortObj: Record<string, 1 | -1> = {};
+    sortObj[sortField] = sortOrder === 'asc' ? 1 : -1;
+
+    const facetPipeline: PipelineStage[] = [
+      ...filterPipeline,
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [
+            { $sort: sortObj },
+            { $skip: skip },
+            { $limit: limit },
+            { $replaceRoot: { newRoot: '$movie' } },
+          ],
+        },
+      },
+    ];
+
+    const result = await MovieInteractionModel.aggregate(facetPipeline).exec();
+
+    const total = result[0]?.metadata[0]?.total || 0;
+    const movies: IMovie[] = result[0]?.data || [];
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: movies as IMovie[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   async getUserWatchlist(
@@ -295,7 +369,7 @@ export class MovieInteractionRepository {
   async getUserContinueWatching(
     userId: Types.ObjectId,
     limit = 10,
-  ): Promise<({ watchProgress: number } & IMovie)[]> {
+  ): Promise<IContinueWatchingItem[]> {
     const interactions = await MovieInteractionModel.find({
       userId,
       interactionType: 'watched',
@@ -320,8 +394,11 @@ export class MovieInteractionRepository {
         const interactionData = interaction.toObject();
 
         return {
-          ...movieData,
-          watchProgress: interactionData.watchProgress,
+          movie: movieData,
+          watchedDuration: interactionData.lastWatchedPosition ?? 0,
+          totalDuration: interactionData.duration ?? 0,
+          percentage: interactionData.watchProgress ?? 0,
+          lastWatchedAt: interactionData.watchedAt ?? interactionData.updatedAt,
         };
       });
   }

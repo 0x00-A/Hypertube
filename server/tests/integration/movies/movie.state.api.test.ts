@@ -5,16 +5,120 @@ import { UserModel } from '../../../src/models/User';
 import { MovieModel } from '../../../src/models/Movie';
 import { MovieInteractionModel } from '../../../src/models/MovieInteraction';
 
+jest.mock('../../../src/services/metadata/tmdb', () => ({
+  getMetadata: jest.fn().mockImplementation((id: number | string) => {
+    return Promise.resolve({
+      tmdbId: typeof id === 'number' ? id : parseInt(id as string, 10) || 12345,
+      imdbId: 'tt1234567',
+      title: 'Mocked Movie',
+      year: 2024,
+      description: 'A mocked movie description for testing.',
+      rating: 8.5,
+      genres: ['Action', 'Sci-Fi'],
+      director: 'Mock Director',
+      cast: ['Actor 1', 'Actor 2', 'Actor 3'],
+      length: 120,
+      images: {
+        thumbnail: 'https://example.com/thumb.jpg',
+        poster: 'https://example.com/poster.jpg',
+        backdrop: 'https://example.com/backdrop.jpg',
+      },
+      trailer: 'https://youtube.com/watch?v=mock',
+    });
+  }),
+  getTrendingMovies: jest.fn().mockResolvedValue({
+    results: [
+      {
+        id: 278,
+        title: 'The Shawshank Redemption',
+        release_date: '1994-09-23',
+        poster_path: '/poster.jpg',
+        overview: 'Mocked overview',
+        vote_average: 9.3,
+      }
+    ],
+    total_pages: 1,
+    total_results: 1
+  }),
+  getPopularMovies: jest.fn().mockResolvedValue({
+    results: [
+      {
+        id: 238,
+        title: 'The Godfather',
+        release_date: '1972-03-14',
+        poster_path: '/poster.jpg',
+        overview: 'Mocked overview',
+        vote_average: 9.2,
+      }
+    ],
+    total_pages: 1,
+    total_results: 1
+  })
+}));
+
+jest.mock('axios', () => {
+  const mockGet = jest.fn((url: string) => {
+    if (url.includes('/trending/') || url.includes('/popular')) {
+      return Promise.resolve({
+        data: {
+          page: 1,
+          total_results: 1,
+          total_pages: 1,
+          results: [
+            {
+              id: 278,
+              title: 'The Shawshank Redemption',
+              release_date: '1994-09-23',
+              poster_path: '/poster.jpg',
+              backdrop_path: '/backdrop.jpg',
+              overview: 'Mocked overview',
+              vote_average: 9.3,
+              genre_ids: [18, 80],
+              original_language: 'en'
+            },
+            {
+              id: 238,
+              title: 'The Godfather',
+              release_date: '1972-03-14',
+              poster_path: '/poster.jpg',
+              backdrop_path: '/backdrop.jpg',
+              overview: 'Mocked overview',
+              vote_average: 9.2,
+              genre_ids: [18, 80],
+              original_language: 'en'
+            }
+          ]
+        }
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  return {
+    get: mockGet,
+    create: jest.fn(() => ({
+      get: mockGet,
+      post: jest.fn(() => Promise.resolve({ data: {} })),
+      put: jest.fn(() => Promise.resolve({ data: {} })),
+      delete: jest.fn(() => Promise.resolve({ data: {} })),
+      interceptors: {
+        request: { use: jest.fn(), eject: jest.fn() },
+        response: { use: jest.fn(), eject: jest.fn() }
+      }
+    }))
+  };
+});
+
 describe('Movie State Flags API (Optional Auth)', () => {
-  let app: ReturnType<typeof createApp>;
+  let app: ReturnType<typeof createApp>['app'];
 
   // Helper to create a user and get a valid access token via API
   async function createUserAndLogin(): Promise<{ accessToken: string; userId: Types.ObjectId }> {
     const crypto = await import('crypto');
     const { VerificationEmailModel } = await import('../../../src/models/VerificationEmail.model');
 
-    const unique = Math.random().toString(36).substring(2, 10) + Date.now();
-    const testUsername = `testuser_${unique}`;
+    const unique = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    const testUsername = `u_${unique}`;
     const testEmail = `test_${unique}@example.com`;
     const password = 'SecurePass123!';
 
@@ -58,7 +162,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
   beforeEach(async () => {
     await mongoose.connection.dropDatabase();
-    app = createApp();
+    app = createApp().app;
   });
 
   describe('Authenticated User - State Flags', () => {
@@ -364,8 +468,8 @@ describe('Movie State Flags API (Optional Auth)', () => {
     });
   });
 
-  describe('Unauthenticated User - Default State Flags', () => {
-    it('should return default state flags when no token provided', async () => {
+  describe('Unauthenticated User - Requires Auth on Private Endpoints', () => {
+    it('should return 401 when no token provided for GET /movies', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -379,14 +483,10 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
       const res = await request(app).get('/api/v1/movies');
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
 
-    it('should return default state flags for multiple movies', async () => {
+    it('should return 401 for multiple movies when unauthenticated', async () => {
       await MovieModel.create([
         {
           imdbId: 'tt0111161',
@@ -412,14 +512,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
 
       const res = await request(app).get('/api/v1/movies');
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(2);
-
-      res.body.data.forEach((movie: any) => {
-        expect(movie.isWatched).toBe(false);
-        expect(movie.inWatchlist).toBe(false);
-        expect(movie.userRating).toBeNull();
-      });
+      expect(res.status).toBe(401);
     });
 
     it('should work for GET /movies/trending without auth', async () => {
@@ -447,7 +540,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
       });
     });
 
-    it('should work for GET /movies/search without auth', async () => {
+    it('should return 401 for GET /movies/search without auth', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -463,10 +556,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
         .get('/api/v1/movies/search')
         .query({ search: 'Shawshank', page: 1, limit: 10 });
 
-      expect(res.status).toBe(200);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
 
     // it('should work for GET /movies/:id without auth', async () => {
@@ -489,7 +579,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
     //   expect(res.body.data.userRating).toBeNull();
     // });
 
-    it('should treat invalid token as unauthenticated', async () => {
+    it('should return 401 for invalid token on GET /movies', async () => {
       await MovieModel.create({
         imdbId: 'tt0111161',
         tmdbId: 278,
@@ -505,10 +595,7 @@ describe('Movie State Flags API (Optional Auth)', () => {
         .get('/api/v1/movies')
         .set('Cookie', ['accessToken=invalid-token']);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data[0].isWatched).toBe(false);
-      expect(res.body.data[0].inWatchlist).toBe(false);
-      expect(res.body.data[0].userRating).toBeNull();
+      expect(res.status).toBe(401);
     });
   });
 

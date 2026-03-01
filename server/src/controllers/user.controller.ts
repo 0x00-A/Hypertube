@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
-import { NotFoundError } from '../core/errors/customErrors';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
 import { IUserProfileUpdate } from '../interfaces/user.interface';
 
@@ -39,11 +39,11 @@ export class UserController {
 
 
   getUser = asyncHandler(async (req: Request, res: Response) => {
-    const identifier = (req.validated?.params as { identifier: string })?.identifier;
+    const id = (req.validated?.params as { id: string })?.id;
 
-    if (!identifier) throw new NotFoundError('User not found');
+    if (!id) throw new NotFoundError('User not found');
 
-    const user = await this._service.getUser(identifier);
+    const user = await this._service.getUser(id);
     if (!user) throw new NotFoundError('User not found');
 
     res.json({
@@ -55,10 +55,22 @@ export class UserController {
   });
 
   updateProfile = asyncHandler(async (req: Request, res: Response) => {
-    const newData = req.validated?.body as IUserProfileUpdate;
+    const { id } = req.validated?.params as { id: string };
     if (req.user == null || req.user.username == null) {
       throw new NotFoundError('User not found');
     }
+    if (req.user._id?.toString() !== id) {
+      throw new ForbiddenError('You can only update your own profile');
+    }
+    const newData = req.validated?.body as IUserProfileUpdate;
+
+    if (newData.username && newData.username !== req.user.username) {
+      const existingUser = await this._service.getUser(newData.username);
+      if (existingUser) {
+        throw new BadRequestError('Duplicate value for field: username. Please use another value.');
+      }
+    }
+
     await this._service.updateProfile(req.user.username, newData);
     res.json({
       status: 'success',

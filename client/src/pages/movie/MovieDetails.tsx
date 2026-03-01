@@ -23,7 +23,8 @@ export default function MovieDetails() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const isTmdbMovie = location.state?.isTmdbMovie ?? (id && !/^\d+$/.test(id));
+    // If ID is purely numeric, it's a TMDB ID; otherwise it's a MongoDB ObjectId
+    const isTmdbMovie = location.state?.isTmdbMovie ?? (id ? /^\d+$/.test(id) : false);
 
     const { data: movie, isLoading, error } = useMovieDetails({
         id: id!,
@@ -110,10 +111,10 @@ export default function MovieDetails() {
                 <div className="text-center">
                     <h2 className="text-2xl text-white font-bold mb-4">Movie not found</h2>
                     <button
-                        onClick={() => navigate('/movies')}
+                        onClick={() => navigate('/library')}
                         className="text-primary hover:underline"
                     >
-                        Back to Movies
+                        Back to Library
                     </button>
                 </div>
             </div>
@@ -136,17 +137,17 @@ export default function MovieDetails() {
                     </button>
                     <span className="text-text-muted">/</span>
                     <button
-                        onClick={() => navigate('/movies')}
+                        onClick={() => navigate('/library')}
                         className="text-text-secondary hover:text-white transition-colors"
                     >
-                        Movies
+                        Library
                     </button>
                     <span className="text-text-muted">/</span>
                     <span className="text-white">{movie.title}</span>
                 </div>
 
                 {/* Ticket Hero Section */}
-                <div className="relative w-full rounded-xl overflow-hidden  flex flex-col md:flex-row bg-[#111]">
+                <div className="relative w-full rounded-xl overflow-hidden flex flex-col md:flex-row bg-[#111] min-h-[400px] md:min-h-[600px]">
 
                     {/* Cutouts for Ticket Effect */}
                     <div className="hidden md:block absolute top-0 left-[35%] -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] bg-[#1A1A1A] rounded-full z-30" />
@@ -156,40 +157,46 @@ export default function MovieDetails() {
                     <div className="hidden md:block absolute top-9 bottom-9 left-[35%] -translate-x-1/2 border-l-2 border-dashed border-white/30 z-30" />
 
                     {/* Left Side - Poster */}
-                    <div className="hidden md:block relative w-[35%] z-20 bg-black">
+                    <div className="hidden md:block relative w-[35%] z-20 bg-black min-h-[600px]">
                         <div className="h-full w-full relative">
                             {/* Skeleton loader for poster */}
                             {!isPosterLoaded && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 animate-pulse">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                </div>
                             )}
                             <img
                                 src={posterImage}
                                 alt={movie.title}
                                 className={clsx(
-                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    "w-full h-full object-cover transition-opacity duration-500",
                                     isPosterLoaded ? "opacity-100" : "opacity-0"
                                 )}
                                 onLoad={() => setIsPosterLoaded(true)}
+                                loading="eager"
                             />
                         </div>
                     </div>
 
                     {/* Right Side - Info with Backdrop Background */}
-                    <div className="relative w-full md:w-[65%] flex-1 flex flex-col">
+                    <div className="relative w-full md:w-[65%] flex-1 flex flex-col min-h-[400px] md:min-h-[600px]">
                         {/* Background Image & Overlay */}
                         <div className="absolute inset-0">
                             {/* Skeleton loader for backdrop */}
                             {!isBackdropLoaded && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 animate-pulse">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+                                </div>
                             )}
                             <img
                                 src={backdropImage}
                                 alt="Backdrop"
                                 className={clsx(
-                                    "w-full h-full object-cover transition-opacity duration-300",
+                                    "w-full h-full object-cover transition-opacity duration-500",
                                     isBackdropLoaded ? "opacity-100" : "opacity-0"
                                 )}
                                 onLoad={() => setIsBackdropLoaded(true)}
+                                loading="eager"
                             />
                             {/* Gradient Overlay for Text Readability */}
                             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/40" />
@@ -217,7 +224,7 @@ export default function MovieDetails() {
                                         {genre}
                                     </span>
                                 ))}
-                                {movie.rating && (
+                                {movie.rating != null && movie.rating > 0 && (
                                     <div className="flex items-center gap-3 ml-2">
                                         <div className="flex items-center gap-2">
                                             <span className="text-white font-bold text-base md:text-lg">{typeof movie.rating === 'number' ? movie.rating.toFixed(1) : movie.rating}</span>
@@ -243,9 +250,16 @@ export default function MovieDetails() {
                             <div className="flex flex-wrap items-center gap-3 md:gap-4">
                                 <button
                                     onClick={() => navigate(`/watch/${id}`, { state: { isTmdbMovie } })}
-                                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-black font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/20"
+                                    disabled={!movie.torrents || movie.torrents.length === 0}
+                                    className={clsx(
+                                        "flex items-center gap-2 font-bold px-6 py-2.5 md:px-8 md:py-3.5 text-sm md:text-base rounded-xl transition-all shadow-lg",
+                                        (!movie.torrents || movie.torrents.length === 0)
+                                            ? "bg-gray-600/50 text-white/50 cursor-not-allowed"
+                                            : "bg-primary hover:bg-primary-dark text-black active:scale-95 shadow-primary/20"
+                                    )}
+                                    title={(!movie.torrents || movie.torrents.length === 0) ? "No streaming sources available" : undefined}
                                 >
-                                    <Play className="w-4 h-4 md:w-5 md:h-5 fill-black" />
+                                    <Play className={clsx("w-4 h-4 md:w-5 md:h-5", (!movie.torrents || movie.torrents.length === 0) ? "fill-white/30" : "fill-black")} />
                                     Play
                                 </button>
                                 {movie.trailer && (movie.trailer.startsWith('http') || movie.trailer.startsWith('//')) && (
@@ -412,7 +426,7 @@ export default function MovieDetails() {
                                     </div>
                                 )}
 
-                                {movie.rating && (
+                                {movie.rating != null && movie.rating > 0 && (
                                     <div className="flex items-center justify-between py-4 border-b border-white/10">
                                         <div className="flex items-center gap-3">
                                             <Star className="w-5 h-5 text-primary" />

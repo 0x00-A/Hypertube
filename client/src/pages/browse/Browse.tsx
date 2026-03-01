@@ -1,11 +1,16 @@
-import { useNavigate } from 'react-router-dom';
-import { HeroSection, MovieCarousel, LastWatchingCarousel, GenresSection } from '../../components/movie';
-import { lastWatchingMovies } from '../../data/mockMovies';
-import type { IMovie } from '../../types/movie.types';
-import { useMovies } from '../../hooks/useMovies';
-import { useFetchGenreMovies } from '../../hooks/useMovies';
-import { useAuthState } from '../../hooks/useAuth';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import {
+  HeroSection,
+  MovieCarousel,
+  LastWatchingCarousel,
+  GenresSection,
+} from "../../components/movie";
+import type { IMovie } from "../../types/movie.types";
+import { useMovies } from "../../hooks/useMovies";
+import { useFetchGenreMovies } from "../../hooks/useMovies";
+import { useAuthState } from "../../hooks/useAuth";
+import { useContinueWatching } from "../../hooks/useContinueWatching";
+import { Sparkles, TrendingUp } from "lucide-react";
 
 export default function Browse() {
   const navigate = useNavigate();
@@ -14,26 +19,29 @@ export default function Browse() {
   // Fetch movies
   const { trending, recommended, slider } = useMovies();
   const genreData = useFetchGenreMovies();
+  const { continueWatching, isLoading: isContinueWatchingLoading } =
+    useContinueWatching(isAuthenticated);
 
   const handlePlayClick = (movie: IMovie) => {
-    navigate(`/watch/${movie.imdbId}`);
+    const id = movie._id ?? movie.imdbId;
+    navigate(`/watch/${id}`, { state: { isTmdbMovie: !movie._id } });
   };
 
   const handleViewAllLastWatching = () => {
-    navigate('/history');
+    navigate("/history");
   };
 
   const handleViewAllRecommended = () => {
-    navigate('/library?filter=recommended');
+    navigate("/watchlist?filter=recommended");
   };
 
   const handleViewAllTrending = () => {
-    navigate('/trending');
+    navigate("/trending");
   };
 
   const handleViewAllGenres = () => {
     // Navigate to all-movies with the selected genre pre-applied
-    navigate(`/movies?genre=${genreData.selectedGenre}`);
+    navigate(`/library?genre=${genreData.selectedGenre}`);
   };
 
   const handleGenreChange = (genre: string) => {
@@ -43,9 +51,7 @@ export default function Browse() {
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Hero Section - Full Width */}
-      <HeroSection
-        sliderMovies={slider.movies}
-      />
+      <HeroSection sliderMovies={slider.movies} />
 
       {/* Content Sections - Constrained */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -53,9 +59,10 @@ export default function Browse() {
           <div className="mt-8 lg:mt-12">
             <LastWatchingCarousel
               title="Continue Watching"
-              progressList={lastWatchingMovies}
+              progressList={continueWatching}
               onPlayClick={handlePlayClick}
               onViewAll={handleViewAllLastWatching}
+              isLoading={isContinueWatchingLoading}
             />
           </div>
         )}
@@ -63,7 +70,7 @@ export default function Browse() {
         {isAuthenticated && (
           <div className="mt-8 lg:mt-12">
             <MovieCarousel
-              title="Recommended for You"
+              title="Recommended"
               movies={recommended.recommended}
               icon={Sparkles}
               onViewAll={handleViewAllRecommended}
@@ -82,18 +89,18 @@ export default function Browse() {
           />
         </div>
 
-        <div className="mt-8 lg:mt-12">
-          <GenresSection
-            movies={genreData.movies}
-            selectedGenre={genreData.selectedGenre}
-            onGenreChange={handleGenreChange}
-            onViewAll={handleViewAllGenres}
-            isLoading={genreData.isLoading}
-          />
-        </div>
+        {isAuthenticated && (
+          <div className="mt-8 lg:mt-12">
+            <GenresSection
+              movies={genreData.movies}
+              selectedGenre={genreData.selectedGenre}
+              onGenreChange={handleGenreChange}
+              onViewAll={handleViewAllGenres}
+              isLoading={genreData.isLoading}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
