@@ -1,9 +1,6 @@
 import { httpClient } from "./http";
 import type { IResponse, IStreamStatus } from "../types/movie.types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
 class StreamingService {
   private readonly BASE_PATH = "/stream";
 
@@ -11,9 +8,12 @@ class StreamingService {
    * Build the full streaming URL for a movie.
    * This URL is used as the `src` of a `<video>` element.
    * The server handles Range requests for seeking support.
+   * Derived from httpClient's baseURL so it can never drift from the API client.
    */
   getStreamUrl(movieId: string): string {
-    return `${API_BASE_URL}${this.BASE_PATH}/${movieId}`;
+    const baseURL =
+      httpClient.getClient().defaults.baseURL ?? "http://localhost:3000/api/v1";
+    return `${baseURL}${this.BASE_PATH}/${movieId}`;
   }
 
   /**
