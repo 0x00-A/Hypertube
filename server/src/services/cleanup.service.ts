@@ -3,6 +3,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { MovieModel } from '../models/Movie';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
+import { ForbiddenError } from '../core/errors/customErrors';
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -103,6 +105,14 @@ export class CleanupService {
   private async deleteFromDisk(filePath: string): Promise<void> {
     try {
       const resolved = path.resolve(filePath);
+      // Guard against path traversal: ensure the target is inside the downloads directory
+      const downloadsDir = path.resolve(env.DOWNLOADS_DIR);
+      const relative = path.relative(downloadsDir, resolved);
+      if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        throw new ForbiddenError(
+          `Refusing to delete path outside downloads directory: ${resolved}`,
+        );
+      }
       const stat = await fs.stat(resolved);
 
       if (stat.isDirectory()) {
