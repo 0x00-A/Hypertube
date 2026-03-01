@@ -186,6 +186,26 @@ export default function Settings() {
       return;
     }
 
+    if (!/[A-Z]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[a-z]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/[0-9]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one number');
+      return;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordData.newPassword)) {
+      setErrorMessage('New password must contain at least one special character');
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setErrorMessage('Passwords do not match');
       return;
@@ -567,7 +587,7 @@ export default function Settings() {
                         )}
                         placeholder="••••••••"
                       />
-                      <p className="text-xs text-text-muted">Must be at least 8 characters</p>
+                      <p className="text-xs text-text-muted">Min 8 chars, with uppercase, lowercase, number & special character</p>
                     </div>
 
                     {/* Confirm Password */}

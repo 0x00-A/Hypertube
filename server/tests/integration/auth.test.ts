@@ -1227,7 +1227,7 @@ describe('Auth Signup Integration Tests', () => {
       expect(res.body.validationErrors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            message: expect.stringContaining('6 characters'),
+            message: expect.stringContaining('8 characters'),
           }),
         ]),
       );

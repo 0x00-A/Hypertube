@@ -359,8 +359,14 @@ paths:
                 newPassword:
                   type: string
                   format: password
-                  minLength: 6
-                  description: New password for the account
+                  minLength: 8
+                  description: |
+                    New password for the account. Must meet all requirements:
+                    - At least 8 characters long
+                    - At least one uppercase letter
+                    - At least one lowercase letter
+                    - At least one number
+                    - At least one special character (!@#$%^&*(),.?":{}|<>)
                   example: NewSecurePass456!
       responses:
         '200':
@@ -377,7 +383,7 @@ paths:
                     type: string
                     example: Password has been reset successfully
         '400':
-          description: Validation error - missing fields or password too short
+          description: Validation error - missing fields or password does not meet policy requirements
           content:
             application/json:
               schema:
@@ -399,7 +405,7 @@ paths:
                           example: body.newPassword
                         message:
                           type: string
-                          example: New password must be at least 6 characters long
+                          example: Password must be at least 8 characters long
         '409':
           description: Invalid or expired reset token
           content:
@@ -1049,12 +1055,12 @@ paths:
         - bearerAuth: []
       description: |
         Changes the password for the authenticated user. Requires the current password for verification
-        and a new password that meets minimum security requirements.
+        and a new password that meets the password policy requirements.
 
         **Requirements:**
         - User must be authenticated (JWT token in cookie)
         - Current password must be correct
-        - New password must be at least 8 characters long
+        - New password must be at least 8 characters long, with uppercase, lowercase, number, and special character
         - OAuth users without a password set cannot use this endpoint
 
         **Security Notes:**
@@ -1073,14 +1079,19 @@ paths:
                 currentPassword:
                   type: string
                   format: password
-                  minLength: 8
                   description: User's current password for verification
                   example: CurrentPass123!
                 newPassword:
                   type: string
                   format: password
                   minLength: 8
-                  description: New password (minimum 8 characters)
+                  description: |
+                    New password. Must meet all requirements:
+                    - At least 8 characters long
+                    - At least one uppercase letter
+                    - At least one lowercase letter
+                    - At least one number
+                    - At least one special character (!@#$%^&*(),.?":{}|<>)
                   example: NewSecurePass456!
             examples:
               changePassword:
@@ -1133,14 +1144,14 @@ paths:
                     message: Current password is incorrect
                     path: /api/v1/users/change-password
                 passwordTooShort:
-                  summary: New password too short
+                  summary: New password does not meet policy
                   value:
                     status: fail
                     message: Validation Error
                     path: /api/v1/users/change-password
                     validationErrors:
                       - path: body.newPassword
-                        message: New password must be at least 8 characters long
+                        message: Password must be at least 8 characters long
                 missingFields:
                   summary: Missing required fields
                   value:
