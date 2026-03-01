@@ -121,9 +121,11 @@ class HttpClient {
             // Refresh succeeded — retry queued requests and the original request
             this.processQueue(null);
             return this.client.request(originalRequest);
-          } catch {
+          } catch (refreshErr) {
             // Refresh failed — reject queued requests and dispatch unauthorized
-            const refreshError = this.handleError(error);
+            const refreshError = axios.isAxiosError<ErrorResponse>(refreshErr)
+              ? this.handleError(refreshErr)
+              : { message: "Token refresh failed" };
             this.processQueue(refreshError);
 
             if (typeof window !== "undefined") {
