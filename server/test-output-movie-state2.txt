@@ -1,0 +1,26 @@
+FAIL tests/integration/movies/movie.state.api.test.ts
+  ΓùÅ Test suite failed to run
+
+    TypeError: axios_1.default.create is not a function
+
+      10 |   constructor(name: string, baseUrl: string) {
+      11 |     this.name = name;
+    > 12 |     this.api = axios.create({
+         |                      ^
+      13 |       baseURL: baseUrl,
+      14 |       timeout: 10000,
+      15 |     });
+
+      at new BaseProvider (src/services/scraper/providers/BaseProvider.ts:12:22)
+      at new YtsProvider (src/services/scraper/providers/YtsProvider.ts:22:5)
+      at Object.<anonymous> (src/services/scraper/providers/YtsProvider.ts:107:28)
+      at Object.<anonymous> (src/services/scraper/ScraperEngine.ts:2:1)
+      at Object.<anonymous> (src/bootstrap/controllers.ts:9:1)
+      at Object.<anonymous> (src/app.ts:18:1)
+      at Object.<anonymous> (tests/integration/movies/movie.state.api.test.ts:2:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        3.095 s
+Ran all test suites matching /tests\\integration\\movies\\movie.state.api.test.ts/i.

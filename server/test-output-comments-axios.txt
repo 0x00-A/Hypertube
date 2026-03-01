@@ -1,0 +1,24 @@
+[2026-03-01 18:26:12.231 +0000] [31mERROR[39m: [36m[MovieService] Error completing data for movie TMDb ID "999999": Cannot read properties of undefined (reading '0')[39m
+FAIL tests/integration/comments.test.ts (7.167 s)
+  ΓùÅ Comment API Integration Tests ΓÇ║ POST /api/v1/comments - Create comment ΓÇ║ should create movie data if movie does not exist
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 404
+
+      327 |         });
+      328 |
+    > 329 |       expect(res.status).toBe(201);
+          |                          ^
+      330 |       const movie = await MovieModel.findOne({ tmdbId: newTmdbId });
+      331 |       expect(movie).toBeTruthy();
+      332 |     });
+
+      at Object.<anonymous> (tests/integration/comments.test.ts:329:26)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 24 passed, 25 total
+Snapshots:   0 total
+Time:        7.409 s, estimated 9 s
+Ran all test suites matching /tests\\integration\\comments.test.ts/i.

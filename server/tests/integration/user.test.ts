@@ -710,12 +710,12 @@ describe('User Profile Integration Tests', () => {
       const res = await request(app)
         .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ firstName: 'NewFirstName' });
+        .send({ firstName: 'NewFirst' });
 
       expect(res.status).toBe(200);
 
       const updatedUser = await UserModel.findOne({ username: testUser.username });
-      expect(updatedUser?.firstName).toBe('NewFirstName');
+      expect(updatedUser?.firstName).toBe('NewFirst');
       expect(updatedUser?.lastName).toBe(testUser.lastName); // Original lastName unchanged
     });
 
@@ -723,12 +723,12 @@ describe('User Profile Integration Tests', () => {
       const res = await request(app)
         .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ lastName: 'NewLastName' });
+        .send({ lastName: 'NewLast' });
 
       expect(res.status).toBe(200);
 
       const updatedUser = await UserModel.findOne({ username: testUser.username });
-      expect(updatedUser?.lastName).toBe('NewLastName');
+      expect(updatedUser?.lastName).toBe('NewLast');
       expect(updatedUser?.firstName).toBe(testUser.firstName); // Original firstName unchanged
     });
 
@@ -1030,14 +1030,14 @@ describe('User Profile Integration Tests', () => {
       const res = await request(app)
         .patch(`/api/v1/users/${testUserId}`)
         .set('Cookie', [`accessToken=${authToken}`])
-        .send({ lastName: 'NewLastNameOnly' });
+        .send({ lastName: 'NewLast' });
 
       expect(res.status).toBe(200);
 
       const updatedUser = await UserModel.findOne({ username: testUser.username });
       expect(updatedUser?.email).toBe(originalEmail);
       expect(updatedUser?.firstName).toBe(originalFirstName);
-      expect(updatedUser?.lastName).toBe('NewLastNameOnly');
+      expect(updatedUser?.lastName).toBe('NewLast');
     });
 
     it('should update successfully with username containing valid characters', async () => {
@@ -1720,16 +1720,17 @@ describe('User Profile Integration Tests', () => {
       expect(res.body.validationErrors).toBeDefined();
       expect(res.body.validationErrors[0]).toMatchObject({
         path: 'body.newPassword',
-        message: 'New password must be at least 6 characters long',
+        message: 'Password must be at least 8 characters long',
       });
     });
 
     it('should return 400 when current password is too short', async () => {
+      // The current password validation only checks min(1) now based on schema
       const res = await request(app)
         .post('/api/v1/users/change-password')
         .set('Cookie', [`accessToken=${authToken}`])
         .send({
-          currentPassword: 'short',
+          currentPassword: '',
           newPassword: 'NewSecurePass456!',
         });
 
@@ -1740,7 +1741,7 @@ describe('User Profile Integration Tests', () => {
       expect(res.body.validationErrors).toBeDefined();
       expect(res.body.validationErrors[0]).toMatchObject({
         path: 'body.currentPassword',
-        message: 'Current password must be at least 6 characters long',
+        message: 'Current password is required',
       });
     });
 

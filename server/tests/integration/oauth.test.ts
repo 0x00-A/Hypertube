@@ -425,13 +425,12 @@ describe('OAuth Integration Tests', () => {
         family_name: 'User',
       });
 
-      // Mock a database error by disconnecting
-      await disconnectDatabase();
+      // Mock a database error by spying on userRepo
+      const spy = jest.spyOn(userRepo, 'findByEmail').mockRejectedValueOnce(new Error('Simulated DB Error'));
 
       await expect(oauthService.handleGoogleOAuth(mockGoogleProfile)).rejects.toThrow();
 
-      // Reconnect for other tests
-      await connectDatabase();
+      spy.mockRestore();
     });
 
     it('should handle non-existent user when linking OAuth account', async () => {

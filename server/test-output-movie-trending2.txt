@@ -1,0 +1,25 @@
+[2026-03-01 18:17:03.012 +0000] [31mERROR[39m: [36m[MovieService] Error completing data for movie TMDb ID "278": Cast to embedded failed for value "Actor 1" (type string) at path "cast" because of "ObjectParameterError"[39m
+[2026-03-01 18:17:03.258 +0000] [31mERROR[39m: [36m[MovieService] Error completing data for movie TMDb ID "999999999": Cast to embedded failed for value "Actor 1" (type string) at path "cast" because of "ObjectParameterError"[39m
+FAIL tests/integration/movies/movies.trending.api.test.ts (7.742 s)
+  ΓùÅ Movies API - New Endpoints (Integration) ΓÇ║ GET /api/v1/movies/trending ΓÇ║ should support pagination
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+      152 |       const res = await request(app).get('/api/v1/movies/trending?page=2');
+      153 |       expect(res.status).toBe(200);
+    > 154 |       expect(res.body.pagination.page).toBe(2);
+          |                                        ^
+      155 |     });
+      156 |   });
+      157 |
+
+      at Object.<anonymous> (tests/integration/movies/movies.trending.api.test.ts:154:40)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 3 passed, 4 total
+Snapshots:   0 total
+Time:        8.074 s
+Ran all test suites matching /tests\\integration\\movies\\movies.trending.api.test.ts/i.

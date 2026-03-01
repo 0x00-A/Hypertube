@@ -9,7 +9,8 @@
     "lint": "eslint . --fix",
     "format": "prettier . --write",
     "test": "jest",
-    "cleanup": "ts-node ./scripts/manual_cleanup.ts"
+    "cleanup": "ts-node ./scripts/manual_cleanup.ts",
+    "seed:top": "ts-node ./scripts/seed_top_movies.ts"
   },
   "dependencies": {
     "@types/multer": "^2.0.0",

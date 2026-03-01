@@ -1,0 +1,60 @@
+[2026-03-01 17:58:23.252 +0000] [31mERROR[39m: [36m[MovieService] Error fetching trending movies: Cannot read properties of undefined (reading 'map')[39m
+[2026-03-01 17:58:24.373 +0000] [31mERROR[39m: [36m[MovieService] Error fetching trending movies: Cannot read properties of undefined (reading 'map')[39m
+[2026-03-01 17:58:24.404 +0000] [31mERROR[39m: [36m[MovieService] Error fetching popular movies: Cannot read properties of undefined (reading 'map')[39m
+FAIL tests/integration/movies/movie.state.api.test.ts (8.406 s)
+  ΓùÅ Movie State Flags API (Optional Auth) ΓÇ║ Authenticated User - State Flags ΓÇ║ should work for GET /movies/trending endpoint
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 502
+
+      390 |         .query({ page: 1 });
+      391 |
+    > 392 |       expect(res.status).toBe(200);
+          |                          ^
+      393 |       // TMDB trending will return many movies, find ours
+      394 |       const localMovie = res.body.data.find((m: any) => m.tmdbId === 278 && m.isLocal);
+      395 |       if (localMovie) {
+
+      at Object.<anonymous> (tests/integration/movies/movie.state.api.test.ts:392:26)
+
+  ΓùÅ Movie State Flags API (Optional Auth) ΓÇ║ Unauthenticated User - Requires Auth on Private Endpoints ΓÇ║ should work for GET /movies/trending without auth
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 502
+
+      513 |       const res = await request(app).get('/api/v1/movies/trending').query({ page: 1 });
+      514 |
+    > 515 |       expect(res.status).toBe(200);
+          |                          ^
+      516 |       expect(res.body.data).toBeDefined();
+      517 |       // All movies should have default state flags
+      518 |       res.body.data.forEach((movie: any) => {
+
+      at Object.<anonymous> (tests/integration/movies/movie.state.api.test.ts:515:26)
+
+  ΓùÅ Movie State Flags API (Optional Auth) ΓÇ║ Unauthenticated User - Requires Auth on Private Endpoints ΓÇ║ should work for GET /movies/popular without auth
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 502
+
+      526 |       const res = await request(app).get('/api/v1/movies/popular').query({ page: 1 });
+      527 |
+    > 528 |       expect(res.status).toBe(200);
+          |                          ^
+      529 |       expect(res.body.data).toBeDefined();
+      530 |       res.body.data.forEach((movie: any) => {
+      531 |         expect(movie.isWatched).toBe(false);
+
+      at Object.<anonymous> (tests/integration/movies/movie.state.api.test.ts:528:26)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 13 passed, 16 total
+Snapshots:   0 total
+Time:        8.651 s
+Ran all test suites matching /tests\\integration\\movies\\movie.state.api.test.ts/i.

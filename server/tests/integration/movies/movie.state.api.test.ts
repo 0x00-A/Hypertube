@@ -5,6 +5,110 @@ import { UserModel } from '../../../src/models/User';
 import { MovieModel } from '../../../src/models/Movie';
 import { MovieInteractionModel } from '../../../src/models/MovieInteraction';
 
+jest.mock('../../../src/services/metadata/tmdb', () => ({
+  getMetadata: jest.fn().mockImplementation((id: number | string) => {
+    return Promise.resolve({
+      tmdbId: typeof id === 'number' ? id : parseInt(id as string, 10) || 12345,
+      imdbId: 'tt1234567',
+      title: 'Mocked Movie',
+      year: 2024,
+      description: 'A mocked movie description for testing.',
+      rating: 8.5,
+      genres: ['Action', 'Sci-Fi'],
+      director: 'Mock Director',
+      cast: ['Actor 1', 'Actor 2', 'Actor 3'],
+      length: 120,
+      images: {
+        thumbnail: 'https://example.com/thumb.jpg',
+        poster: 'https://example.com/poster.jpg',
+        backdrop: 'https://example.com/backdrop.jpg',
+      },
+      trailer: 'https://youtube.com/watch?v=mock',
+    });
+  }),
+  getTrendingMovies: jest.fn().mockResolvedValue({
+    results: [
+      {
+        id: 278,
+        title: 'The Shawshank Redemption',
+        release_date: '1994-09-23',
+        poster_path: '/poster.jpg',
+        overview: 'Mocked overview',
+        vote_average: 9.3,
+      }
+    ],
+    total_pages: 1,
+    total_results: 1
+  }),
+  getPopularMovies: jest.fn().mockResolvedValue({
+    results: [
+      {
+        id: 238,
+        title: 'The Godfather',
+        release_date: '1972-03-14',
+        poster_path: '/poster.jpg',
+        overview: 'Mocked overview',
+        vote_average: 9.2,
+      }
+    ],
+    total_pages: 1,
+    total_results: 1
+  })
+}));
+
+jest.mock('axios', () => {
+  const mockGet = jest.fn((url: string) => {
+    if (url.includes('/trending/') || url.includes('/popular')) {
+      return Promise.resolve({
+        data: {
+          page: 1,
+          total_results: 1,
+          total_pages: 1,
+          results: [
+            {
+              id: 278,
+              title: 'The Shawshank Redemption',
+              release_date: '1994-09-23',
+              poster_path: '/poster.jpg',
+              backdrop_path: '/backdrop.jpg',
+              overview: 'Mocked overview',
+              vote_average: 9.3,
+              genre_ids: [18, 80],
+              original_language: 'en'
+            },
+            {
+              id: 238,
+              title: 'The Godfather',
+              release_date: '1972-03-14',
+              poster_path: '/poster.jpg',
+              backdrop_path: '/backdrop.jpg',
+              overview: 'Mocked overview',
+              vote_average: 9.2,
+              genre_ids: [18, 80],
+              original_language: 'en'
+            }
+          ]
+        }
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  return {
+    get: mockGet,
+    create: jest.fn(() => ({
+      get: mockGet,
+      post: jest.fn(() => Promise.resolve({ data: {} })),
+      put: jest.fn(() => Promise.resolve({ data: {} })),
+      delete: jest.fn(() => Promise.resolve({ data: {} })),
+      interceptors: {
+        request: { use: jest.fn(), eject: jest.fn() },
+        response: { use: jest.fn(), eject: jest.fn() }
+      }
+    }))
+  };
+});
+
 describe('Movie State Flags API (Optional Auth)', () => {
   let app: ReturnType<typeof createApp>['app'];
 

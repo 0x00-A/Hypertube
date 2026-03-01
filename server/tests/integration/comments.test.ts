@@ -1,3 +1,83 @@
+jest.mock('axios', () => {
+  const mockGet = jest.fn((url: string, config?: any) => {
+    if (url.includes('/external_ids')) {
+      return Promise.resolve({
+        data: {
+          imdb_id: 'tt1234567'
+        }
+      });
+    }
+    if (url.includes('/find/')) {
+      return Promise.resolve({
+        data: {
+          movie_results: [{ id: 999999 }]
+        }
+      });
+    }
+    if (url.includes('/movie/') && !url.includes('/external_ids')) {
+      return Promise.resolve({
+        data: {
+          id: 999999,
+          imdb_id: 'tt1234567',
+          title: 'Mocked Movie',
+          release_date: '2024-01-01',
+          overview: 'Mock desc.',
+          vote_average: 8.5,
+          genres: [{ id: 28, name: 'Action' }],
+          runtime: 120,
+          poster_path: '/poster.jpg',
+          backdrop_path: '/backdrop.jpg',
+          original_language: 'en',
+          credits: {
+            cast: [{ id: 1, name: 'Actor 1', character: 'Hero', profile_path: '/profile.jpg' }],
+            crew: [{ job: 'Director', name: 'Mock Director' }]
+          },
+          videos: {
+            results: []
+          }
+        }
+      });
+    }
+    if (url.includes('yts.mx/api')) {
+      return Promise.resolve({
+        data: {
+          data: {
+            movie: {
+              rating: 8.5,
+              torrents: [{
+                url: 'magnet:?xt=urn:btih:test',
+                hash: 'testhash',
+                quality: '1080p',
+                type: 'mp4',
+                video_codec: 'x264',
+                seeds: 100,
+                peers: 50,
+                size: '1.5 GB',
+                size_bytes: 1610612736
+              }]
+            }
+          }
+        }
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  return {
+    get: mockGet,
+    create: jest.fn(() => ({
+      get: mockGet,
+      post: jest.fn(() => Promise.resolve({ data: {} })),
+      put: jest.fn(() => Promise.resolve({ data: {} })),
+      delete: jest.fn(() => Promise.resolve({ data: {} })),
+      interceptors: {
+        request: { use: jest.fn(), eject: jest.fn() },
+        response: { use: jest.fn(), eject: jest.fn() }
+      }
+    }))
+  };
+});
+
 import request from 'supertest';
 import { createApp } from '../../src/app';
 import { CommentModel } from '../../src/models/Comment';
