@@ -50,12 +50,39 @@ export class StreamingController {
     const rangeHeader = req.headers.range;
 
     if (rangeHeader) {
-      // Parse Range header: "bytes=start-end"
-      const parts = rangeHeader.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      // Parse Range header per RFC 7233: "bytes=start-end", "bytes=start-", "bytes=-suffix"
+      const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
+      if (!match) {
+        // Malformed Range header — respond with 416
+        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+        res.end();
+        return;
+      }
 
-      if (start >= fileSize || end >= fileSize || start > end) {
+      const rawStart = match[1];
+      const rawEnd = match[2];
+
+      let start: number;
+      let end: number;
+
+      if (rawStart === '' && rawEnd === '') {
+        // "bytes=-" is invalid
+        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+        res.end();
+        return;
+      } else if (rawStart === '') {
+        // Suffix-byte range: "bytes=-N" means last N bytes
+        const suffixLength = parseInt(rawEnd, 10);
+        start = Math.max(0, fileSize - suffixLength);
+        end = fileSize - 1;
+      } else {
+        start = parseInt(rawStart, 10);
+        end = rawEnd !== '' ? parseInt(rawEnd, 10) : fileSize - 1;
+      }
+
+      // Number.isFinite guards are defensive — the regex guarantees digit strings,
+      // but parseInt('', 10) === NaN so they catch any edge cases from empty capture groups.
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start >= fileSize || end >= fileSize || start > end) {
         res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
         res.end();
         return;
