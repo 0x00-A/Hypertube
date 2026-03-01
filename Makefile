@@ -25,7 +25,8 @@ lint:
 	cd client && npm run lint
 	cd server && npm run lint
 
-clean: down -v -rmi all
+clean:
+	$(DC) down -v --rmi all
 
 fclean: down
 	docker system prune -af

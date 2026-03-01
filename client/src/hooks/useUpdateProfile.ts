@@ -22,8 +22,8 @@ export const useUpdateProfile = () => {
 
       toast.success('Profile updated successfully!');
     },
-    onError: (error: unknown) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+    onError: (error: any) => {
+      const errorMessage = error?.message || 'Failed to update profile';
       toast.error(errorMessage);
     },
   });

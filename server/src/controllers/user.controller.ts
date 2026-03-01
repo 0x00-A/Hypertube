@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
-import { NotFoundError, ForbiddenError } from '../core/errors/customErrors';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../core/errors/customErrors';
 import { asyncHandler } from '../utils/asyncHandler';
 import { IUserProfileUpdate } from '../interfaces/user.interface';
 
@@ -63,6 +63,14 @@ export class UserController {
       throw new ForbiddenError('You can only update your own profile');
     }
     const newData = req.validated?.body as IUserProfileUpdate;
+
+    if (newData.username && newData.username !== req.user.username) {
+      const existingUser = await this._service.getUser(newData.username);
+      if (existingUser) {
+        throw new BadRequestError('Duplicate value for field: username. Please use another value.');
+      }
+    }
+
     await this._service.updateProfile(req.user.username, newData);
     res.json({
       status: 'success',

@@ -82,11 +82,11 @@ export const authService = {
     }
 
     // Append other fields
-    if (data.username) formData.append('username', data.username);
-    if (data.email) formData.append('email', data.email);
-    if (data.firstName) formData.append('firstName', data.firstName);
-    if (data.lastName) formData.append('lastName', data.lastName);
-    if (data.language) formData.append('language', data.language);
+    if (data.username !== undefined) formData.append('username', data.username);
+    if (data.email !== undefined) formData.append('email', data.email);
+    if (data.firstName !== undefined) formData.append('firstName', data.firstName);
+    if (data.lastName !== undefined) formData.append('lastName', data.lastName);
+    if (data.language !== undefined) formData.append('language', data.language);
 
     // Override default JSON content type so the request is sent as multipart/form-data
     await httpClient.patch<{ status: string; message: string }>(

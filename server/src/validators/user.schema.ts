@@ -67,9 +67,21 @@ export const UpdateProfileSchema = z.object({
   }),
   body: z.object({
     email: z.string().trim().email('Invalid email address').optional(),
-    username: z.string().trim().min(3, 'Username must be at least 3 characters long').optional(),
-    firstName: z.string().nullish(),
-    lastName: z.string().nullish(),
+    username: z.string().trim()
+      .min(3, 'Username must be at least 3 characters long')
+      .max(20, 'Username must be less than 20 characters')
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+      .optional(),
+    firstName: z.string().trim()
+      .min(2, 'First name is required')
+      .max(10, 'First name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'First name can only contain letters')
+      .nullish(),
+    lastName: z.string().trim()
+      .min(2, 'Last name is required')
+      .max(10, 'Last name must be less than 10 characters')
+      .regex(/^[a-zA-Z]+$/, 'Last name can only contain letters')
+      .nullish(),
     // avatarUrl can be either a file path (from multer) or an external URL
     avatarUrl: z
       .string()

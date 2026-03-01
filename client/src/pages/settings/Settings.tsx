@@ -128,8 +128,45 @@ export default function Settings() {
       return;
     }
 
-    if (!formData.username.trim()) {
-      setErrorMessage('Username is required');
+    const username = formData.username.trim();
+    if (username.length < 3) {
+      setErrorMessage('Username must be at least 3 characters');
+      return;
+    }
+    if (username.length > 20) {
+      setErrorMessage('Username must be less than 20 characters');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setErrorMessage('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    const firstName = formData.firstName.trim();
+    if (firstName.length < 2) {
+      setErrorMessage('First name must be at least 2 characters');
+      return;
+    }
+    if (firstName.length > 10) {
+      setErrorMessage('First name must be less than 10 characters');
+      return;
+    }
+    if (!/^[a-zA-Z]+$/.test(firstName)) {
+      setErrorMessage('First name can only contain letters');
+      return;
+    }
+
+    const lastName = formData.lastName.trim();
+    if (lastName.length < 2) {
+      setErrorMessage('Last name must be at least 2 characters');
+      return;
+    }
+    if (lastName.length > 10) {
+      setErrorMessage('Last name must be less than 10 characters');
+      return;
+    }
+    if (!/^[a-zA-Z]+$/.test(lastName)) {
+      setErrorMessage('Last name can only contain letters');
       return;
     }
 
@@ -156,12 +193,8 @@ export default function Settings() {
         onSuccess: () => {
           setAvatarFile(null); // Clear the file after successful upload
         },
-        onError: (error: unknown) => {
-          if (error instanceof Error) {
-            setErrorMessage(error.message || 'Failed to update profile');
-          } else {
-            setErrorMessage('Failed to update profile. Please try again.');
-          }
+        onError: (error: any) => {
+          setErrorMessage(error?.message || 'Failed to update profile. Please try again.');
         },
       }
     );
@@ -226,12 +259,8 @@ export default function Settings() {
             confirmPassword: '',
           });
         },
-        onError: (error: unknown) => {
-          if (error instanceof Error) {
-            setErrorMessage(error.message || 'Failed to change password');
-          } else {
-            setErrorMessage('Failed to change password. Please try again.');
-          }
+        onError: (error: any) => {
+          setErrorMessage(error?.message || 'Failed to change password. Please try again.');
         },
       }
     );
