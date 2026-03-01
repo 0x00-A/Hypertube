@@ -177,6 +177,47 @@ describe('StreamingController', () => {
         expect(res.status).toHaveBeenCalledWith(416);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes */5000000');
       });
+
+      it('should respond 206 for a suffix-byte range (bytes=-N)', async () => {
+        mockGetStreamableFile.mockResolvedValue(baseStreamable);
+        const req = createMockRequest({
+          headers: { range: 'bytes=-500' },
+        } as Partial<Request>);
+        const res = createMockResponse();
+
+        await controller.stream(req, res, jest.fn());
+
+        // Last 500 bytes of a 5_000_000 byte file: start=4999500, end=4999999
+        expect(res.status).toHaveBeenCalledWith(206);
+        expect(res.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes 4999500-4999999/5000000');
+        expect(res.setHeader).toHaveBeenCalledWith('Content-Length', 500);
+      });
+
+      it('should respond 416 for a malformed Range header', async () => {
+        mockGetStreamableFile.mockResolvedValue(baseStreamable);
+        const req = createMockRequest({
+          headers: { range: 'bytes=abc-def' },
+        } as Partial<Request>);
+        const res = createMockResponse();
+
+        await controller.stream(req, res, jest.fn());
+
+        expect(res.status).toHaveBeenCalledWith(416);
+        expect(res.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes */5000000');
+      });
+
+      it('should respond 416 for "bytes=-" (invalid suffix range)', async () => {
+        mockGetStreamableFile.mockResolvedValue(baseStreamable);
+        const req = createMockRequest({
+          headers: { range: 'bytes=-' },
+        } as Partial<Request>);
+        const res = createMockResponse();
+
+        await controller.stream(req, res, jest.fn());
+
+        expect(res.status).toHaveBeenCalledWith(416);
+        expect(res.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes */5000000');
+      });
     });
 
     describe('transcoding path', () => {
