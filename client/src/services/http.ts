@@ -62,7 +62,12 @@ class HttpClient {
       if (error) {
         reject(error);
       } else {
-        this.client.request(config).then(resolve).catch(reject);
+        this.client
+          .request(config)
+          .then(resolve)
+          .catch((err: AxiosError<ErrorResponse>) => {
+            reject(this.handleError(err));
+          });
       }
     });
     this.failedQueue = [];
