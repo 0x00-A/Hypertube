@@ -228,15 +228,20 @@ export class StreamingService {
       }
     }
 
-    // prefer the actual file extension once downloaded; fall back to the torrent type field
+    // Determine whether the browser can play the file natively.
+    // Priority: actual file on disk > active engine's real filename > unknown (default false)
     let needsTranscoding = false;
     if (movie.downloadStatus === 'downloaded' && movie.localPath) {
       const ext = path.extname(movie.localPath).toLowerCase();
       needsTranscoding = !BROWSER_PLAYABLE.has(ext);
-    } else if (movie.torrents && movie.torrents.length > 0) {
-      const torrent = this.selectTorrent(movie);
-      const torrentExt = torrent.type ? `.${torrent.type.toLowerCase()}` : '';
-      needsTranscoding = torrentExt !== '' && !BROWSER_PLAYABLE.has(torrentExt);
+    } else {
+      const activeEngine = this._activeEngines.get(movieId);
+      if (activeEngine?.file) {
+        const ext = path.extname(activeEngine.file.name).toLowerCase();
+        needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+      }
+      // If no engine is running yet we can't know the container format;
+      // leave needsTranscoding = false until the stream is started.
     }
 
     // duration is stored in minutes; the client needs seconds
