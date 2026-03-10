@@ -10,11 +10,12 @@ import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { NotFoundError, BadRequestError } from '../core/errors/customErrors';
 import { IMovieDocument } from '../models/movie.model.types';
-import { ITorrent } from '../interfaces/movie.interface';
+import { ITorrent, IQualityOption } from '../interfaces/movie.interface';
 
 interface ActiveEngine {
   engine: ReturnType<typeof torrentStream>;
   movieId: string;
+  quality: string;
   file: {
     name: string;
     path: string;
@@ -63,10 +64,14 @@ export class StreamingService {
     }
   }
 
-  // Resolves the best stream source for a movie:
-  //   1. local file if already downloaded
+  // Resolves the best stream source for a movie at the requested quality:
+  //   1. local file if already downloaded for this quality
   //   2. torrent engine stream otherwise (starts one if needed)
-  async getStreamableFile(movieId: string, language: string = 'en'): Promise<StreamableFile> {
+  async getStreamableFile(
+    movieId: string,
+    language: string = 'en',
+    quality?: string,
+  ): Promise<StreamableFile> {
     const movie = await this._movieRepository.findById(movieId);
     if (!movie) {
       throw new NotFoundError('Movie not found');
@@ -76,8 +81,14 @@ export class StreamingService {
       throw new BadRequestError('No torrents available for this movie');
     }
 
-    if (movie.downloadStatus === 'downloaded' && movie.localPath) {
-      const filePath = path.resolve(movie.localPath);
+    const torrent = this.findTorrent(movie, quality);
+    const resolvedQuality = torrent.quality;
+
+    // Check per-quality download status first
+    const downloadInfo = movie.downloads?.get(resolvedQuality);
+
+    if (downloadInfo?.status === 'downloaded' && downloadInfo.localPath) {
+      const filePath = path.resolve(downloadInfo.localPath);
       if (fs.existsSync(filePath)) {
         const stats = fs.statSync(filePath);
 
@@ -85,11 +96,10 @@ export class StreamingService {
         const MIN_MOVIE_SIZE = 10 * 1024 * 1024;
         if (stats.size < MIN_MOVIE_SIZE) {
           logger.warn(
-            { movieId, filePath, fileSize: stats.size },
+            { movieId, quality: resolvedQuality, filePath, fileSize: stats.size },
             'Downloaded file is suspiciously small — re-downloading',
           );
-          movie.downloadStatus = 'not_downloaded';
-          movie.localPath = undefined;
+          movie.downloads!.set(resolvedQuality, { status: 'not_downloaded' });
           await movie.save();
         } else {
           const ext = path.extname(filePath).toLowerCase();
@@ -99,24 +109,59 @@ export class StreamingService {
           movie.lastWatched = new Date();
           await movie.save();
 
-          const torrent = this.selectTorrent(movie);
           this.fetchSubtitlesInBackground(movie, torrent, language);
 
           logger.info(
-            { movieId, filePath, ext, fileSize: stats.size },
+            { movieId, quality: resolvedQuality, filePath, ext, fileSize: stats.size },
             'Serving already-downloaded movie',
           );
           return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
         }
       } else {
-        logger.warn({ movieId }, 'Local file missing, re-downloading');
-        movie.downloadStatus = 'not_downloaded';
-        movie.localPath = undefined;
+        logger.warn({ movieId, quality: resolvedQuality }, 'Local file missing, re-downloading');
+        movie.downloads!.set(resolvedQuality, { status: 'not_downloaded' });
         await movie.save();
       }
     }
 
-    const activeEngine = await this.getOrCreateEngine(movie, language);
+    // Fallback: check legacy downloadStatus/localPath fields (backward compat)
+    if (
+      !downloadInfo &&
+      movie.downloadStatus === 'downloaded' &&
+      movie.localPath
+    ) {
+      const filePath = path.resolve(movie.localPath);
+      if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        const MIN_MOVIE_SIZE = 10 * 1024 * 1024;
+        if (stats.size >= MIN_MOVIE_SIZE) {
+          const ext = path.extname(filePath).toLowerCase();
+          const mimeType = VIDEO_MIME_TYPES[ext] || 'application/octet-stream';
+          const needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+
+          movie.lastWatched = new Date();
+          // Migrate to new per-quality tracking
+          if (!movie.downloads) {
+            movie.downloads = new Map();
+          }
+          movie.downloads.set(resolvedQuality, {
+            status: 'downloaded',
+            localPath: movie.localPath,
+          });
+          await movie.save();
+
+          this.fetchSubtitlesInBackground(movie, torrent, language);
+
+          logger.info(
+            { movieId, quality: resolvedQuality, filePath, ext, fileSize: stats.size },
+            'Serving movie from legacy path (migrated to per-quality tracking)',
+          );
+          return { filePath, fileSize: stats.size, mimeType, needsTranscoding, movie };
+        }
+      }
+    }
+
+    const activeEngine = await this.getOrCreateEngine(movie, torrent, language);
 
     if (!activeEngine.file) {
       throw new BadRequestError('No suitable video file found in torrent');
@@ -174,12 +219,14 @@ export class StreamingService {
   async getStatus(
     movieId: string,
     language?: string,
+    quality?: string,
   ): Promise<{
     downloadStatus: string;
     hasActiveEngine: boolean;
     needsTranscoding: boolean;
     runtimeSeconds: number | null;
     subtitles: Record<string, { language: string; label: string; url: string }[]>;
+    availableQualities: IQualityOption[];
   }> {
     const movie = await this._movieRepository.findById(movieId);
     if (!movie) {
@@ -202,7 +249,7 @@ export class StreamingService {
       }
 
       if (needsFetch) {
-        const torrent = this.selectTorrent(movie);
+        const torrent = this.findTorrent(movie, quality);
         this.fetchSubtitlesInBackground(movie, torrent, language);
       }
     }
@@ -225,52 +272,153 @@ export class StreamingService {
             language: s.language,
             label: s.label,
             url: s.url || '',
+            forQuality: s.forQuality || '',
           }));
         }
       }
     }
 
+    // Resolve the torrent for the requested quality (or best default)
+    const resolvedTorrent = this.findTorrent(movie, quality);
+    const resolvedQuality = resolvedTorrent.quality;
+    const engineKey = `${movieId}:${resolvedQuality}`;
+
+    // Determine download status for the requested quality
+    let downloadStatus = 'not_downloaded';
+    const downloadInfo = movie.downloads?.get(resolvedQuality);
+    if (downloadInfo) {
+      downloadStatus = downloadInfo.status;
+    } else if (movie.downloadStatus) {
+      // Legacy fallback
+      downloadStatus = movie.downloadStatus;
+    }
+
     // Determine whether the browser can play the file natively.
-    // Priority: actual file on disk > active engine's real filename > unknown (default false)
     let needsTranscoding = false;
-    if (movie.downloadStatus === 'downloaded' && movie.localPath) {
+    if (downloadInfo?.status === 'downloaded' && downloadInfo.localPath) {
+      const ext = path.extname(downloadInfo.localPath).toLowerCase();
+      needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+    } else if (movie.downloadStatus === 'downloaded' && movie.localPath) {
       const ext = path.extname(movie.localPath).toLowerCase();
       needsTranscoding = !BROWSER_PLAYABLE.has(ext);
     } else {
-      const activeEngine = this._activeEngines.get(movieId);
+      const activeEngine = this._activeEngines.get(engineKey);
       if (activeEngine?.file) {
         const ext = path.extname(activeEngine.file.name).toLowerCase();
         needsTranscoding = !BROWSER_PLAYABLE.has(ext);
+      } else if (resolvedTorrent.type) {
+        // No engine yet — use the torrent's declared container type as a hint
+        const ext = `.${resolvedTorrent.type.toLowerCase()}`;
+        needsTranscoding = !BROWSER_PLAYABLE.has(ext);
       }
-      // If no engine is running yet we can't know the container format;
-      // leave needsTranscoding = false until the stream is started.
     }
 
     // duration is stored in minutes; the client needs seconds
     const runtimeSeconds =
       movie.duration != null && movie.duration > 0 ? movie.duration * 60 : null;
 
+    // Build available qualities from all torrents
+    const availableQualities = this.getAvailableQualities(movie);
+
     return {
-      downloadStatus: movie.downloadStatus,
-      hasActiveEngine: this._activeEngines.has(movieId),
+      downloadStatus,
+      hasActiveEngine: this._activeEngines.has(engineKey),
       needsTranscoding,
       runtimeSeconds,
       subtitles,
+      availableQualities,
     };
   }
 
+  // Returns quality options for all torrents, enriched with download status
+  getAvailableQualities(movie: IMovieDocument): IQualityOption[] {
+    if (!movie.torrents || movie.torrents.length === 0) return [];
+
+    const deduped = this.deduplicateTorrents(movie.torrents);
+
+    return deduped.map((torrent) => {
+      const downloadInfo = movie.downloads?.get(torrent.quality);
+      let downloadStatus = 'not_downloaded';
+      if (downloadInfo) {
+        downloadStatus = downloadInfo.status;
+      } else if (movie.downloadStatus === 'downloaded' && movie.localPath) {
+        // Legacy: if old fields are set, show as downloaded for the first matching quality
+        downloadStatus = movie.downloadStatus;
+      }
+
+      return {
+        quality: torrent.quality,
+        seeds: torrent.seeds,
+        peers: torrent.peers,
+        size: torrent.size,
+        sizeBytes: torrent.sizeBytes,
+        downloadStatus,
+      };
+    });
+  }
+
   destroyAll(): void {
-    for (const [movieId, active] of this._activeEngines) {
-      logger.info({ movieId }, 'Destroying torrent engine on shutdown');
+    for (const [key, active] of this._activeEngines) {
+      logger.info({ key }, 'Destroying torrent engine on shutdown');
       active.engine.destroy();
     }
     this._activeEngines.clear();
   }
 
-  // Picks the best torrent quality: 480p first, then 720p, 1080p, then most seeds.
+  // Deduplicates torrents that share the same quality string (e.g. two 1080p entries
+  // with different codecs). Prefers x265/HEVC (smaller file, same visual quality),
+  // otherwise picks the smallest torrent.
+  private deduplicateTorrents(torrents: ITorrent[]): ITorrent[] {
+    const byQuality = new Map<string, ITorrent[]>();
+    for (const t of torrents) {
+      const key = t.quality.toLowerCase();
+      if (!byQuality.has(key)) byQuality.set(key, []);
+      byQuality.get(key)!.push(t);
+    }
+
+    const result: ITorrent[] = [];
+    for (const group of byQuality.values()) {
+      if (group.length === 1) {
+        result.push(group[0]);
+        continue;
+      }
+      // Prefer x265 / HEVC
+      const x265 = group.find(
+        (t) => t.videoCodec && /x265|hevc/i.test(t.videoCodec),
+      );
+      if (x265) {
+        result.push(x265);
+        continue;
+      }
+      // No x265 — pick the smallest
+      const smallest = group.reduce((a, b) => (a.sizeBytes <= b.sizeBytes ? a : b));
+      result.push(smallest);
+    }
+    return result;
+  }
+
+  // Finds a torrent by the requested quality, or falls back to best available.
+  // When multiple torrents share the same quality, prefers x265.
+  private findTorrent(movie: IMovieDocument, quality?: string): ITorrent {
+    const deduped = this.deduplicateTorrents(movie.torrents);
+    if (quality) {
+      const match = deduped.find(
+        (t) => t.quality.toLowerCase() === quality.toLowerCase(),
+      );
+      if (match) return match;
+      logger.warn(
+        { movieId: movie._id, requestedQuality: quality },
+        'Requested quality not found — falling back to best available',
+      );
+    }
+    return this.selectTorrent(movie);
+  }
+
+  // Picks the best torrent quality: 1080p first, then 720p, 480p, then most seeds.
+  // Operates on deduplicated torrents so codec preference is already applied.
   private selectTorrent(movie: IMovieDocument): ITorrent {
-    const torrents = movie.torrents;
-    const qualityPriority = ['480p', '720p', '1080p'];
+    const torrents = this.deduplicateTorrents(movie.torrents);
+    const qualityPriority = ['1080p', '720p', '480p'];
 
     for (const quality of qualityPriority) {
       const match = torrents.find((t) => t.quality === quality);
@@ -283,54 +431,54 @@ export class StreamingService {
 
   private async getOrCreateEngine(
     movie: IMovieDocument,
+    torrent: ITorrent,
     language: string = 'en',
   ): Promise<ActiveEngine> {
     const movieId = movie._id.toString();
+    const quality = torrent.quality;
+    const engineKey = `${movieId}:${quality}`;
 
-    const activeEngineIds = Array.from(this._activeEngines.keys());
+    const activeEngineKeys = Array.from(this._activeEngines.keys());
     logger.info(
-      { movieId, activeEngines: activeEngineIds, totalActive: activeEngineIds.length },
+      { movieId, quality, engineKey, activeEngines: activeEngineKeys, totalActive: activeEngineKeys.length },
       'Checking for existing torrent engines',
     );
 
-    const existing = this._activeEngines.get(movieId);
+    const existing = this._activeEngines.get(engineKey);
     if (existing) {
       await existing.readyPromise;
 
       // torrent-stream considers everything downloaded once pieces are verified,
       // so if the file was deleted from disk we have to destroy and restart
       if (existing.file) {
-        const movieDir = path.join(this._downloadsDir, movieId);
+        const movieDir = path.join(this._downloadsDir, movieId, quality);
         const filePath = path.join(movieDir, existing.file.path);
         if (!fs.existsSync(filePath)) {
           logger.warn(
-            { movieId, filePath },
+            { movieId, quality, filePath },
             'Cached engine file missing from disk — destroying stale engine and re-creating',
           );
           existing.engine.destroy();
-          this._activeEngines.delete(movieId);
+          this._activeEngines.delete(engineKey);
 
-          movie.downloadStatus = 'not_downloaded';
-          movie.localPath = undefined;
+          if (!movie.downloads) movie.downloads = new Map();
+          movie.downloads.set(quality, { status: 'not_downloaded' });
           await movie.save();
         } else {
           logger.info(
-            { movieId, ready: existing.ready, fileName: existing.file.name },
+            { movieId, quality, ready: existing.ready, fileName: existing.file.name },
             'Reusing existing torrent engine',
           );
-          const torrent = this.selectTorrent(movie);
           this.fetchSubtitlesInBackground(movie, torrent, language);
           return existing;
         }
       } else {
-        logger.info({ movieId }, 'Reusing existing torrent engine (no file yet)');
-        const torrent = this.selectTorrent(movie);
+        logger.info({ movieId, quality }, 'Reusing existing torrent engine (no file yet)');
         this.fetchSubtitlesInBackground(movie, torrent, language);
         return existing;
       }
     }
 
-    const torrent = this.selectTorrent(movie);
     const magnetLinks = movie.getMagnetLinks();
     const magnetResult = magnetLinks.find(
       (m) => m.quality === torrent.quality && m.seeds === torrent.seeds,
@@ -347,11 +495,14 @@ export class StreamingService {
       'Starting torrent engine',
     );
 
+    // Update per-quality download status
+    if (!movie.downloads) movie.downloads = new Map();
+    movie.downloads.set(quality, { status: 'downloading' });
     movie.downloadStatus = 'downloading';
     await movie.save();
 
-    // Start torrent-stream engine
-    const movieDir = path.join(this._downloadsDir, movieId);
+    // Start torrent-stream engine — store under quality subdir
+    const movieDir = path.join(this._downloadsDir, movieId, quality);
     const engine = torrentStream(magnetUri, {
       path: movieDir,
       connections: 100,
@@ -370,15 +521,16 @@ export class StreamingService {
     const activeEngine: ActiveEngine = {
       engine,
       movieId,
+      quality,
       file: null,
       ready: false,
       readyPromise,
     };
 
-    this._activeEngines.set(movieId, activeEngine);
+    this._activeEngines.set(engineKey, activeEngine);
 
     logger.info(
-      { movieId, totalActiveEngines: this._activeEngines.size },
+      { movieId, quality, engineKey, totalActiveEngines: this._activeEngines.size },
       'Created new torrent engine and added to active engines map',
     );
 
@@ -386,7 +538,7 @@ export class StreamingService {
     engine.on('ready', () => {
       const files = engine.files;
       if (files.length === 0) {
-        logger.error({ movieId }, 'Torrent has no files');
+        logger.error({ movieId, quality }, 'Torrent has no files');
         resolveReady!();
         return;
       }
@@ -410,6 +562,7 @@ export class StreamingService {
       logger.info(
         {
           movieId,
+          quality,
           fileName: videoFile.name,
           fileSize: videoFile.length,
           fileCount: files.length,
@@ -441,7 +594,7 @@ export class StreamingService {
       const completionRatio = actualSize / expectedSize;
       if (completionRatio < 0.99) {
         logger.debug(
-          { movieId, actualSize, expectedSize, completionRatio: completionRatio.toFixed(3) },
+          { movieId, quality, actualSize, expectedSize, completionRatio: completionRatio.toFixed(3) },
           'Idle event fired but file is incomplete — ignoring',
         );
         return;
@@ -451,6 +604,13 @@ export class StreamingService {
         .findById(movieId)
         .then((freshMovie) => {
           if (freshMovie) {
+            // Update per-quality download info
+            if (!freshMovie.downloads) freshMovie.downloads = new Map();
+            freshMovie.downloads.set(quality, {
+              status: 'downloaded',
+              localPath,
+            });
+            // Also update legacy fields for backward compat
             freshMovie.downloadStatus = 'downloaded';
             freshMovie.localPath = localPath;
             return freshMovie.save();
@@ -458,13 +618,13 @@ export class StreamingService {
         })
         .then(() => {
           logger.info(
-            { movieId, localPath, actualSize, expectedSize },
+            { movieId, quality, localPath, actualSize, expectedSize },
             'Torrent download complete',
           );
         })
         .catch((err: unknown) => {
           const error = err instanceof Error ? err : new Error(String(err));
-          logger.error({ err: error, movieId }, 'Failed to update movie after download');
+          logger.error({ err: error, movieId, quality }, 'Failed to update movie after download');
         });
     });
 

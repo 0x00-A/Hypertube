@@ -1,0 +1,63 @@
+jest-haste-map: duplicate manual mock found: nodemailer
+  The following files share their name; please delete one of them:
+    * <rootDir>\tests\__mocks__\nodemailer.ts
+    * <rootDir>\dist\tests\__mocks__\nodemailer.js
+
+jest-haste-map: duplicate manual mock found: uuid
+  The following files share their name; please delete one of them:
+    * <rootDir>\tests\__mocks__\uuid.ts
+    * <rootDir>\dist\tests\__mocks__\uuid.js
+
+FAIL tests/unit/services/streaming.service.test.ts (5.392 s)
+  StreamingService
+    getStreamableFile
+      ΓêÜ should throw NotFoundError when movie does not exist (79 ms)
+      ΓêÜ should throw BadRequestError when movie has no torrents (56 ms)
+      ΓêÜ should serve from local file when movie is already downloaded (29 ms)
+      ΓêÜ should mark MKV files as needing transcoding (26 ms)
+      ΓêÜ should start a torrent engine when movie is not downloaded (35 ms)
+    createTranscodingStream
+      ΓêÜ should return a readable stream (6 ms)
+      ΓêÜ should call ffmpeg with correct output options (5 ms)
+    getStatus
+      ΓêÜ should throw NotFoundError when movie does not exist (5 ms)
+      ΓêÜ should return status for existing movie (11 ms)
+      ├ù should return subtitles when available (19 ms)
+    destroyAll
+      ΓêÜ should not throw when no active engines (2 ms)
+    torrent quality selection
+      ΓêÜ should prefer 720p over 1080p (21 ms)
+    codec deduplication
+      ΓêÜ should prefer x265 over x264 when both exist for the same quality (12 ms)
+      ΓêÜ should pick the smallest torrent when no x265 is available (10 ms)
+      ΓêÜ should keep different qualities separate (no cross-quality dedup) (12 ms)
+
+  ΓùÅ StreamingService ΓÇ║ getStatus ΓÇ║ should return subtitles when available
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+      Object {
+    +   "forQuality": "720p",
+        "label": "English (SRT)",
+        "language": "English",
+        "url": "/subtitles/tt123_en.vtt",
+      }
+
+      301 |       expect(result.subtitles).toHaveProperty('en');
+      302 |       expect(result.subtitles['en']).toHaveLength(1);
+    > 303 |       expect(result.subtitles['en'][0]).toEqual({
+          |                                         ^
+      304 |         language: 'English',
+      305 |         label: 'English (SRT)',
+      306 |         url: '/subtitles/tt123_en.vtt',
+
+      at Object.<anonymous> (tests/unit/services/streaming.service.test.ts:303:41)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 14 passed, 15 total
+Snapshots:   0 total
+Time:        5.847 s
+Ran all test suites matching /tests\\unit\\services\\streaming.service.test.ts/i.

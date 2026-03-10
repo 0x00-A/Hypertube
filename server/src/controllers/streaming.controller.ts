@@ -15,9 +15,10 @@ export class StreamingController {
 
   stream = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
+    const { quality } = (req.validated?.query as { quality?: string }) || {};
     const userLanguage = req.user?.language || 'en';
 
-    const streamable = await this._streamingService.getStreamableFile(movieId, userLanguage);
+    const streamable = await this._streamingService.getStreamableFile(movieId, userLanguage, quality);
 
     if (streamable.needsTranscoding) {
       logger.info({ movieId }, 'Transcoding required — streaming via ffmpeg');
@@ -138,9 +139,10 @@ export class StreamingController {
 
   getStatus = asyncHandler(async (req: Request, res: Response) => {
     const { movieId } = req.validated?.params as { movieId: string };
+    const { quality } = (req.validated?.query as { quality?: string }) || {};
     const userLanguage = req.user?.language || 'en';
 
-    const status = await this._streamingService.getStatus(movieId, userLanguage);
+    const status = await this._streamingService.getStatus(movieId, userLanguage, quality);
 
     res.json({
       status: 'success',

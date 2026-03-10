@@ -27,7 +27,7 @@ services:
     depends_on:
       - server
     ports:
-      - '8080:80'
+      - '5173:80'
     volumes:
       - server_uploads:/app/uploads
       - subs:/app/public/subtitles

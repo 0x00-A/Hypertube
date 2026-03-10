@@ -37,10 +37,20 @@ export interface ITorrent {
   provider?: string;
 }
 
+export interface IQualityOption {
+  quality: string;
+  seeds: number;
+  peers: number;
+  size: string;
+  sizeBytes: number;
+  downloadStatus: string;
+}
+
 export interface ISubtitleTrack {
   language: string;
   label: string;
   url: string;
+  forQuality?: string;
 }
 
 export interface IStreamStatus {
@@ -49,6 +59,7 @@ export interface IStreamStatus {
   needsTranscoding?: boolean;
   runtimeSeconds?: number | null;
   subtitles: Record<string, ISubtitleTrack[]>;
+  availableQualities?: IQualityOption[];
 }
 
 export interface IAvailableSubtitles {

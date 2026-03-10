@@ -13,6 +13,7 @@ paths:
         - **MKV/AVI (needs transcoding):** Pipes through ffmpeg to MP4 via Transfer-Encoding: chunked (200).
 
         If the movie has not started downloading, a torrent engine is created on-the-fly.
+        Use the `quality` query parameter to select a specific torrent quality (e.g., 720p, 1080p).
       security:
         - cookieAuth: []
       parameters:
@@ -24,6 +25,15 @@ paths:
             type: string
             pattern: '^[a-fA-F0-9]{24}$'
             example: '507f1f77bcf86cd799439011'
+        - name: quality
+          in: query
+          required: false
+          description: |
+            The desired torrent quality (e.g., "720p", "1080p"). If omitted, the server
+            auto-selects the best available quality (480p → 720p → 1080p → most seeds).
+          schema:
+            type: string
+            example: '720p'
         - name: Range
           in: header
           required: false
@@ -145,7 +155,8 @@ paths:
       summary: Get streaming status for a movie
       description: |
         Returns the current download status, whether a torrent engine is active,
-        and any available subtitles (grouped by language).
+        available subtitle tracks (grouped by language), and available quality options
+        from the movie's torrents.
       security:
         - cookieAuth: []
       parameters:
@@ -157,6 +168,15 @@ paths:
             type: string
             pattern: '^[a-fA-F0-9]{24}$'
             example: '507f1f77bcf86cd799439011'
+        - name: quality
+          in: query
+          required: false
+          description: |
+            Optionally specify a quality to check status for.
+            If omitted, status reflects the best available quality.
+          schema:
+            type: string
+            example: '720p'
       responses:
         '200':
           description: Stream status retrieved successfully
@@ -181,6 +201,13 @@ paths:
                       hasActiveEngine:
                         type: boolean
                         example: true
+                      needsTranscoding:
+                        type: boolean
+                        example: false
+                      runtimeSeconds:
+                        type: number
+                        nullable: true
+                        example: 7200
                       subtitles:
                         type: object
                         description: Subtitles grouped by language code
@@ -203,6 +230,34 @@ paths:
                             - language: English
                               label: English (SRT)
                               url: /subtitles/tt1234567_en.vtt
+                      availableQualities:
+                        type: array
+                        description: Quality options from all available torrents
+                        items:
+                          type: object
+                          properties:
+                            quality:
+                              type: string
+                              example: '720p'
+                            seeds:
+                              type: integer
+                              example: 150
+                            peers:
+                              type: integer
+                              example: 30
+                            size:
+                              type: string
+                              example: '1.2 GB'
+                            sizeBytes:
+                              type: integer
+                              example: 1288490188
+                            downloadStatus:
+                              type: string
+                              enum:
+                                - not_downloaded
+                                - downloading
+                                - downloaded
+                              example: not_downloaded
         '401':
           description: Unauthorized — not logged in
           content:
