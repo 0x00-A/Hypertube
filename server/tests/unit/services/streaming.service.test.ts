@@ -304,6 +304,7 @@ describe('StreamingService', () => {
         language: 'English',
         label: 'English (SRT)',
         url: '/subtitles/tt123_en.vtt',
+        forQuality: '720p',
       });
     });
   });
