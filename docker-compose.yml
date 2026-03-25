@@ -7,8 +7,13 @@ services:
     container_name: hypertube-server
     env_file:
       - ./server/.env
+    deploy:
+      resources:
+        limits:
+          memory: 4G
     environment:
       - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=3072
     ports:
       - '127.0.0.1:3000:3000'
     volumes:
