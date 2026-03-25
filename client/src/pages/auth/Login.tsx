@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MovieSlideshow from '../../components/auth/MovieSlideshow';
 import AuthInput from '../../components/auth/AuthInput';
@@ -76,6 +76,12 @@ export default function Login() {
           {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-white">login</h1>
+          </div>
+
+          {/* Info Banner */}
+          <div className="mb-6 flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-400">
+            <Info className="h-5 w-5 flex-shrink-0" />
+            <span>Only 42 Intra authentication is currently available</span>
           </div>
 
           {/* Login Form */}
