@@ -95,6 +95,20 @@ export interface ISubtitle {
   updatedAt?: Date;
 }
 
+export interface IDownloadInfo {
+  status: 'not_downloaded' | 'downloading' | 'downloaded';
+  localPath?: string;
+}
+
+export interface IQualityOption {
+  quality: string;
+  seeds: number;
+  peers: number;
+  size: string;
+  sizeBytes: number;
+  downloadStatus: string;
+}
+
 export interface IMovie {
   imdbId: string;
   tmdbId: number;
@@ -119,6 +133,7 @@ export interface IMovie {
   downloadStatus: 'not_downloaded' | 'downloading' | 'downloaded';
   lastWatched?: Date;
   localPath?: string;
+  downloads?: Map<string, IDownloadInfo>;
   lastUpdated: Date;
   metadataSource?: string;
   isWatched?: boolean;

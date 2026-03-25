@@ -304,6 +304,7 @@ describe('StreamingService', () => {
         language: 'English',
         label: 'English (SRT)',
         url: '/subtitles/tt123_en.vtt',
+        forQuality: '720p',
       });
     });
   });
@@ -389,6 +390,110 @@ describe('StreamingService', () => {
 
       // Restore original on
       mockEngine.on = originalOn as typeof mockEngine.on;
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // codec deduplication (tested via getAvailableQualities)
+  // --------------------------------------------------------------------------
+  describe('codec deduplication', () => {
+    it('should prefer x265 over x264 when both exist for the same quality', async () => {
+      const movie = await createTestMovie({
+        torrents: [
+          {
+            url: 'https://yts.mx/torrent/1080p-x264',
+            hash: 'hash_x264',
+            quality: '1080p',
+            videoCodec: 'x264',
+            seeds: 200,
+            peers: 100,
+            size: '2.02 GB',
+            sizeBytes: 2_020_000_000,
+          },
+          {
+            url: 'https://yts.mx/torrent/1080p-x265',
+            hash: 'hash_x265',
+            quality: '1080p',
+            videoCodec: 'x265',
+            seeds: 150,
+            peers: 80,
+            size: '1.83 GB',
+            sizeBytes: 1_830_000_000,
+          },
+        ],
+      });
+
+      const qualities = streamingService.getAvailableQualities(movie);
+
+      expect(qualities).toHaveLength(1);
+      expect(qualities[0].quality).toBe('1080p');
+      expect(qualities[0].sizeBytes).toBe(1_830_000_000); // x265 is smaller
+    });
+
+    it('should pick the smallest torrent when no x265 is available', async () => {
+      const movie = await createTestMovie({
+        torrents: [
+          {
+            url: 'https://yts.mx/torrent/1080p-big',
+            hash: 'hash_big',
+            quality: '1080p',
+            videoCodec: 'x264',
+            seeds: 200,
+            peers: 100,
+            size: '2.50 GB',
+            sizeBytes: 2_500_000_000,
+          },
+          {
+            url: 'https://yts.mx/torrent/1080p-small',
+            hash: 'hash_small',
+            quality: '1080p',
+            videoCodec: 'x264',
+            seeds: 150,
+            peers: 80,
+            size: '1.80 GB',
+            sizeBytes: 1_800_000_000,
+          },
+        ],
+      });
+
+      const qualities = streamingService.getAvailableQualities(movie);
+
+      expect(qualities).toHaveLength(1);
+      expect(qualities[0].sizeBytes).toBe(1_800_000_000);
+    });
+
+    it('should keep different qualities separate (no cross-quality dedup)', async () => {
+      const movie = await createTestMovie({
+        torrents: [
+          {
+            url: 'https://yts.mx/torrent/720p',
+            hash: 'hash_720',
+            quality: '720p',
+            videoCodec: 'x264',
+            seeds: 100,
+            peers: 50,
+            size: '1.00 GB',
+            sizeBytes: 1_000_000_000,
+          },
+          {
+            url: 'https://yts.mx/torrent/1080p',
+            hash: 'hash_1080',
+            quality: '1080p',
+            videoCodec: 'x265',
+            seeds: 200,
+            peers: 100,
+            size: '1.80 GB',
+            sizeBytes: 1_800_000_000,
+          },
+        ],
+      });
+
+      const qualities = streamingService.getAvailableQualities(movie);
+
+      expect(qualities).toHaveLength(2);
+      const qualityLabels = qualities.map((q) => q.quality);
+      expect(qualityLabels).toContain('720p');
+      expect(qualityLabels).toContain('1080p');
     });
   });
 });

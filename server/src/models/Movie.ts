@@ -101,6 +101,22 @@ const movieSchema = new Schema(
     },
     lastWatched: { type: Date, default: null }, // Vital for the 1-month deletion rule
     localPath: { type: String, default: null }, // Path to the file on your server
+    // Per-quality download tracking: { '720p': { status: 'downloaded', localPath: '...' }, ... }
+    downloads: {
+      type: Map,
+      of: new Schema(
+        {
+          status: {
+            type: String,
+            enum: ['not_downloaded', 'downloading', 'downloaded'],
+            default: 'not_downloaded',
+          },
+          localPath: { type: String },
+        },
+        { _id: false },
+      ),
+      default: () => ({}),
+    },
     lastUpdated: { type: Date, default: Date.now }, // Last updated timestamp
     metadataSource: { type: String, default: 'tmdb' }, // Source of metadata
     isWatched: { type: Boolean, default: false },

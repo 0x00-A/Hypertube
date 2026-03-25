@@ -25,6 +25,7 @@ import {
   X,
   RotateCcw,
   ArrowLeft,
+  Settings,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useAuthState } from "../../hooks/useAuth";
@@ -43,6 +44,7 @@ import { movieInteractionService } from "../../services/movieInteraction.service
 import type {
   ISubtitleTrack,
   IAvailableSubtitles,
+  IQualityOption,
 } from "../../types/movie.types";
 
 // ============================================================================
@@ -102,8 +104,8 @@ export default function Watch() {
   const controlsTimeoutRef = useRef<number | null>(null);
   const progressSaveRef = useRef<number | null>(null);
   const lastSavedTimeRef = useRef<number>(0);
-  const subtitleControlsRef = useRef<HTMLButtonElement>(null);
-  const subtitlePanelRef = useRef<HTMLDivElement>(null);
+  const settingsPanelRef = useRef<HTMLDivElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -117,6 +119,12 @@ export default function Watch() {
   const [volume, setVolume] = useState(1);
   const [isTranscoded, setIsTranscoded] = useState(false);
   const [runtimeSeconds, setRuntimeSeconds] = useState<number | null>(null);
+  // Quality selection state
+  const [availableQualities, setAvailableQualities] = useState<IQualityOption[]>([]);
+  const [selectedQuality, setSelectedQuality] = useState<string | null>(() => {
+    const saved = localStorage.getItem('preferred-quality');
+    return saved || null; // null = Auto
+  });
   // Subtitle state
   const [availableSubtitles, setAvailableSubtitles] =
     useState<IAvailableSubtitles>({});
@@ -125,7 +133,20 @@ export default function Watch() {
   >(null);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [activeCueText, setActiveCueText] = useState<string>("");
-  const [isSubtitlePanelOpen, setIsSubtitlePanelOpen] = useState(false);
+  // Unified settings panel state: 'closed' | 'menu' | 'subtitles' | 'quality'
+  const [settingsView, setSettingsView] = useState<'closed' | 'menu' | 'subtitles' | 'quality'>('closed');
+  const qualityLabel = selectedQuality || "Auto";
+  const hasMultipleQualities = availableQualities.length > 1;
+  // Compute what quality the server would pick in Auto mode (480p→720p→1080p→most seeds)
+  const autoQuality = useMemo(() => {
+    if (availableQualities.length === 0) return null;
+    const priority = ['1080p', '720p', '480p'];
+    for (const q of priority) {
+      if (availableQualities.find((aq) => aq.quality === q)) return q;
+    }
+    const sorted = [...availableQualities].sort((a, b) => b.seeds - a.seeds);
+    return sorted[0]?.quality ?? null;
+  }, [availableQualities]);
 
   const [isMobileVolumeHovered, setIsMobileVolumeHovered] = useState(false);
   const [subtitleOffset, setSubtitleOffset] = useState(() => {
@@ -143,12 +164,68 @@ export default function Watch() {
   );
   const [streamError, setStreamError] = useState<string | null>(null);
 
-  // Derived stream URL — purely computed from movie._id, no state needed
+  // Derived stream URL — movieId is required; selectedQuality=null means "Auto" (no param)
   const movieId = movie?._id ?? "";
   const streamUrl = useMemo(
-    () => (movieId ? streamingService.getStreamUrl(movieId) : null),
-    [movieId],
+    () => (movieId ? streamingService.getStreamUrl(movieId, selectedQuality || undefined) : null),
+    [movieId, selectedQuality],
   );
+
+  // ========================================================================
+  // Fetch available qualities on mount
+  // ========================================================================
+
+  useEffect(() => {
+    if (!movieId) return;
+    streamingService
+      .getStreamStatus(movieId)
+      .then((status) => {
+        setAvailableQualities(status.availableQualities || []);
+      })
+      .catch(() => {
+        setAvailableQualities([]);
+      });
+  }, [movieId]);
+
+  // Handle quality selection from the panel
+  const handleQualitySelect = (quality: string | null) => {
+    if (quality === selectedQuality) {
+      setSettingsView('closed');
+      return;
+    }
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    }
+    setSelectedQuality(quality);
+    // Persist preference globally
+    if (quality) {
+      localStorage.setItem('preferred-quality', quality);
+    } else {
+      localStorage.removeItem('preferred-quality');
+    }
+    setSettingsView('closed');
+    setStreamError(null);
+    setIsPlaying(false);
+    setIsBuffering(true);
+    setCurrentTime(0);
+    setDuration(0);
+
+    // Immediately re-fetch status for the new quality to update needsTranscoding
+    if (movieId) {
+      streamingService
+        .getStreamStatus(movieId, quality || undefined)
+        .then((status) => {
+          setIsTranscoded(status.needsTranscoding ?? false);
+          if (status.runtimeSeconds != null) {
+            setRuntimeSeconds(status.runtimeSeconds);
+          }
+        })
+        .catch(() => {});
+    }
+  };
 
   // Storyline state
   const [isStoryExpanded, setIsStoryExpanded] = useState(false);
@@ -182,7 +259,7 @@ export default function Watch() {
 
     const fetchSubtitles = () => {
       streamingService
-        .getStreamStatus(movieId)
+        .getStreamStatus(movieId, selectedQuality || undefined)
         .then((status) => {
           if (cancelled) return;
 
@@ -197,17 +274,30 @@ export default function Watch() {
             userLanguageCode: userLanguage,
           };
 
+          // Only pick subtitles that match the quality currently playing
+          const playingQuality = selectedQuality || autoQuality;
+
           // Check for English subtitles
           const englishSubs = status.subtitles["en"];
           if (englishSubs && englishSubs.length > 0) {
-            available.english = englishSubs.filter((sub) => sub.url);
+            const qualityMatch = playingQuality
+              ? englishSubs.filter((sub) => sub.url && sub.forQuality === playingQuality)
+              : [];
+            available.english = qualityMatch.length > 0
+              ? qualityMatch
+              : englishSubs.filter((sub) => sub.url).slice(0, 1);
           }
 
           // Check for user language subtitles (if different from English)
           if (userLanguage !== "en") {
             const userLangSubs = status.subtitles[userLanguage];
             if (userLangSubs && userLangSubs.length > 0) {
-              available.userLanguage = userLangSubs.filter((sub) => sub.url);
+              const qualityMatch = playingQuality
+                ? userLangSubs.filter((sub) => sub.url && sub.forQuality === playingQuality)
+                : [];
+              available.userLanguage = qualityMatch.length > 0
+                ? qualityMatch
+                : userLangSubs.filter((sub) => sub.url).slice(0, 1);
             }
           }
 
@@ -242,7 +332,7 @@ export default function Watch() {
     return () => {
       cancelled = true;
     };
-  }, [movieId, userLanguage]);
+  }, [movieId, userLanguage, selectedQuality]);
 
   // ========================================================================
   // Programmatically manage subtitle tracks on the <video> element
@@ -399,7 +489,7 @@ export default function Watch() {
     if (
       showControls &&
       isPlaying &&
-      !isSubtitlePanelOpen &&
+      settingsView === 'closed' &&
       !isMobileVolumeHovered
     ) {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -410,32 +500,31 @@ export default function Watch() {
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
-  }, [showControls, isPlaying, isSubtitlePanelOpen, isMobileVolumeHovered]);
+  }, [showControls, isPlaying, settingsView, isMobileVolumeHovered]);
 
-  // Close subtitle panel and volume UI when controls hide
   useEffect(() => {
     if (!showControls) {
-      setIsSubtitlePanelOpen(false);
+      setSettingsView('closed');
       setIsMobileVolumeHovered(false);
     }
   }, [showControls]);
 
-  // Close subtitle panel on click outside
+  // Close settings panel on click outside
   useEffect(() => {
-    if (!isSubtitlePanelOpen) return;
+    if (settingsView === 'closed') return;
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        subtitlePanelRef.current &&
-        !subtitlePanelRef.current.contains(e.target as Node) &&
-        subtitleControlsRef.current &&
-        !subtitleControlsRef.current.contains(e.target as Node)
+        settingsPanelRef.current &&
+        !settingsPanelRef.current.contains(e.target as Node) &&
+        settingsButtonRef.current &&
+        !settingsButtonRef.current.contains(e.target as Node)
       ) {
-        setIsSubtitlePanelOpen(false);
+        setSettingsView('closed');
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isSubtitlePanelOpen]);
+  }, [settingsView]);
 
   // ========================================================================
   // Fullscreen change listener
@@ -733,12 +822,26 @@ export default function Watch() {
               <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
                 <AlertTriangle className="w-14 h-14 text-yellow-500" />
                 <p className="text-white text-lg font-medium">{streamError}</p>
-                <button
-                  onClick={() => navigate("/library")}
-                  className="px-5 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors"
-                >
-                  Back to Library
-                </button>
+                <div className="flex items-center gap-3">
+                  {hasMultipleQualities && (
+                    <button
+                      onClick={() => {
+                        setStreamError(null);
+                        setSettingsView('quality');
+                        setShowControls(true);
+                      }}
+                      className="px-5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/20"
+                    >
+                      Try Different Quality
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate("/library")}
+                    className="px-5 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors"
+                  >
+                    Back to Library
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -799,16 +902,12 @@ export default function Watch() {
               >
                 {/* Buffered bar */}
                 <div
-                  className={`absolute h-full rounded-full transition-all ${
-                    isTranscoded ? "bg-white/15" : "bg-white/30"
-                  }`}
+                  className="absolute h-full rounded-full transition-all bg-white/30"
                   style={{ width: `${bufferedPercent}%` }}
                 />
                 {/* Progress bar */}
                 <div
-                  className={`absolute h-full rounded-full transition-all ${
-                    isTranscoded ? "bg-primary/50" : "bg-primary"
-                  }`}
+                  className="absolute h-full rounded-full transition-all bg-primary"
                   style={{ width: `${progressPercent}%` }}
                 />
                 {/* Scrub handle — hidden for transcoded streams */}
@@ -892,31 +991,26 @@ export default function Watch() {
                   )}
                 </button>
 
-                {/* Subtitle Panel Trigger */}
-                {hasSubtitles && (
-                  <button
-                    ref={subtitleControlsRef}
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded transition-colors relative",
-                      isSubtitlePanelOpen || subtitlesEnabled
-                        ? "text-primary bg-primary/15"
-                        : "text-white/70 hover:bg-white/10 hover:text-white",
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsSubtitlePanelOpen((p) => !p);
-                      setShowControls(true);
-                    }}
-                    aria-label="Subtitle settings"
-                    aria-expanded={isSubtitlePanelOpen}
-                    aria-haspopup="dialog"
-                  >
-                    <Subtitles className="w-4 h-4 sm:w-5 sm:h-5" />
-                    {subtitlesEnabled && (
-                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
-                    )}
-                  </button>
-                )}
+                {/* Settings Panel Trigger */}
+                <button
+                  ref={settingsButtonRef}
+                  className={clsx(
+                    "w-9 h-9 flex items-center justify-center rounded transition-colors relative",
+                    settingsView !== 'closed'
+                      ? "text-primary bg-primary/15"
+                      : "text-white/70 hover:bg-white/10 hover:text-white",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettingsView((v) => v === 'closed' ? 'menu' : 'closed');
+                    setShowControls(true);
+                  }}
+                  aria-label="Settings"
+                  aria-expanded={settingsView !== 'closed'}
+                  aria-haspopup="dialog"
+                >
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
 
                 {/* Fullscreen */}
                 <button
@@ -930,257 +1024,303 @@ export default function Watch() {
                     <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </button>
-              </div>
             </div>
           </div>
 
-          {/* ── Subtitle Settings Panel (fullscreen only) ─────── */}
-          {isFullscreen && hasSubtitles && isSubtitlePanelOpen && (
+          {/* ── Unified Settings Panel ── */}
+          {settingsView !== 'closed' && (
             <div
-              ref={subtitlePanelRef}
-              className="absolute bottom-14 sm:bottom-16 right-2 sm:right-3 w-[min(272px,calc(100%-1rem))] bg-zinc-900/95 backdrop-blur-xl border border-white/12 rounded-2xl shadow-2xl z-20 overflow-hidden"
+              ref={settingsPanelRef}
+              className={clsx(
+                "absolute bg-zinc-900/95 backdrop-blur-xl border border-white/12 shadow-2xl z-20 overflow-hidden",
+                isFullscreen
+                  ? "bottom-14 sm:bottom-16 right-2 sm:right-3 w-[min(280px,calc(100%-1rem))] rounded-2xl"
+                  : "bottom-11 sm:bottom-16 right-1.5 sm:right-3 w-[min(220px,calc(100%-0.75rem))] sm:w-[min(260px,calc(100%-1.5rem))] rounded-lg sm:rounded-2xl",
+              )}
               role="dialog"
-              aria-label="Subtitle settings"
+              aria-label="Settings"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Panel header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                <span className="text-sm font-semibold text-white tracking-tight">Subtitles</span>
-                <button
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                  onClick={() => setIsSubtitlePanelOpen(false)}
-                  aria-label="Close subtitle settings"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Language list */}
-              <div className="px-2 py-2">
-                <p className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1.5 px-2">Language</p>
-                {/* Off */}
-                <button
-                  className={clsx(
-                    "flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm transition-colors text-left",
-                    !subtitlesEnabled
-                      ? "bg-primary/15 text-primary"
-                      : "text-white/65 hover:bg-white/8 hover:text-white",
-                  )}
-                  onClick={() => {
-                    setSubtitlesEnabled(false);
-                    setSelectedSubtitleLanguage(null);
-                    setActiveCueText("");
-                  }}
-                >
-                  <span
-                    className={clsx(
-                      "w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center",
-                      !subtitlesEnabled ? "border-primary" : "border-white/25",
-                    )}
-                  >
-                    {!subtitlesEnabled && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    )}
-                  </span>
-                  Off
-                </button>
-
-                {/* Language options */}
-                {availableLanguages.map((lang) => {
-                  const isSelected =
-                    subtitlesEnabled && selectedSubtitleLanguage === lang.code;
-                  return (
-                    <button
-                      key={lang.code}
-                      className={clsx(
-                        "flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm transition-colors text-left",
-                        isSelected
-                          ? "bg-primary/15 text-primary"
-                          : "text-white/65 hover:bg-white/8 hover:text-white",
-                      )}
-                      onClick={() => {
-                        setSubtitlesEnabled(true);
-                        setSelectedSubtitleLanguage(lang.code);
-                      }}
-                    >
-                      <span
-                        className={clsx(
-                          "w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center",
-                          isSelected ? "border-primary" : "border-white/25",
-                        )}
-                      >
-                        {isSelected && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        )}
-                      </span>
-                      {lang.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Timing offset – shown only when a language is active */}
-              {subtitlesEnabled && selectedSubtitleLanguage && (
+              {/* ── Main Menu ── */}
+              {settingsView === 'menu' && (
                 <>
-                  <div className="h-px bg-white/10 mx-3" />
-                  <div className="px-3 py-3">
-                    <p className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-2 px-1">Sync offset</p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={subtitleOffset}
-                        onChange={(e) =>
-                          setSubtitleOffset(parseInt(e.target.value) || 0)
-                        }
-                        className="flex-1 bg-white/8 text-sm text-white text-center border border-white/12 rounded-lg px-2 py-1.5 focus:border-primary focus:outline-none focus:bg-white/12 transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-appearance:textfield]"
-                        step={50}
-                        min={-20000}
-                        max={20000}
-                        placeholder="0"
-                        aria-label="Subtitle timing offset in milliseconds"
-                        title="+ms delays · −ms advances"
-                      />
-                      <span className="text-xs text-white/40 shrink-0">ms</span>
+                  <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 border-b border-white/10">
+                    <span className={clsx(
+                      "font-semibold text-white tracking-tight",
+                      isFullscreen ? "text-sm" : "text-[11px] sm:text-sm",
+                    )}>Settings</span>
+                    <button
+                      className={clsx(
+                        "flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors",
+                        isFullscreen ? "w-7 h-7 rounded-lg" : "w-5 h-5 sm:w-7 sm:h-7",
+                      )}
+                      onClick={() => setSettingsView('closed')}
+                      aria-label="Close settings"
+                    >
+                      <X className={clsx(isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                    </button>
+                  </div>
+
+                  <div className={clsx(isFullscreen ? "px-2 py-2" : "px-1 py-0.5 sm:px-2 sm:py-2")}>
+                    {/* Subtitles row */}
+                    {hasSubtitles && (
                       <button
-                        onClick={() => setSubtitleOffset(0)}
                         className={clsx(
-                          "w-8 h-8 shrink-0 flex items-center justify-center rounded-lg transition-colors",
-                          subtitleOffset !== 0
-                            ? "text-white/60 hover:text-white hover:bg-white/10"
-                            : "text-white/20 cursor-default",
+                          "flex items-center justify-between w-full rounded transition-colors text-left",
+                          isFullscreen
+                            ? "px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 text-white/70 hover:text-white"
+                            : "px-2 py-1.5 sm:px-3 sm:py-2.5 rounded sm:rounded-xl text-[11px] sm:text-sm hover:bg-white/8 text-white/70 hover:text-white",
                         )}
-                        disabled={subtitleOffset === 0}
-                        aria-label="Reset subtitle offset"
-                        title="Reset timing"
+                        onClick={() => setSettingsView('subtitles')}
                       >
-                        <RotateCcw className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-2.5">
+                          <Subtitles className={clsx(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5 sm:w-4 sm:h-4", "text-white/50")} />
+                          <span>Subtitles</span>
+                        </div>
+                        <span className={clsx(
+                          "text-white/40",
+                          isFullscreen ? "text-xs" : "text-[10px] sm:text-xs",
+                        )}>
+                          {subtitlesEnabled ? (selectedSubtitleLanguage?.split('-')[0]?.toUpperCase() || 'On') : 'Off'}
+                        </span>
                       </button>
-                    </div>
-                    <p className="text-[10px] text-white/30 mt-1.5 px-1">+ delays · − advances subtitles</p>
+                    )}
+
+                    {/* Quality row */}
+                    {hasMultipleQualities && (
+                      <button
+                        className={clsx(
+                          "flex items-center justify-between w-full rounded transition-colors text-left",
+                          isFullscreen
+                            ? "px-3 py-2.5 rounded-xl text-sm hover:bg-white/8 text-white/70 hover:text-white"
+                            : "px-2 py-1.5 sm:px-3 sm:py-2.5 rounded sm:rounded-xl text-[11px] sm:text-sm hover:bg-white/8 text-white/70 hover:text-white",
+                        )}
+                        onClick={() => setSettingsView('quality')}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Settings className={clsx(isFullscreen ? "w-4 h-4" : "w-3.5 h-3.5 sm:w-4 sm:h-4", "text-white/50")} />
+                          <span>Quality</span>
+                        </div>
+                        <span className={clsx(
+                          "text-white/40",
+                          isFullscreen ? "text-xs" : "text-[10px] sm:text-xs",
+                        )}>{qualityLabel}{selectedQuality === null && autoQuality ? ` (${autoQuality})` : ''}</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
 
+              {/* ── Subtitles Sub-panel ── */}
+              {settingsView === 'subtitles' && (
+                <>
+                  <div className="flex items-center gap-1 px-2 py-2 sm:px-3 sm:py-3 border-b border-white/10">
+                    <button
+                      className={clsx(
+                        "flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors",
+                        isFullscreen ? "w-7 h-7 rounded-lg" : "w-5 h-5 sm:w-7 sm:h-7",
+                      )}
+                      onClick={() => setSettingsView('menu')}
+                      aria-label="Back to settings"
+                    >
+                      <ArrowLeft className={clsx(isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                    </button>
+                    <span className={clsx(
+                      "font-semibold text-white tracking-tight",
+                      isFullscreen ? "text-sm" : "text-[11px] sm:text-sm",
+                    )}>Subtitles</span>
+                  </div>
+
+                  <div className={clsx(isFullscreen ? "px-2 py-2" : "px-1 py-0.5 sm:px-2 sm:py-2")}>
+                    {/* Off */}
+                    <button
+                      className={clsx(
+                        "flex items-center gap-2 sm:gap-3 w-full rounded transition-colors text-left",
+                        isFullscreen ? "px-3 py-2 rounded-xl text-sm" : "px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm",
+                        !subtitlesEnabled
+                          ? "bg-primary/15 text-primary"
+                          : "text-white/65 hover:bg-white/8 hover:text-white",
+                      )}
+                      onClick={() => {
+                        setSubtitlesEnabled(false);
+                        setSelectedSubtitleLanguage(null);
+                        setActiveCueText("");
+                      }}
+                    >
+                      <span
+                        className={clsx(
+                          "rounded-full border-2 shrink-0 flex items-center justify-center",
+                          isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4",
+                          !subtitlesEnabled ? "border-primary" : "border-white/25",
+                        )}
+                      >
+                        {!subtitlesEnabled && <span className={clsx("rounded-full bg-primary", isFullscreen ? "w-1.5 h-1.5" : "w-1 h-1 sm:w-1.5 sm:h-1.5")} />}
+                      </span>
+                      Off
+                    </button>
+
+                    {availableLanguages.map((lang) => {
+                      const isSelected = subtitlesEnabled && selectedSubtitleLanguage === lang.code;
+                      return (
+                        <button
+                          key={lang.code}
+                          className={clsx(
+                            "flex items-center gap-2 sm:gap-3 w-full rounded transition-colors text-left",
+                            isFullscreen ? "px-3 py-2 rounded-xl text-sm" : "px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm",
+                            isSelected
+                              ? "bg-primary/15 text-primary"
+                              : "text-white/65 hover:bg-white/8 hover:text-white",
+                          )}
+                          onClick={() => {
+                            setSubtitlesEnabled(true);
+                            setSelectedSubtitleLanguage(lang.code);
+                          }}
+                        >
+                          <span
+                            className={clsx(
+                              "rounded-full border-2 shrink-0 flex items-center justify-center",
+                              isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4",
+                              isSelected ? "border-primary" : "border-white/25",
+                            )}
+                          >
+                            {isSelected && <span className={clsx("rounded-full bg-primary", isFullscreen ? "w-1.5 h-1.5" : "w-1 h-1 sm:w-1.5 sm:h-1.5")} />}
+                          </span>
+                          {lang.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Sync offset */}
+                  {subtitlesEnabled && selectedSubtitleLanguage && (
+                    <>
+                      <div className="h-px bg-white/10 mx-2 sm:mx-3" />
+                      <div className={clsx(isFullscreen ? "px-3 py-3" : "px-2 py-1.5 sm:px-3 sm:py-3")}>
+                        <p className={clsx("uppercase tracking-widest text-white/35 font-semibold mb-1", isFullscreen ? "text-[10px]" : "text-[9px] sm:text-[10px]")}>Sync (ms)</p>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={subtitleOffset}
+                            onChange={(e) => setSubtitleOffset(parseInt(e.target.value) || 0)}
+                            className={clsx(
+                              "flex-1 min-w-0 bg-white/8 text-white text-center border border-white/12 rounded focus:border-primary focus:outline-none transition-colors",
+                              isFullscreen ? "text-sm px-2 py-1.5 rounded-lg" : "text-[11px] sm:text-sm px-1 py-0.5 sm:px-2 sm:py-1.5",
+                            )}
+                            step={50}
+                            min={-20000}
+                            max={20000}
+                            placeholder="0"
+                            aria-label="Subtitle timing offset in milliseconds"
+                          />
+                          <button
+                            onClick={() => setSubtitleOffset(0)}
+                            disabled={subtitleOffset === 0}
+                            className={clsx(
+                              "shrink-0 flex items-center justify-center rounded transition-colors",
+                              isFullscreen ? "w-8 h-8 rounded-lg" : "w-6 h-6 sm:w-7 sm:h-7",
+                              subtitleOffset !== 0
+                                ? "text-white/60 hover:text-white hover:bg-white/10"
+                                : "text-white/20 cursor-default",
+                            )}
+                            aria-label="Reset subtitle offset"
+                          >
+                            <RotateCcw className={clsx(isFullscreen ? "w-3.5 h-3.5" : "w-2.5 h-2.5 sm:w-3.5 sm:h-3.5")} />
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* ── Quality Sub-panel ── */}
+              {settingsView === 'quality' && (
+                <>
+                  <div className="flex items-center gap-1 px-2 py-2 sm:px-3 sm:py-3 border-b border-white/10">
+                    <button
+                      className={clsx(
+                        "flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors",
+                        isFullscreen ? "w-7 h-7 rounded-lg" : "w-5 h-5 sm:w-7 sm:h-7",
+                      )}
+                      onClick={() => setSettingsView('menu')}
+                      aria-label="Back to settings"
+                    >
+                      <ArrowLeft className={clsx(isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                    </button>
+                    <span className={clsx(
+                      "font-semibold text-white tracking-tight",
+                      isFullscreen ? "text-sm" : "text-[11px] sm:text-sm",
+                    )}>Quality</span>
+                  </div>
+
+                  <div className={clsx(isFullscreen ? "px-2 py-2" : "px-1 py-0.5 sm:px-2 sm:py-2")}>
+                    {/* Auto */}
+                    <button
+                      className={clsx(
+                        "flex items-center gap-2 sm:gap-3 w-full rounded transition-colors text-left",
+                        isFullscreen ? "px-3 py-2 rounded-xl text-sm" : "px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm",
+                        selectedQuality === null
+                          ? "bg-primary/15 text-primary"
+                          : "text-white/65 hover:bg-white/8 hover:text-white",
+                      )}
+                      onClick={() => handleQualitySelect(null)}
+                    >
+                      <span
+                        className={clsx(
+                          "rounded-full border-2 shrink-0 flex items-center justify-center",
+                          isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4",
+                          selectedQuality === null ? "border-primary" : "border-white/25",
+                        )}
+                      >
+                        {selectedQuality === null && <span className={clsx("rounded-full bg-primary", isFullscreen ? "w-1.5 h-1.5" : "w-1 h-1 sm:w-1.5 sm:h-1.5")} />}
+                      </span>
+                      Auto{autoQuality && <span className={clsx("text-white/40 ml-1", isFullscreen ? "text-[10px]" : "text-[9px] sm:text-[10px]")}>({autoQuality})</span>}
+                    </button>
+
+                    {availableQualities.map((q) => {
+                      const isSelected = selectedQuality === q.quality;
+                      return (
+                        <button
+                          key={q.quality}
+                          className={clsx(
+                            "flex items-center gap-2 sm:gap-3 w-full rounded transition-colors text-left",
+                            isFullscreen ? "px-3 py-2 rounded-xl text-sm" : "px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm",
+                            isSelected
+                              ? "bg-primary/15 text-primary"
+                              : "text-white/65 hover:bg-white/8 hover:text-white",
+                          )}
+                          onClick={() => handleQualitySelect(q.quality)}
+                        >
+                          <span
+                            className={clsx(
+                              "rounded-full border-2 shrink-0 flex items-center justify-center",
+                              isFullscreen ? "w-4 h-4" : "w-3 h-3 sm:w-4 sm:h-4",
+                              isSelected ? "border-primary" : "border-white/25",
+                            )}
+                          >
+                            {isSelected && <span className={clsx("rounded-full bg-primary", isFullscreen ? "w-1.5 h-1.5" : "w-1 h-1 sm:w-1.5 sm:h-1.5")} />}
+                          </span>
+                          <span className="flex-1">{q.quality}</span>
+                          <span className={clsx("flex items-center", isFullscreen ? "gap-2" : "gap-1.5")}>
+                            {q.downloadStatus === 'downloaded' && (
+                              <span className={clsx("uppercase tracking-wider font-semibold rounded-full bg-green-500/20 text-green-400", isFullscreen ? "text-[9px] px-1.5 py-0.5" : "text-[8px] px-1 py-0.5")}>Cached</span>
+                            )}
+                            {q.downloadStatus === 'downloading' && (
+                              <span className={clsx("uppercase tracking-wider font-semibold rounded-full bg-blue-500/20 text-blue-400", isFullscreen ? "text-[9px] px-1.5 py-0.5" : "text-[8px] px-1 py-0.5")}>DL</span>
+                            )}
+                            <span className={clsx("text-white/30", isFullscreen ? "text-[10px]" : "text-[9px]")}>{q.seeds}s</span>
+                            <span className={clsx("text-white/40", isFullscreen ? "text-[10px]" : "text-[9px]")}>{q.size}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           )}
+
         </div>
-        {/* ── Subtitle Settings Panel (normal / non-fullscreen) ── */}
-        {!isFullscreen && hasSubtitles && isSubtitlePanelOpen && (
-          <div
-            ref={subtitlePanelRef}
-            className="absolute bottom-11 sm:bottom-16 right-1.5 sm:right-3 w-[min(190px,calc(100%-0.75rem))] sm:w-[min(240px,calc(100%-1.5rem))] bg-zinc-900/95 backdrop-blur-xl border border-white/12 rounded-lg sm:rounded-2xl shadow-2xl z-20"
-            role="dialog"
-            aria-label="Subtitle settings"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Panel header */}
-            <div className="flex items-center justify-between px-2.5 py-1.5 sm:px-4 sm:py-3 border-b border-white/10">
-              <span className="text-[11px] sm:text-sm font-semibold text-white tracking-tight">Subtitles</span>
-              <button
-                className="w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                onClick={() => setIsSubtitlePanelOpen(false)}
-                aria-label="Close subtitle settings"
-              >
-                <X className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-            </div>
-
-            {/* Language list */}
-            <div className="px-1 py-0.5 sm:px-2 sm:py-2">
-              {/* Off */}
-              <button
-                className={clsx(
-                  "flex items-center gap-2 w-full px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm transition-colors text-left",
-                  !subtitlesEnabled
-                    ? "bg-primary/15 text-primary"
-                    : "text-white/65 hover:bg-white/8 hover:text-white",
-                )}
-                onClick={() => {
-                  setSubtitlesEnabled(false);
-                  setSelectedSubtitleLanguage(null);
-                  setActiveCueText("");
-                }}
-              >
-                <span
-                  className={clsx(
-                    "w-3 h-3 rounded-full border-2 shrink-0 flex items-center justify-center",
-                    !subtitlesEnabled ? "border-primary" : "border-white/25",
-                  )}
-                >
-                  {!subtitlesEnabled && <span className="w-1 h-1 rounded-full bg-primary" />}
-                </span>
-                Off
-              </button>
-
-              {/* Language options */}
-              {availableLanguages.map((lang) => {
-                const isSelected = subtitlesEnabled && selectedSubtitleLanguage === lang.code;
-                return (
-                  <button
-                    key={lang.code}
-                    className={clsx(
-                      "flex items-center gap-2 w-full px-2 py-1 sm:px-3 sm:py-2 rounded sm:rounded-xl text-[11px] sm:text-sm transition-colors text-left",
-                      isSelected
-                        ? "bg-primary/15 text-primary"
-                        : "text-white/65 hover:bg-white/8 hover:text-white",
-                    )}
-                    onClick={() => {
-                      setSubtitlesEnabled(true);
-                      setSelectedSubtitleLanguage(lang.code);
-                    }}
-                  >
-                    <span
-                      className={clsx(
-                        "w-3 h-3 rounded-full border-2 shrink-0 flex items-center justify-center",
-                        isSelected ? "border-primary" : "border-white/25",
-                      )}
-                    >
-                      {isSelected && <span className="w-1 h-1 rounded-full bg-primary" />}
-                    </span>
-                    {lang.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Sync offset */}
-            {subtitlesEnabled && selectedSubtitleLanguage && (
-              <>
-                <div className="h-px bg-white/10 mx-2 sm:mx-3" />
-                <div className="px-2 py-1.5 sm:px-3 sm:py-3">
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1">Sync (ms)</p>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={subtitleOffset}
-                      onChange={(e) => setSubtitleOffset(parseInt(e.target.value) || 0)}
-                      className="flex-1 min-w-0 bg-white/8 text-[11px] sm:text-sm text-white text-center border border-white/12 rounded px-1 py-0.5 sm:px-2 sm:py-1.5 focus:border-primary focus:outline-none transition-colors"
-                      step={50}
-                      min={-20000}
-                      max={20000}
-                      placeholder="0"
-                      aria-label="Subtitle timing offset in milliseconds"
-                    />
-                    <button
-                      onClick={() => setSubtitleOffset(0)}
-                      disabled={subtitleOffset === 0}
-                      className={clsx(
-                        "w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center rounded transition-colors",
-                        subtitleOffset !== 0
-                          ? "text-white/60 hover:text-white hover:bg-white/10"
-                          : "text-white/20 cursor-default",
-                      )}
-                      aria-label="Reset subtitle offset"
-                    >
-                      <RotateCcw className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-          </div>
-        )}
         </div>
 
         {/* Movie Info Section */}
@@ -1334,6 +1474,7 @@ export default function Watch() {
           title="Share this movie"
         />
       </div>
+    </div>
     </div>
   );
 }
