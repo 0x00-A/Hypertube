@@ -2,8 +2,6 @@
 
 ![Hypertube Demo](./.github/assets/leetflex.gif)
 
-**Live Demo:** http://172.234.168.35/browse
-
 A full-stack video streaming platform. Aggregates torrent metadata from external sources, streams video directly to the browser with real-time FFmpeg transcoding for non-native formats, and handles[...] 
 
 > Built without plug-and-play streaming libraries (no webtorrent, peerflix, etc.) — the torrent engine and streaming pipeline were implemented from scratch.
