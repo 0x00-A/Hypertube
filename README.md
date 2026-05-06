@@ -2,7 +2,9 @@
 
 ![Hypertube Demo](./.github/assets/leetflex.gif)
 
-A full-stack video streaming platform. Aggregates torrent metadata from external sources, streams video directly to the browser with real-time FFmpeg transcoding for non-native formats, and handles[...] 
+**Live Demo:** <http://64.226.92.118/browse>
+
+A full-stack video streaming platform. Aggregates torrent metadata from external sources, streams video directly to the browser with real-time FFmpeg transcoding for non-native formats, and handles[...]
 
 > Built without plug-and-play streaming libraries (no webtorrent, peerflix, etc.) — the torrent engine and streaming pipeline were implemented from scratch.
 
